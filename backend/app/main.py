@@ -63,6 +63,28 @@ def seed_admin_if_empty() -> None:
         db.close()
 
 
+def seed_builtin_roles() -> None:
+    """Make sure Admin -> Roles lists the platform's built-in roles.
+
+    Idempotent: it only inserts roles that are missing, so an admin's edits to a
+    system role survive the next restart.
+    """
+    from .services.rbac_seed import seed_roles
+
+    db = SessionLocal()
+    try:
+        admin = db.scalar(select(User).order_by(User.id))
+        if admin is None:
+            return
+        summary = seed_roles(db, created_by_id=admin.id)
+        if summary["roles_created"]:
+            print(f"RBAC: seeded built-in roles {summary['roles_created']}")
+    except Exception as exc:  # noqa: BLE001 — never block startup on the catalogue
+        print(f"RBAC: role seeding skipped ({exc})")
+    finally:
+        db.close()
+
+
 def warn_insecure_defaults() -> None:
     """Log a loud warning when known-insecure default secrets are active.
 
@@ -92,6 +114,7 @@ async def lifespan(_app: FastAPI):
     # manage the schema via Alembic migrations (see backend/alembic/).
     Base.metadata.create_all(bind=engine)
     seed_admin_if_empty()
+    seed_builtin_roles()
     warn_insecure_defaults()
     yield
 

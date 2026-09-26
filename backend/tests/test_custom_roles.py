@@ -138,3 +138,27 @@ def test_roles_create_accepts_the_canonical_path(client, admin_headers):
     role_id = resp.json().get("id")
     if role_id:
         client.delete(f"/api/roles/{role_id}", headers=admin_headers)
+
+def test_builtin_roles_are_seeded_idempotently(client, admin_headers):
+    """Admin -> Roles must list the platform's built-in roles, once."""
+    from app.db import SessionLocal
+    from app.models import User
+    from app.services.rbac_seed import BUILTIN_ROLES, seed_roles
+
+    resp = client.get("/api/roles", headers=admin_headers)
+    assert resp.status_code == 200, resp.text
+    by_name = {row["name"]: row for row in resp.json()}
+    for name in BUILTIN_ROLES:
+        assert name in by_name, f"{name} missing from the role catalogue"
+        assert by_name[name]["is_system"] is True
+        assert by_name[name]["display_name"]
+
+    # Running the seeder again changes nothing (admins may edit a system role).
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == "admin").one()
+        again = seed_roles(db, created_by_id=admin.id)
+        assert again["roles_created"] == []
+        assert db.query(type(admin)).count() >= 1
+    finally:
+        db.close()
