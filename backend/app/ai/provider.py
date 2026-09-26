@@ -117,25 +117,54 @@ def available() -> tuple[bool, str | None]:
     return False, f"Unknown AI_PROVIDER: {provider!r}"
 
 
-def chat(messages: list[dict[str, str]], system: str | None = None) -> str | None:
+def chat(messages: list[dict[str, str]], system: str | None = None,
+         model: str | None = None) -> str | None:
     """Send a chat completion request to the configured provider.
 
+    `model` overrides the configured chat model for this one request, which is
+    how the assistant lets a user pick a different local model on the fly.
     Returns the assistant's reply text, or None on error.
-    Uses runtime overrides so admin-saved settings take effect.
     """
     settings = get_settings()
     provider = _eff("AI_PROVIDER", settings.AI_PROVIDER).lower()
 
     if provider == "ollama":
-        return _chat_ollama(messages, system, settings)
+        return _chat_ollama(messages, system, settings, model=model)
 
     if provider in ("openrouter", "openai", "deepseek", "kimi", "glm"):
-        return _chat_openai_compat(messages, system, settings, provider)
+        return _chat_openai_compat(messages, system, settings, provider, model=model)
 
     if provider == "anthropic":
-        return _chat_anthropic(messages, system, settings)
+        return _chat_anthropic(messages, system, settings, model=model)
 
     return None
+
+
+def list_models() -> list[dict[str, Any]]:
+    """Models the provider can currently run (local Ollama: pulled models)."""
+    settings = get_settings()
+    provider = _eff("AI_PROVIDER", settings.AI_PROVIDER).lower()
+    active = _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL)
+    if provider != "ollama":
+        return [{"name": active, "active": True, "size": None}]
+    base = _eff("AI_BASE_URL", settings.AI_BASE_URL).rstrip("/")
+    data = _get(f"{base}/api/tags")
+    if not data:
+        return []
+    out: list[dict[str, Any]] = []
+    for m in data.get("models", []):
+        name = m.get("name")
+        if not name:
+            continue
+        out.append({
+            "name": name,
+            "active": name == active,
+            "size": m.get("size"),
+            "family": (m.get("details") or {}).get("family"),
+            "params": (m.get("details") or {}).get("parameter_size"),
+        })
+    out.sort(key=lambda m: (not m["active"], m["name"]))
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -146,9 +175,10 @@ def _chat_ollama(
     messages: list[dict[str, str]],
     system: str | None,
     settings: Any,
+    model: str | None = None,
 ) -> str | None:
     base = _eff("AI_BASE_URL", settings.AI_BASE_URL).rstrip("/")
-    model = _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL)
+    model = model or _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL)
     payload: dict[str, Any] = {
         "model": model,
         "messages": [{"role": m["role"], "content": m["content"]} for m in messages],
@@ -170,12 +200,13 @@ def _chat_openai_compat(
     system: str | None,
     settings: Any,
     provider: str,
+    model: str | None = None,
 ) -> str | None:
     """OpenAI-compatible chat completions (OpenRouter, OpenAI, DeepSeek, Kimi, GLM).
 
     Reads runtime overrides so admin-saved API keys and models take effect.
     """
-    chat_model = _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL)
+    chat_model = model or _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL)
 
     provider_config = {
         "openrouter": (
@@ -230,10 +261,11 @@ def _chat_anthropic(
     messages: list[dict[str, str]],
     system: str | None,
     settings: Any,
+    model: str | None = None,
 ) -> str | None:
     """Anthropic Messages API."""
     url = "https://api.anthropic.com/v1/messages"
-    model = _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL) or "claude-3-5-haiku-20241022"
+    model = model or _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL) or "claude-3-5-haiku-20241022"
     payload: dict[str, Any] = {
         "model": model,
         "max_tokens": 2048,

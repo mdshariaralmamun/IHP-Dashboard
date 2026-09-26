@@ -555,6 +555,21 @@ export interface WorkPermitWithProject extends WorkPermit {
 
 // ---------- AI assistant ----------
 
+/** One model the configured AI provider can run (local Ollama: pulled models). */
+export interface AiModel {
+  name: string;
+  active: boolean;
+  size: number | null;
+  family?: string | null;
+  params?: string | null;
+}
+
+export interface AiModelsResponse {
+  provider: string;
+  active: string;
+  models: AiModel[];
+}
+
 export interface AiSource {
   filename: string;
   chunk_index: number;

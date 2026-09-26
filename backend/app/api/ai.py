@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from ..ai import provider, retrieval
 from ..ai.corpus import chunk_text
+from ..core.config import get_settings
 from ..core.rbac import get_current_user
 from ..db import get_db
 from ..models import (
@@ -48,6 +49,8 @@ class ChatIn(BaseModel):
     project_id: int | None = None
     message: str
     scope: str = "all"  # "all" | "project" | "standards"
+    #: Optional per-request model override (local Ollama model name).
+    model: str | None = None
 
 
 class ChatOut(BaseModel):
@@ -59,6 +62,8 @@ class ChatOut(BaseModel):
 class AskIn(BaseModel):
     question: str
     project_id: int | None = None
+    #: Optional per-request model override (local Ollama model name).
+    model: str | None = None
 
 
 class AskOut(BaseModel):
@@ -317,6 +322,16 @@ Stage progression: Intake → MOM Confirmed → EAR Review → Disposition → S
 # ---------------------------------------------------------------------------
 
 
+@router.get("/models")
+def ai_models(_user: User = Depends(get_current_user)):
+    """Local models the assistant can use (so the UI can offer a switcher)."""
+    return {
+        "provider": provider._eff("AI_PROVIDER", get_settings().AI_PROVIDER),
+        "active": provider._eff("AI_CHAT_MODEL", get_settings().AI_CHAT_MODEL),
+        "models": provider.list_models(),
+    }
+
+
 @router.post("/chat", response_model=ChatOut)
 def chat(
     body: ChatIn,
@@ -346,6 +361,7 @@ def chat(
     reply = provider.chat(
         [{"role": "user", "content": user_content}],
         system=SYSTEM_PROMPT,
+        model=body.model,
     )
     return ChatOut(
         reply=reply or "(no response from provider)",
@@ -400,6 +416,7 @@ def ask(
     reply = provider.chat(
         [{"role": "user", "content": user_content}],
         system=SYSTEM_PROMPT,
+        model=body.model,
     )
 
     all_sources = db_sources + corpus_sources

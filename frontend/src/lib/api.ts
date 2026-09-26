@@ -1,5 +1,6 @@
 import type {
   AiAnswer,
+  AiModelsResponse,
   Attachment,
   AuditEntry,
   BoqItem,
@@ -592,11 +593,21 @@ export async function parsePrForm(file: File): Promise<PrFormParseResult> {
 
 // --- AI assistant ---
 
-export function askAi(question: string, projectId?: number): Promise<AiAnswer> {
+export function askAi(
+  question: string,
+  projectId?: number,
+  model?: string,
+): Promise<AiAnswer> {
   return request<AiAnswer>('/api/ai/ask', { method: 'POST' }, {
     question,
     project_id: projectId ?? null,
+    model: model ?? null,
   });
+}
+
+/** Local/remote models the assistant can switch between. */
+export function listAiModels(): Promise<AiModelsResponse> {
+  return request<AiModelsResponse>('/api/ai/models');
 }
 
 export function listCorpus(): Promise<CorpusDoc[]> {
