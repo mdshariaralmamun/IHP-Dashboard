@@ -293,6 +293,28 @@ html[data-text-size="large"] { font-size: 18px; }
   :where(html.dark) [class~="bg-blue-50/50"][class]:not(:where(.paper-surface, .paper-surface *)) { background-color: rgb(30 58 138 / 0.2); }
   :where(html.dark) [class~="text-amber-700/80"][class]:not(:where(.paper-surface, .paper-surface *)) { color: #fcd34d; }
   :where(html.dark) [class~="bg-white/80"][class]:not(:where(.paper-surface, .paper-surface *)) { background-color: rgba(255, 255, 255, 0.12); }
+
+  /* Interaction variants (hover / focus) of the same tints: they would flash
+     a light colour in dark mode. Same 0,2,0 base plus the pseudo-class, so
+     dark:hover:* still wins where a component defines it. */
+  :where(html.dark) [class~="hover:bg-amber-100"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { background-color: rgb(120 53 15 / 0.35); }
+  :where(html.dark) [class~="hover:bg-blue-100"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { background-color: rgb(30 58 138 / 0.35); }
+  :where(html.dark) [class~="hover:bg-emerald-100"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { background-color: rgb(6 78 59 / 0.35); }
+  :where(html.dark) [class~="hover:bg-emerald-50"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { background-color: rgb(6 78 59 / 0.22); }
+  :where(html.dark) [class~="hover:bg-gray-300"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { background-color: rgba(255, 255, 255, 0.13); }
+  :where(html.dark) [class~="hover:bg-gray-50"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { background-color: rgba(255, 255, 255, 0.04); }
+  :where(html.dark) [class~="hover:bg-red-100"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { background-color: rgb(127 29 29 / 0.35); }
+  :where(html.dark) [class~="hover:bg-red-50"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { background-color: rgb(127 29 29 / 0.22); }
+  :where(html.dark) [class~="hover:border-gray-300"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { border-color: rgba(255, 255, 255, 0.18); }
+  :where(html.dark) [class~="hover:text-blue-800"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { color: #bfdbfe; }
+  :where(html.dark) [class~="hover:text-blue-900"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { color: #bfdbfe; }
+  :where(html.dark) [class~="hover:text-red-800"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { color: #fecaca; }
+  :where(html.dark) [class~="hover:text-red-900"][class]:hover:not(:where(.paper-surface, .paper-surface *)) { color: #fecaca; }
+  :where(html.dark) [class~="focus:border-blue-50"][class]:focus:not(:where(.paper-surface, .paper-surface *)) { border-color: rgb(30 58 138 / 0.6); }
+  :where(html.dark) [class~="focus:border-red-50"][class]:focus:not(:where(.paper-surface, .paper-surface *)) { border-color: rgb(127 29 29 / 0.6); }
+  :where(html.dark) [class~="focus:ring-blue-50"][class]:focus:not(:where(.paper-surface, .paper-surface *)) { --tw-ring-color: rgb(30 58 138 / 0.6); }
+  :where(html.dark) [class~="focus:ring-emerald-50"][class]:focus:not(:where(.paper-surface, .paper-surface *)) { --tw-ring-color: rgb(6 78 59 / 0.6); }
+  :where(html.dark) [class~="focus:ring-red-50"][class]:focus:not(:where(.paper-surface, .paper-surface *)) { --tw-ring-color: rgb(127 29 29 / 0.6); }
 }
 
 /* -------------------------------------------------------------------------
