@@ -7,6 +7,58 @@ html[data-text-size="medium"] { font-size: 16px; }
 html[data-text-size="large"] { font-size: 18px; }
 
 /* -------------------------------------------------------------------------
+ * Form controls are readable in BOTH themes by default.
+ *
+ * Many panels relied on the browser's default control colours. In dark mode
+ * that produced a light box containing light text - the field looked empty
+ * even though it had a value (SOW/BOQ revision form, punch list, MOM, EAR...).
+ *
+ * Everything below is wrapped in :where(), which has ZERO specificity, so any
+ * Tailwind utility (bg-*, text-*, placeholder:*) still wins where a component
+ * wants something specific - this is only the fallback.
+ * ------------------------------------------------------------------------ */
+
+@layer base {
+  :where(input, textarea, select) {
+    color: var(--color-text);
+  }
+
+  :where(html.dark) :where(input, textarea, select) {
+    background-color: #1c1c1e;
+    color: #f5f5f7;
+    border-color: rgba(255, 255, 255, 0.14);
+  }
+
+  :where(html.dark) :where(input, textarea, select)::placeholder {
+    color: #98989d;
+    opacity: 1; /* Firefox lowers placeholder opacity by default */
+  }
+
+  :where(html.dark) :where(input, textarea, select):focus-visible {
+    border-color: var(--color-primary);
+    outline: 2px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
+    outline-offset: 1px;
+  }
+
+  /* Native widgets keep their own rendering. */
+  :where(input[type="checkbox"], input[type="radio"], input[type="range"],
+         input[type="file"], input[type="color"]) {
+    background-color: revert;
+  }
+
+  /* Autofill otherwise paints a pale yellow box over dark fields. */
+  :where(html.dark) :where(input):-webkit-autofill {
+    -webkit-text-fill-color: #f5f5f7;
+    box-shadow: 0 0 0 1000px #1c1c1e inset;
+  }
+
+  /* Number inputs keep their spinners visible in dark mode. */
+  :where(html.dark) :where(input[type="number"]) {
+    color-scheme: dark;
+  }
+}
+
+/* -------------------------------------------------------------------------
  * KAUST IHP - Apple-Tier Visual Standard Tokens
  * ------------------------------------------------------------------------ */
 

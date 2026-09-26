@@ -155,7 +155,7 @@ export default function MetadataCard({
               <label className="block text-xs font-medium text-apple-muted">
                 Convert to ICR
               </label>
-              <p className="mt-2 text-xs text-apple-muted/60">
+              <p className="mt-2 text-xs text-apple-muted">
                 Routes project straight to MTO (skips EAR & SOW). ICR-classified
                 projects do not go through construction, EAR, or SOW stages.
               </p>

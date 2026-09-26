@@ -212,10 +212,10 @@ export default function SowBoqPanel({
     <section className="p-4 border rounded border-apple-surface text-apple-text space-y-4">
       {/* SOW revisions */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-apple-muted/60 mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-apple-muted mb-2">
           Scope of Work (SOW)
         </p>
-        <p className="text-sm text-apple-muted/60">
+        <p className="text-sm text-apple-muted">
           Rev-0 / Rev-1 / Rev-2 with Procore review comments. Approved SOWs
           gate the MTO stage.
         </p>
@@ -230,7 +230,7 @@ export default function SowBoqPanel({
           <div className="mb-3">
             <div className="grid grid-cols-1 gap-2">
               <div>
-                <label className="block text-xs font-medium text-apple-muted/60">
+                <label className="block text-xs font-medium text-apple-muted">
                   Revision name
                 </label>
                 <input
@@ -238,11 +238,11 @@ export default function SowBoqPanel({
                   value={revisionName}
                   onChange={(e) => setRevisionName(e.target.value)}
                   placeholder="e.g. Rev-0"
-                  className="rounded-sm border border-apple-border/50 px-2 py-1 text-sm"
+                  className="w-full rounded-sm border border-apple-border/50 bg-white px-2 py-1 text-sm text-apple-text placeholder:text-apple-muted focus:border-apple-primary focus:outline-none dark:bg-[#1c1c1e] dark:text-apple-text"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-apple-muted/60">
+                <label className="block text-xs font-medium text-apple-muted">
                   Procore comments (optional)
                 </label>
                 <input
@@ -250,7 +250,7 @@ export default function SowBoqPanel({
                   value={procoreComments}
                   onChange={(e) => setProcoreComments(e.target.value)}
                   placeholder="Reviewer feedback"
-                  className="rounded-sm border border-apple-border/50 px-2 py-1 text-sm"
+                  className="w-full rounded-sm border border-apple-border/50 bg-white px-2 py-1 text-sm text-apple-text placeholder:text-apple-muted focus:border-apple-primary focus:outline-none dark:bg-[#1c1c1e] dark:text-apple-text"
                 />
               </div>
             </div>
@@ -266,13 +266,13 @@ export default function SowBoqPanel({
         )}
 
         {sowRecords.length === 0 ? (
-          <p className="text-sm text-apple-muted/60">No SOW revisions yet.</p>
+          <p className="text-sm text-apple-muted">No SOW revisions yet.</p>
         ) : (
           <ul className="text-sm text-apple-text space-y-1">
             {sowRecords.map((sow) => (
               <li key={sow.id} className="border-t border-apple-border/20 py-1">
                 <span className="font-medium text-apple-text">{sow.revision_name}</span>
-                <span className="text-apple-muted/60 text-xs"> {formatDate(sow.created_at)}</span>
+                <span className="text-apple-muted text-xs"> {formatDate(sow.created_at)}</span>
               </li>
             ))}
           </ul>
@@ -283,7 +283,7 @@ export default function SowBoqPanel({
       {canManageSow && latestSow && (
         <div className="rounded border border-apple-border p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs font-semibold uppercase tracking-wider text-apple-muted/60">
+            <div className="text-xs font-semibold uppercase tracking-wider text-apple-muted">
               Proposal review — {latestSow.revision_name}
             </div>
             <span className="rounded-full bg-apple-surface px-2 py-0.5 text-[11px] font-semibold text-apple-text">
@@ -382,7 +382,7 @@ export default function SowBoqPanel({
       {/* Live preview of the SOW as it will be generated */}
       <div className="rounded border border-apple-border p-3">
         <div className="mb-2 flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-wider text-apple-muted/60">
+          <div className="text-xs font-semibold uppercase tracking-wider text-apple-muted">
             Live preview — Scope of Work
           </div>
           <button
@@ -439,10 +439,10 @@ export default function SowBoqPanel({
 
       {/* BOQ / Design MTO */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-apple-muted/60 mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-apple-muted mb-2">
           Design BOQ / MTO
         </p>
-        <p className="text-sm text-apple-muted/60">
+        <p className="text-sm text-apple-muted">
           Design-stage line items. Reconciled against the construction MTO at
           the start of construction.
         </p>
@@ -523,11 +523,11 @@ export default function SowBoqPanel({
         )}
 
         {boqItems.length === 0 ? (
-          <p className="text-sm text-apple-muted/60">No BOQ line items yet.</p>
+          <p className="text-sm text-apple-muted">No BOQ line items yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="text-sm text-apple-text">
-              <thead className="text-apple-muted/60 text-xs uppercase">
+              <thead className="text-apple-muted text-xs uppercase">
                 <tr>
                   <th className="px-3 py-2">Trade</th>
                   <th className="px-3 py-2">Code</th>
@@ -553,7 +553,7 @@ export default function SowBoqPanel({
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={7} className="px-3 py-2 text-right text-xs font-semibold uppercase text-apple-muted/60">
+                  <td colSpan={7} className="px-3 py-2 text-right text-xs font-semibold uppercase text-apple-muted">
                     Total
                   </td>
                   <td className="px-3 py-2 text-right text-sm font-semibold text-apple-text">

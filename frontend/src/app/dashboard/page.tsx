@@ -345,7 +345,7 @@ function BucketDashboard() {
                     ))}
                   </div>
                   <div className="mt-3 space-y-1 border-t border-apple-border pt-2">
-                    <div className="text-[10px] font-semibold uppercase tracking-wide text-apple-muted/70">
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-apple-muted">
                       {isEar ? 'EAR status' : 'Status'}
                     </div>
                     {top.slice(0, isEar ? 6 : 3).map(([status, c]) => (

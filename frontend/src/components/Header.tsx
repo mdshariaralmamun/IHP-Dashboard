@@ -178,7 +178,7 @@ export default function Header({ user }: { user: User | null }) {
           {groups.map((g, gi) => (
             <div key={`${m.label}-${g.name ?? gi}`} className={m.wide ? 'p-1' : ''}>
               {g.name && (
-                <div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-apple-muted/70">
+                <div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-apple-muted">
                   {g.name}
                 </div>
               )}
@@ -414,7 +414,7 @@ export default function Header({ user }: { user: User | null }) {
                       {groups.map((g, gi) => (
                         <div key={`${m.label}-m-${g.name ?? gi}`}>
                           {g.name && (
-                            <div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-apple-muted/70">
+                            <div className="px-3 pb-1 pt-2 text-[10px] font-bold uppercase tracking-wider text-apple-muted">
                               {g.name}
                             </div>
                           )}

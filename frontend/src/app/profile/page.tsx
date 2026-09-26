@@ -243,7 +243,7 @@ export default function ProfilePage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Senior Project Engineer"
-                  className="w-full rounded-lg border border-apple-border bg-white/50 px-3 py-2 text-sm text-apple-text placeholder:text-apple-muted/60 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:bg-white/10"
+                  className="w-full rounded-lg border border-apple-border bg-white/50 px-3 py-2 text-sm text-apple-text placeholder:text-apple-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:bg-white/10"
                 />
               </div>
 
@@ -391,7 +391,7 @@ export default function ProfilePage() {
                                     </svg>
                                   </span>
                                 ) : (
-                                  <span className="inline-block h-4 w-4 text-apple-muted/30">
+                                  <span className="inline-block h-4 w-4 text-apple-muted">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M18 12H6" />
                                     </svg>

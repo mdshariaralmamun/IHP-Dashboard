@@ -100,7 +100,7 @@ export default function DashboardView() {
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-apple-muted">{c.label}</p>
                 <p className={`mt-2 text-3xl font-bold tabular-nums ${c.accent}`}>{c.value}</p>
               </div>
-              <span className="text-apple-muted/60 transition-colors group-hover:text-primary">{c.icon}</span>
+              <span className="text-apple-muted transition-colors group-hover:text-primary">{c.icon}</span>
             </div>
           </Link>
         ))}
@@ -160,7 +160,7 @@ export default function DashboardView() {
                 })}
                 {Object.keys(stats.by_disposition).length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-3 py-6 text-center text-apple-muted/60">
+                    <td colSpan={3} className="px-3 py-6 text-center text-apple-muted">
                       No disposition data yet
                     </td>
                   </tr>
@@ -208,7 +208,7 @@ export default function DashboardView() {
                 })}
                 {Object.keys(stats.by_stage).length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-3 py-6 text-center text-apple-muted/60">
+                    <td colSpan={3} className="px-3 py-6 text-center text-apple-muted">
                       No stage data yet
                     </td>
                   </tr>

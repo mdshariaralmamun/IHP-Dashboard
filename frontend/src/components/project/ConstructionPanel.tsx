@@ -78,7 +78,7 @@ export default function ConstructionPanel({
 
   return (
     <section className="p-4 border rounded border-apple-surface text-apple-text">
-      <p className="text-xs font-medium uppercase tracking-wider text-apple-muted/60 mb-2">
+      <p className="text-xs font-medium uppercase tracking-wider text-apple-muted mb-2">
         Construction Execution
       </p>
 
@@ -96,12 +96,12 @@ export default function ConstructionPanel({
       {construction && (
         <div className="mb-3 grid grid-cols-1 gap-2">
           <div className="rounded-sm border border-apple-surface/50 px-2 py-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-apple-muted/60">Status</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-apple-muted">Status</span>
             <p className="mt-0.5 text-sm font-medium text-apple-text">{construction.status}</p>
           </div>
           {construction.started_at && (
             <div className="rounded-sm border border-apple-surface/50 px-2 py-1">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-apple-muted/60">Started</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-apple-muted">Started</span>
               <p className="mt-0.5 text-sm font-medium text-apple-text">
                 {formatDateTime(construction.started_at)}
               </p>
@@ -109,7 +109,7 @@ export default function ConstructionPanel({
           )}
           {construction.completed_at && (
             <div className="rounded-sm border border-apple-surface/50 px-2 py-1">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-apple-muted/60">Completed</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-apple-muted">Completed</span>
               <p className="mt-0.5 text-sm font-medium text-apple-text">
                 {formatDateTime(construction.completed_at)}
               </p>
@@ -169,7 +169,7 @@ export default function ConstructionPanel({
         </div>
       )}
 
-      <p className="text-xs text-apple-muted/60">
+      <p className="text-xs text-apple-muted">
         Construction tracking is aggregated on the dashboard.
       </p>
     </section>

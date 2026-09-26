@@ -142,10 +142,10 @@ export default function EarPanel({
 
   return (
     <section className="p-4 border rounded border-apple-surface text-apple-text space-y-3">
-      <p className="text-xs font-medium uppercase tracking-wider text-apple-muted/60 mb-2">
+      <p className="text-xs font-medium uppercase tracking-wider text-apple-muted mb-2">
         Engineering Assessment Report (EAR)
       </p>
-      <p className="text-sm text-apple-muted/60">
+      <p className="text-sm text-apple-muted">
         Captures the high-level engineering assessment, per-trade proposals,
         budget envelope, and AI code-compliance review. Approved EARs gate the
         SOW stage.
@@ -164,7 +164,7 @@ export default function EarPanel({
 
       {canManage && ear && (
         <div className="mb-3">
-          <p className="text-xs font-medium text-apple-muted/60 mb-1">
+          <p className="text-xs font-medium text-apple-muted mb-1">
             Executive summary
           </p>
           <textarea
@@ -173,7 +173,7 @@ export default function EarPanel({
             onChange={(e) => setSummary(e.target.value)}
             className="rounded-sm border border-apple-border/50 px-2.5 py-1.5 text-sm"
           />
-          <p className="text-xs font-medium text-apple-muted/60 mb-1">
+          <p className="text-xs font-medium text-apple-muted mb-1">
             Recommendations
           </p>
           <textarea
@@ -187,18 +187,18 @@ export default function EarPanel({
 
       {canManage && (
         <div className="mb-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-apple-muted/60 mb-1">
+          <p className="text-xs font-medium uppercase tracking-wider text-apple-muted mb-1">
             Submit your trade proposal
           </p>
           {currentUser?.role !== 'admin' && (
-            <p className="text-xs text-apple-muted/60">
+            <p className="text-xs text-apple-muted">
               Trade: <span className="font-medium text-apple-text">{effectiveTrade}</span>
               (pinned to your account)
             </p>
           )}
           {currentUser?.role === 'admin' && (
             <div className="mb-2">
-              <label className="block text-xs font-medium text-apple-muted/60">
+              <label className="block text-xs font-medium text-apple-muted">
                 Trade
               </label>
               <select
@@ -264,7 +264,7 @@ export default function EarPanel({
                 className="rounded-sm border border-apple-border/50 px-2.5 py-1.5 text-sm"
               />
             </div>
-            <label className="flex items-center gap-2 text-xs text-apple-muted/60">
+            <label className="flex items-center gap-2 text-xs text-apple-muted">
               <input
                 type="checkbox"
                 checked={form.has_conflict}
@@ -290,7 +290,7 @@ export default function EarPanel({
 
       {canManage && ear && (
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-apple-muted/60 mb-1">
+          <p className="text-xs font-medium uppercase tracking-wider text-apple-muted mb-1">
             AI code-compliance review
           </p>
           {busy === 'ai-review' ? (
@@ -309,7 +309,7 @@ export default function EarPanel({
       )}
 
       {findings.length === 0 ? (
-        <p className="text-xs text-apple-muted/60">
+        <p className="text-xs text-apple-muted">
           No findings recorded yet. Run a review to capture code / standards
           gaps against the trade proposals.
         </p>
@@ -317,7 +317,7 @@ export default function EarPanel({
         <ul className="text-xs text-apple-text space-y-1">
           {findings.map((finding, i) => (
             <li key={i} className="border-b border-apple-border/20 py-1">
-              <span className="text-apple-muted/60 small">{finding.type}</span>
+              <span className="text-apple-muted small">{finding.type}</span>
               {finding.trade && (
                 <span className="text-apple-muted">{finding.trade}</span>
               )}

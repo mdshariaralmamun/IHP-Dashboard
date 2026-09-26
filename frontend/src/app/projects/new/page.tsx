@@ -200,7 +200,7 @@ function NewProjectForm() {
               <label htmlFor="pi_name" className={labelClass}>
                 PI Name
                 {form._om_source === 'om' && (
-                  <span className="text-xs text-apple-muted/60">
+                  <span className="text-xs text-apple-muted">
                     (from O&M Tracking Sheet)
                   </span>
                 )}
@@ -242,12 +242,12 @@ function NewProjectForm() {
               <label htmlFor="location" className={labelClass}>
                 Location
                 {form._om_source === 'om' && (
-                  <span className="text-xs text-apple-muted/60">
+                  <span className="text-xs text-apple-muted">
                     (from O&M Tracking Sheet)
                   </span>
                 )}
                 {form._om_source === 'om' && form._om_detail_location && (
-                  <span className="text-xs text-apple-muted/60">
+                  <span className="text-xs text-apple-muted">
                     • Detail: {form._om_detail_location}
                   </span>
                 )}

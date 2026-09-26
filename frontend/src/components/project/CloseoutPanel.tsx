@@ -142,10 +142,10 @@ export default function CloseoutPanel({
 
   return (
     <section className="p-4 border rounded border-apple-surface text-apple-text space-y-3">
-      <p className="text-xs font-medium uppercase tracking-wider text-apple-muted/60 mb-2">
+      <p className="text-xs font-medium uppercase tracking-wider text-apple-muted mb-2">
         Project Closeout & Handover
       </p>
-      <p className="text-sm text-apple-muted/60">
+      <p className="text-sm text-apple-muted">
         T&C notes, as-builts and O&M submission, warranty terms, and
         the punch list of defects. Sign-off marks the project complete.
       </p>
@@ -185,7 +185,7 @@ export default function CloseoutPanel({
       {canManage && (
         <div className="mb-3 grid grid-cols-1 gap-2">
           <div>
-            <label className="block text-xs font-medium text-apple-muted/60">Status</label>
+            <label className="block text-xs font-medium text-apple-muted">Status</label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
@@ -199,7 +199,7 @@ export default function CloseoutPanel({
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-apple-muted/60">
+            <label className="block text-xs font-medium text-apple-muted">
               Warranty provider
             </label>
             <input
@@ -211,7 +211,7 @@ export default function CloseoutPanel({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-apple-muted/60">
+            <label className="block text-xs font-medium text-apple-muted">
               T&C notes
             </label>
             <textarea
@@ -242,7 +242,7 @@ export default function CloseoutPanel({
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div>
-              <label className="block text-xs font-medium text-apple-muted/60">
+              <label className="block text-xs font-medium text-apple-muted">
                 Client signoff (by)
               </label>
               <input
@@ -254,7 +254,7 @@ export default function CloseoutPanel({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-apple-muted/60">
+              <label className="block text-xs font-medium text-apple-muted">
                 Client feedback (optional)
               </label>
               <input
@@ -282,11 +282,11 @@ export default function CloseoutPanel({
       {/* Punch list */}
       {canManage && (
         <div className="mt-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-apple-muted/60 mb-1">
+          <p className="text-xs font-medium uppercase tracking-wider text-apple-muted mb-1">
             Punch list
           </p>
           {punchItems.length === 0 ? (
-            <p className="text-sm text-apple-muted/60">
+            <p className="text-sm text-apple-muted">
               No punch items yet. Add T&C defects here as they surface.
             </p>
           ) : (
@@ -296,13 +296,13 @@ export default function CloseoutPanel({
                   <span className="font-medium text-apple-text">{p.trade}</span>
                   <span>{p.description}</span>
                   {p.location && (
-                    <span className="text-xs text-apple-muted/60">@ {p.location}</span>
+                    <span className="text-xs text-apple-muted">@ {p.location}</span>
                   )}
                   {p.assigned_to && (
-                    <span className="text-xs text-apple-muted/60">→ {p.assigned_to}</span>
+                    <span className="text-xs text-apple-muted">→ {p.assigned_to}</span>
                   )}
                   {p.due_date && (
-                    <span className="text-xs text-apple-muted/60">
+                    <span className="text-xs text-apple-muted">
                       due {formatDate(p.due_date)}
                     </span>
                   )}
