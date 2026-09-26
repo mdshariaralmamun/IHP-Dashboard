@@ -328,9 +328,12 @@ def list_models(provider: str | None = None) -> list[dict[str, Any]]:
     source = "live" if names else "suggested"
     if not names:
         names = list(spec.default_models)
-    names = names[:_MAX_LISTED_MODELS]
     if active and active not in names:
+        # Keep the configured model visible without exceeding the cap.
+        names = names[: _MAX_LISTED_MODELS - 1]
         names.insert(0, active)
+    else:
+        names = names[:_MAX_LISTED_MODELS]
     return [
         {
             "name": name, "active": name == active, "size": None,
