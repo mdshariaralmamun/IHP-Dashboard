@@ -10,3 +10,10 @@ services:
   frontend:
     ports:
       - "127.0.0.1:3010:3000"
+
+  backend:
+    # Planner / O&M tracker files are read from the host directory ./trackers
+    # (read-only: the app never writes there). Set Settings -> Trackers dir
+    # to /trackers so the newest _DDMMYYYY file is picked up automatically.
+    volumes:
+      - ./trackers:/trackers:ro
