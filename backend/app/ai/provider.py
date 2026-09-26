@@ -317,7 +317,7 @@ def embed_many(texts: list[str], batch_size: int = 8) -> list[list[float] | None
         if isinstance(vectors, list) and len(vectors) == len(window):
             for offset, vector in enumerate(vectors):
                 if isinstance(vector, list) and vector:
-                    results[start + offset] = vector
+                    results[start + offset] = [round(float(v), 5) for v in vector]
             continue
         # Legacy server: one request per text.
         for offset, text in enumerate(window):
@@ -326,7 +326,9 @@ def embed_many(texts: list[str], batch_size: int = 8) -> list[list[float] | None
             )
             vector = (legacy or {}).get("embedding")
             if isinstance(vector, list) and vector:
-                results[start + offset] = vector
+                # Rounded to 5 decimals: ~3x smaller JSON embeddings (tens of
+                # thousands of chunks) with no measurable effect on cosine.
+                results[start + offset] = [round(float(v), 5) for v in vector]
     return results
 
 
