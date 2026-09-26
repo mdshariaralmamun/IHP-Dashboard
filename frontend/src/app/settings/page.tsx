@@ -298,7 +298,7 @@ function SettingsView() {
                   <select
                     value={aiProvider}
                     onChange={(e) => applyProvider(e.target.value)}
-                    className="w-full rounded-md border border-apple-border px-3 py-1.5 text-sm bg-white"
+                    className="w-full rounded-md border border-apple-border px-3 py-1.5 text-sm bg-white text-apple-text dark:bg-[#1f1f22]"
                   >
                     <optgroup label="Local / self-hosted">
                       {providers.filter((p) => p.local).map((p) => (
@@ -359,7 +359,7 @@ function SettingsView() {
                         onChange={(e) => {
                           if (e.target.value !== '__custom__') setChatModel(e.target.value);
                         }}
-                        className="w-full rounded-md border border-apple-border px-3 py-1.5 text-sm bg-white"
+                        className="w-full rounded-md border border-apple-border px-3 py-1.5 text-sm bg-white text-apple-text dark:bg-[#1f1f22]"
                       >
                         {OPENROUTER_FREE_MODELS.map((m) => (
                           <option key={m.id} value={m.id}>{m.label} (free)</option>

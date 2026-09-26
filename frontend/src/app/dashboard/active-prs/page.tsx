@@ -131,7 +131,7 @@ function ActivePrs() {
                 type="button"
                 onClick={() => setFilter('')}
                 className={`rounded-full px-3 py-1 font-semibold ring-1 ring-inset ${
-                  filter === '' ? 'bg-primary text-white ring-primary' : 'bg-white text-apple-muted ring-apple-border'
+                  filter === '' ? 'bg-primary text-white ring-primary' : 'bg-white text-apple-muted ring-apple-border dark:bg-white/[0.06]'
                 }`}
               >
                 All {s.total ?? 0}
@@ -151,7 +151,7 @@ function ActivePrs() {
             </div>
 
             {order.filter((c) => groups[c] && (!filter || filter === c)).map((c) => (
-              <section key={c} className="rounded-2xl border border-apple-border bg-white p-5">
+              <section key={c} className="rounded-2xl border border-apple-border bg-white p-5 dark:bg-white/[0.04]">
                 <div className="mb-1 flex flex-wrap items-baseline gap-2">
                   <h2 className="text-sm font-bold text-apple-text">
                     {CATEGORY_META[c]?.label ?? c}

@@ -353,7 +353,7 @@ export default function SowBoqPanel({
                     {group.suggestions.map((s) => (
                       <li
                         key={s.text}
-                        className="flex items-start justify-between gap-2 rounded bg-white px-2 py-1.5"
+                        className="flex items-start justify-between gap-2 rounded bg-white px-2 py-1.5 dark:bg-white/[0.06]"
                       >
                         <span className="min-w-0 text-xs text-apple-text">
                           {s.text}
@@ -393,8 +393,10 @@ export default function SowBoqPanel({
             {showPreview ? 'Hide' : 'Show'}
           </button>
         </div>
+        {/* Document preview: stays a white "paper" sheet in both themes, so the
+            text colour is fixed dark rather than theme-driven. */}
         {showPreview && (
-          <div className="rounded bg-white p-4 text-apple-text">
+          <div className="paper-surface rounded bg-white p-4 text-gray-900">
             <div className="text-base font-bold">SCOPE OF WORK</div>
             <div className="mt-0.5 text-xs font-semibold">
               PR # {project.pr_number} &nbsp;|&nbsp; EAR # {project.ear_number ?? '—'} &nbsp;|&nbsp;{' '}

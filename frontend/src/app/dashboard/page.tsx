@@ -212,7 +212,7 @@ function BucketDashboard() {
         </div>
 
         {/* Tracker sync banner: which dated source file the app is using */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-apple-border bg-white px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-apple-border bg-white px-4 py-3 dark:bg-white/[0.04]">
           <div className="text-xs text-apple-muted">
             <span className="font-semibold text-apple-text">Auto-tracked source:</span>{' '}
             {sources?.planner_latest ? (
@@ -326,7 +326,7 @@ function BucketDashboard() {
                 <Link
                   key={ph.key}
                   href={`/projects?phase=${encodeURIComponent(ph.key)}`}
-                  className="group rounded-2xl border-2 border-apple-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
+                  className="group rounded-2xl border-2 border-apple-border bg-white p-5 shadow-sm dark:bg-white/[0.04] transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
                 >
                   <div className="flex items-baseline justify-between">
                     <span className="text-base font-bold text-apple-text">{ph.label}</span>
@@ -386,7 +386,7 @@ function BucketDashboard() {
 
         {/* Priority + flag summary from the Notes/Labels analysis */}
         <div className="grid gap-3 md:grid-cols-2">
-          <div className="rounded-xl border border-apple-border bg-white p-4">
+          <div className="rounded-xl border border-apple-border bg-white p-4 dark:bg-white/[0.04]">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-apple-muted">
               Priority breakdown
             </div>
@@ -407,7 +407,7 @@ function BucketDashboard() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-apple-border bg-white p-4">
+          <div className="rounded-xl border border-apple-border bg-white p-4 dark:bg-white/[0.04]">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-apple-muted">
               Project type &amp; flags
             </div>
@@ -447,19 +447,19 @@ function BucketDashboard() {
                 </p>
               </div>
               <div className="flex gap-3 text-center">
-                <div className="rounded-lg bg-white px-4 py-2">
+                <div className="rounded-lg bg-white px-4 py-2 dark:bg-white/[0.06]">
                   <div className="text-2xl font-bold tabular-nums text-purple-800">
                     {omActive.summary.upcoming_ear_count ?? 0}
                   </div>
                   <div className="text-[10px] font-semibold uppercase text-purple-700">Upcoming EAR</div>
                 </div>
-                <div className="rounded-lg bg-white px-4 py-2">
+                <div className="rounded-lg bg-white px-4 py-2 dark:bg-white/[0.06]">
                   <div className="text-2xl font-bold tabular-nums text-amber-700">
                     {omActive.summary.equipment_branch_count ?? 0}
                   </div>
                   <div className="text-[10px] font-semibold uppercase text-amber-700">Equipment installation</div>
                 </div>
-                <div className="rounded-lg bg-white px-4 py-2">
+                <div className="rounded-lg bg-white px-4 py-2 dark:bg-white/[0.06]">
                   <div className="text-2xl font-bold tabular-nums text-emerald-700">
                     {omActive.summary.ihp_active_count ?? 0}
                   </div>
@@ -475,7 +475,7 @@ function BucketDashboard() {
             <Link
               key={b.key}
               href={`/dashboard/bucket/${encodeURIComponent(b.key)}`}
-              className="group rounded-2xl border border-apple-border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className="group rounded-2xl border border-apple-border bg-white p-5 shadow-sm dark:bg-white/[0.04] transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex items-baseline justify-between">
                 <span className="text-sm font-semibold uppercase tracking-wide text-apple-muted group-hover:text-apple-text">
@@ -500,7 +500,7 @@ function BucketDashboard() {
 
           <Link
             href="/projects"
-            className="rounded-2xl border border-dashed border-apple-border bg-white/50 p-5 transition hover:bg-white"
+            className="rounded-2xl border border-dashed border-apple-border bg-white/50 p-5 transition hover:bg-white dark:bg-white/[0.02] dark:hover:bg-white/[0.05]"
           >
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-semibold uppercase tracking-wide text-apple-muted">

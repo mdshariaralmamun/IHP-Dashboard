@@ -84,7 +84,7 @@ function SummaryView({ projectId }: { projectId: number }) {
         {!data && !error && <p className="text-sm text-apple-muted">Loading…</p>}
 
         {data && (
-          <article className="rounded-lg border border-gray-300 bg-white p-8 shadow-sm">
+          <article className="paper-surface rounded-lg border border-gray-300 bg-white p-8 shadow-sm">
             {/* logo + date */}
             <div className="flex items-start justify-between gap-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}

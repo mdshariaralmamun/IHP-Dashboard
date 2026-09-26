@@ -56,6 +56,19 @@ html[data-text-size="large"] { font-size: 18px; }
   :where(html.dark) :where(input[type="number"]) {
     color-scheme: dark;
   }
+
+  /* A bare bg-white carries no dark variant, so in dark mode it rendered as a
+     white card holding light text (invisible). Turn those surfaces dark by
+     default. This rule is in the base layer, so an explicit dark:bg-* utility
+     has the same specificity but is emitted later and therefore still wins.
+     Literal white "paper" surfaces (document previews, light-only admin pages)
+     opt out with .paper-surface. */
+  :where(html.dark) .bg-white:not(.paper-surface) {
+    background-color: #1c1c1e;
+  }
+  :where(html.dark) .bg-white\/50:not(.paper-surface) {
+    background-color: rgba(28, 28, 30, 0.5);
+  }
 }
 
 /* -------------------------------------------------------------------------

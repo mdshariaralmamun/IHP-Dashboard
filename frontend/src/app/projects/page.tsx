@@ -597,7 +597,7 @@ function ProjectRow({ project, isOpen, onToggle, onOpen }: {
               </div>
             )}
             {(project.status_timeline ?? []).length > 0 && (
-              <div className="mt-4 rounded-md border border-apple-border bg-white p-3">
+              <div className="mt-4 rounded-md border border-apple-border bg-white p-3 dark:bg-white/[0.04]">
                 <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-apple-muted">
                   Status timeline (from the Planner notes)
                 </div>

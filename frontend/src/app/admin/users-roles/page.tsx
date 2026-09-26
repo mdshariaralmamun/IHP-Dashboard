@@ -208,24 +208,24 @@ export default function UsersManagementPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Total Users</p>
           <p className="text-2xl font-bold text-gray-900">{users.length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Active Users</p>
           <p className="text-2xl font-bold text-green-600">
             {users.filter((u) => u.is_active).length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Total Roles</p>
           <p className="text-2xl font-bold text-blue-600">{roles.length}</p>
         </div>
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -246,7 +246,7 @@ export default function UsersManagementPage() {
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white paper-surface divide-y divide-gray-200">
             {users.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
@@ -299,7 +299,7 @@ export default function UsersManagementPage() {
       {/* Role Assignment Modal */}
       {showRoleAssignModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
+          <div className="bg-white paper-surface rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto m-4">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900">
                 Assign Roles to {selectedUser.full_name}

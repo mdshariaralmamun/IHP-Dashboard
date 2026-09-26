@@ -136,7 +136,7 @@ export default function RolesManagementPage() {
       </div>
 
       {/* Actions Bar */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+      <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
         <div className="flex flex-wrap items-center gap-4">
           {/* Filter by Discipline */}
           <div className="flex-1 min-w-64">
@@ -171,23 +171,23 @@ export default function RolesManagementPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Total Roles</p>
           <p className="text-2xl font-bold text-gray-900">{roles.length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">System Roles</p>
           <p className="text-2xl font-bold text-blue-600">
             {roles.filter((r) => r.is_system).length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Custom Roles</p>
           <p className="text-2xl font-bold text-green-600">
             {roles.filter((r) => !r.is_system).length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Active Roles</p>
           <p className="text-2xl font-bold text-gray-900">
             {roles.filter((r) => r.is_active).length}
@@ -196,7 +196,7 @@ export default function RolesManagementPage() {
       </div>
 
       {/* Roles Grid */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white paper-surface rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -223,7 +223,7 @@ export default function RolesManagementPage() {
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white paper-surface divide-y divide-gray-200">
             {roles.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
@@ -312,13 +312,13 @@ export default function RolesManagementPage() {
       <div className="mt-6 flex gap-4">
         <button
           onClick={() => router.push("/admin/roles/dashboard")}
-          className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 bg-white paper-surface border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           View Dashboard
         </button>
         <button
           onClick={() => router.push("/admin/users")}
-          className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 bg-white paper-surface border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           Manage Users
         </button>
