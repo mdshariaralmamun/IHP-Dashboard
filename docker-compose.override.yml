@@ -1,0 +1,12 @@
+# VPS deployment override (185.182.9.20)
+#
+# The host runs nginx-proxy-manager on the DOCKER HOST network, so it can
+# reach a loopback-published port directly. This publishes the frontend on
+# 127.0.0.1:3010 only - it is NOT exposed to the internet, and the proxy
+# host for ihp.shariar.dev forwards to http://127.0.0.1:3010.
+#
+# The base docker-compose.yml stays tunnel-oriented (no published ports).
+services:
+  frontend:
+    ports:
+      - "127.0.0.1:3010:3000"
