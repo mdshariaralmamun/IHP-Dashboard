@@ -63,12 +63,28 @@ def base_url_for(spec: ProviderSpec, settings: Any) -> str:
     return spec.base_url.rstrip("/")
 
 
+#: Legacy per-vendor slots written by pre-catalogue builds and the old
+#: Settings UI. They are still honoured so existing installs keep working.
+_LEGACY_KEY_SLOTS: dict[str, tuple[str, ...]] = {
+    "openrouter": ("OPENROUTER_API_KEY",),
+    "anthropic": ("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"),
+    "openai": ("OPENAI_API_KEY",),
+    "deepseek": ("DEEPSEEK_API_KEY",),
+    "moonshot": ("KIMI_API_KEY",),
+    "zhipu": ("GLM_API_KEY",),
+}
+
+
 def api_key_for(spec: ProviderSpec, settings: Any) -> str:
-    """API key: per-provider runtime override, then env, then the generic slot."""
+    """API key: per-provider override, legacy vendor slot, env, generic slot."""
     overrides = runtime_settings.read_overrides()
     per_provider = overrides.get(f"AI_KEY_{spec.id.upper()}", "")
     if per_provider:
         return str(per_provider).strip()
+    for slot in _LEGACY_KEY_SLOTS.get(spec.id, ()):
+        value = overrides.get(slot) or getattr(settings, slot, "")
+        if value:
+            return str(value).strip()
     if spec.env_key:
         env_value = getattr(settings, spec.env_key, "") or ""
         if env_value:
@@ -245,6 +261,8 @@ def chat(messages: list[dict[str, str]], system: str | None = None,
 #: Remote /v1/models responses are cached briefly: the UI polls this.
 _model_cache: dict[str, tuple[float, list[str]]] = {}
 _MODEL_CACHE_TTL = 120
+#: How many vendor models to offer in the picker.
+_MAX_LISTED_MODELS = 60
 
 
 def _remote_model_names(spec: ProviderSpec, settings: Any) -> list[str]:
@@ -265,8 +283,10 @@ def _remote_model_names(spec: ProviderSpec, settings: Any) -> list[str]:
             if name:
                 names.append(str(name))
     if names:
-        _model_cache[spec.id] = (time.time(), names)
-    return names
+        # OpenRouter and friends return hundreds of models; a <select> with
+        # 400 entries is unusable, and the user can type any name anyway.
+        _model_cache[spec.id] = (time.time(), names[:_MAX_LISTED_MODELS])
+    return names[:_MAX_LISTED_MODELS]
 
 
 def list_models(provider: str | None = None) -> list[dict[str, Any]]:
@@ -308,6 +328,7 @@ def list_models(provider: str | None = None) -> list[dict[str, Any]]:
     source = "live" if names else "suggested"
     if not names:
         names = list(spec.default_models)
+    names = names[:_MAX_LISTED_MODELS]
     if active and active not in names:
         names.insert(0, active)
     return [

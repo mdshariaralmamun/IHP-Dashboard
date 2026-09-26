@@ -107,6 +107,31 @@ def test_embeddings_stay_local_when_chat_moves_to_the_cloud(saved_overrides, mon
     assert provider.embed_base_for(spec, settings) == "http://172.17.0.1:11434"
 
 
+def test_legacy_vendor_key_slots_still_work(saved_overrides):
+    """Existing installs store the OpenRouter key under OPENROUTER_API_KEY."""
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    spec = providers_catalog.resolve("openrouter")
+    runtime_settings.write_overrides({
+        "AI_PROVIDER": "openrouter",
+        "OPENROUTER_API_KEY": "sk-or-v1-legacy-key",
+    })
+    assert provider.api_key_for(spec, settings) == "sk-or-v1-legacy-key"
+    available, reason = provider.available()
+    assert available is True, reason
+
+
+def test_huge_vendor_catalogues_are_capped(monkeypatch):
+    """OpenRouter lists hundreds of models; the picker must stay usable."""
+    monkeypatch.setattr(
+        provider, "_remote_model_names",
+        lambda spec, settings: [f"vendor/model-{i}" for i in range(500)],
+    )
+    models = provider.list_models("openrouter")
+    assert len(models) <= provider._MAX_LISTED_MODELS
+
+
 def test_providers_endpoint_lists_the_catalogue(client, admin_headers):
     resp = client.get("/api/ai/providers", headers=admin_headers)
     assert resp.status_code == 200, resp.text
