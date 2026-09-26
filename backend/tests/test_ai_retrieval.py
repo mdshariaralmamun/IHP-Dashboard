@@ -47,6 +47,17 @@ def _seed_corpus(db):
     return nitrogen.id, chiller.id
 
 
+def test_chunk_text_strips_nul_bytes():
+    """Postgres rejects NUL in text columns; extraction emits them."""
+    from app.ai.corpus import chunk_text
+
+    chunks = chunk_text("Scope of work\x00 for the nitrogen line\r\nsecond line")
+    assert chunks
+    assert "\x00" not in chunks[0]
+    assert "\r" not in chunks[0]
+    assert "nitrogen line" in chunks[0]
+
+
 def test_keyword_retrieval_finds_the_right_document():
     db = SessionLocal()
     try:

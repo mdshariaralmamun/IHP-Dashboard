@@ -28,7 +28,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..ai import provider
-from ..ai.corpus import chunk_text
+from ..ai.corpus import chunk_text, sanitize_text
 from ..models import CorpusChunk, CorpusDocument, User
 
 TEXT_EXTS = {".txt", ".md", ".log", ".csv", ".json"}
@@ -211,7 +211,7 @@ def scan_archive(
             continue
 
         try:
-            text = extract_file_text(path)
+            text = sanitize_text(extract_file_text(path))
         except Exception as e:  # noqa: BLE001 — record and move on
             failed += 1
             errors.append({"file": rel, "error": str(e)[:200]})

@@ -220,7 +220,12 @@ class CorpusChunk(Base):
     project_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     chunk_index: Mapped[int] = mapped_column(Integer)
     text: Mapped[str] = mapped_column(Text)
-    embedding: Mapped[list[float] | None] = mapped_column(JSON, nullable=True)
+    # none_as_null=True: a missing vector must be SQL NULL, not the JSON literal
+    # "null" - otherwise "WHERE embedding IS NULL" (the backfill query) never
+    # matches and every chunk looks embedded.
+    embedding: Mapped[list[float] | None] = mapped_column(
+        JSON(none_as_null=True), nullable=True
+    )
 
     document: Mapped[CorpusDocument] = relationship(back_populates="chunks")
 
