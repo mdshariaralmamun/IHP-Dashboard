@@ -234,7 +234,7 @@ export default function Header({ user }: { user: User | null }) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-apple-border/60 bg-apple-surface/70 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-6 py-3">
+      <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2.5">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-[11px] font-bold text-white shadow-sm">

@@ -55,14 +55,22 @@ export default function RequestAccessPage() {
     <div className="min-h-screen bg-apple-bg text-apple-text">
       <header className="border-b border-apple-border/60 bg-white/70 backdrop-blur-xl dark:bg-[#161618]/80">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex min-w-0 items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/kaust_logo.png" alt="KAUST" className="h-9" />
-            <span className="text-sm font-semibold">IHP Project Delivery Platform</span>
+            <img src="/kaust_logo.png" alt="KAUST" className="h-8 shrink-0 sm:h-9" />
+            <span className="truncate text-sm font-semibold">IHP Project Delivery Platform</span>
           </Link>
-          <Link href="/" className="text-sm font-medium text-apple-muted hover:text-apple-text">
-            ← Back to overview
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="hidden text-sm font-medium text-apple-muted hover:text-apple-text sm:block">
+              ← Back to overview
+            </Link>
+            <Link
+              href="/login"
+              className="rounded-full border border-apple-border px-4 py-2 text-sm font-medium text-apple-text transition hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              Sign in
+            </Link>
+          </div>
         </div>
       </header>
 

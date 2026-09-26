@@ -84,15 +84,15 @@ export default function PublicDashboardView() {
   return (
     <div className="min-h-screen bg-apple-bg text-apple-text">
       <header className="border-b border-apple-border/60 bg-white/70 backdrop-blur-xl dark:bg-[#161618]/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-5 sm:py-4">
+          <div className="flex min-w-0 items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/kaust_logo.png" alt="KAUST" className="h-9" />
-            <div>
-              <p className="text-sm font-semibold leading-tight">
+            <img src="/kaust_logo.png" alt="KAUST" className="h-8 shrink-0 sm:h-9" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold leading-tight">
                 IHP Project Delivery Platform
               </p>
-              <p className="text-[11px] text-apple-muted">
+              <p className="truncate text-[10px] text-apple-muted sm:text-[11px]">
                 In-House Projects · read-only overview
               </p>
             </div>
@@ -114,9 +114,9 @@ export default function PublicDashboardView() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-5 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">Portfolio overview</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Portfolio overview</h1>
           <p className="mt-1 text-sm text-apple-muted">
             Aggregate progress across every live project. Detailed records are available to
             approved users only.

@@ -52,7 +52,7 @@ function HomeView() {
         
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-[39px] font-bold tracking-tight leading-none mb-2 text-apple-text">
+            <h1 className="mb-2 text-3xl font-bold leading-none tracking-tight text-apple-text sm:text-[39px]">
               Executive Dashboard
             </h1>
             <p className="text-sm font-medium text-apple-muted">

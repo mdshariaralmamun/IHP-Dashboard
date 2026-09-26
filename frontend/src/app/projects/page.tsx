@@ -249,7 +249,7 @@ function ProjectRegister() {
         {/* Register Title & Search Header */}
         <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-[39px] font-bold tracking-tight leading-none mb-2">
+            <h1 className="text-3xl sm:text-[39px] font-bold tracking-tight leading-none mb-2">
               Project Register
             </h1>
             <p className="text-sm text-apple-muted font-medium">

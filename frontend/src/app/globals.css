@@ -373,6 +373,55 @@ body {
 }
 
 /* -------------------------------------------------------------------------
+ * Mobile hardening
+ *
+ * The layout is fluid, but phones need a few guards: no page-level sideways
+ * scroll, long identifiers (PR numbers, file names) wrapping instead of
+ * stretching the layout, and 16px form controls so iOS Safari does not zoom
+ * the whole page when a field gets focus.
+ * ------------------------------------------------------------------------ */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+}
+
+/* Any table inside this wrapper scrolls on its own instead of widening the
+   page. Also used by the document-preview tables. */
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Long unbreakable strings: PR numbers, stored file names, emails. */
+.break-anywhere {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  /* [class] keeps this above the Tailwind text-* utilities (0,1,1 > 0,1,0),
+     which is exactly the intent: readable controls on a phone. */
+  input[class],
+  textarea[class],
+  select[class] {
+    font-size: 16px;
+  }
+
+  /* Comfortable tap targets for the primary actions. */
+  button[class],
+  a[class][role='button'] {
+    min-height: 40px;
+  }
+}
+
+/* -------------------------------------------------------------------------
  * Scrollbars - thin, overlay-style, auto-hiding
  * ------------------------------------------------------------------------ */
 

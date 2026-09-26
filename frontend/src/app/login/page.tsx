@@ -39,7 +39,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center px-4 bg-apple-bg">
       <div className="w-full max-w-sm text-center">
         {/* Hero Typography for Login */}
-        <h1 className="text-[48px] leading-tight font-bold tracking-tight text-apple-text mb-12">
+        <h1 className="mb-10 text-4xl font-bold leading-tight tracking-tight text-apple-text sm:mb-12 sm:text-[48px]">
           KAUST IHP
         </h1>
 
