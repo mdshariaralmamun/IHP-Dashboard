@@ -11,7 +11,8 @@ export interface AiSource {
 
 export interface AiAnswer {
   answer: string;
-  mode: 'llm' | 'extractive';
+  /** live = exact database answer, llm = model answer, extractive = fallback. */
+  mode: 'llm' | 'extractive' | 'live';
   sources: AiSource[];
 }
 
@@ -578,7 +579,8 @@ export interface AiSource {
 
 export interface AiAnswer {
   answer: string;
-  mode: 'llm' | 'extractive';
+  /** live = exact database answer, llm = model answer, extractive = fallback. */
+  mode: 'llm' | 'extractive' | 'live';
   sources: AiSource[];
 }
 

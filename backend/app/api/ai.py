@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from ..ai import facts as facts_mod
 from ..ai import provider, retrieval
 from ..ai.corpus import chunk_text
 from ..core.config import get_settings
@@ -64,11 +65,14 @@ class AskIn(BaseModel):
     project_id: int | None = None
     #: Optional per-request model override (local Ollama model name).
     model: str | None = None
+    #: Previous turns, oldest first: [{"role": "user"|"assistant", "content": ...}].
+    #: Lets "and which of those are overdue?" resolve against the last answer.
+    history: list[dict[str, str]] | None = None
 
 
 class AskOut(BaseModel):
     answer: str
-    mode: str  # "llm" | "extractive"
+    mode: str  # "llm" (model answer) | "live" (exact database answer) | "extractive"
     sources: list[dict] = []
 
 
@@ -107,17 +111,60 @@ STAGE_LABELS = {
 }
 
 
-def _fmt_project(p: Project) -> str:
+def _derive(project: Project) -> dict:
+    """Planner-derived fields (division, dates, completion, flags)."""
+    from .projects import _derive_tracker_fields
+
+    return _derive_tracker_fields(project)
+
+
+def _fmt_project(p: Project, derived: dict | None = None) -> str:
+    derived = derived if derived is not None else _derive(p)
     stage = STAGE_LABELS.get(p.stage or "", p.stage or "Unknown")
+    division = derived.get("phase") or "Unassigned"
     lines = [
         f"Project: {p.pr_number} — {p.title}",
-        f"  Stage: {stage}",
+        f"  Division: {division} | Stage: {stage} | Priority: {derived.get('priority') or 'N/A'}",
         f"  Location: {p.location or 'N/A'}",
         f"  PI: {p.pi_name or 'N/A'} ({p.pi_email or 'N/A'})",
         f"  Funding: {p.funding_source or 'N/A'}",
         f"  Disposition: {p.disposition or 'N/A'}",
         f"  Created: {p.created_at.strftime('%Y-%m-%d') if p.created_at else 'N/A'}",
     ]
+    # Planner schedule: what "on time" actually means for this project.
+    schedule = []
+    if derived.get("start_date"):
+        schedule.append(f"start {derived['start_date']}")
+    if derived.get("finish_date"):
+        schedule.append(f"finish {derived['finish_date']}")
+    if derived.get("completion_pct") is not None:
+        schedule.append(f"{derived['completion_pct']}% complete")
+    if derived.get("effort"):
+        schedule.append(f"effort {derived['effort']}")
+    if derived.get("duration"):
+        schedule.append(f"duration {derived['duration']}")
+    if schedule:
+        lines.append("  Planner schedule: " + ", ".join(schedule))
+    if derived.get("planner_sync_date"):
+        lines.append(f"  Planner sync: {derived['planner_sync_date']}")
+    status = []
+    if derived.get("latest_status"):
+        status.append(f"latest status {derived['latest_status']}")
+    if derived.get("latest_status_date"):
+        status.append(f"as of {derived['latest_status_date']}")
+    if derived.get("checklist"):
+        status.append(f"checklist {derived['checklist']}")
+    if derived.get("flags"):
+        status.append("flags " + ", ".join(derived["flags"]))
+    if status:
+        lines.append("  Tracker: " + " | ".join(status))
+    if derived.get("ear_substatus"):
+        ear = f"  EAR status: {derived['ear_substatus']}"
+        if derived.get("ear_approved_date"):
+            ear += f" (approved {derived['ear_approved_date']})"
+        lines.append(ear)
+    if derived.get("trades"):
+        lines.append("  Trades: " + ", ".join(derived["trades"]))
     return "\n".join(lines)
 
 
@@ -134,10 +181,38 @@ def _extract_pr_numbers(text: str) -> list[str]:
     return list(set(found))
 
 
-def _build_project_context(question: str, project_id: int | None, db: Session) -> tuple[str, list[dict]]:
-    """
-    Build a context string from the database relevant to the question.
-    Returns (context_text, sources_list).
+#: "this / it / the project" -> the question is about the scoped project,
+#: so portfolio-wide counting answers must not be used.
+_DEICTIC = re.compile(
+    r"\b(this|these|it|its|the project|current project|this one|here)\b", re.I
+)
+
+#: A portfolio-wide question must never be answered with one project's record.
+_PORTFOLIO = re.compile(
+    r"\b(projects|portfolio|overall|across|everything|all prs?)\b", re.I
+)
+
+
+def _history_messages(history: list[dict[str, str]] | None) -> list[dict[str, str]]:
+    """Turn the client's transcript into chat turns (last 6, trimmed)."""
+    turns: list[dict[str, str]] = []
+    for turn in (history or [])[-4:]:
+        role = str(turn.get("role", "")).lower()
+        content = str(turn.get("content") or turn.get("text") or "").strip()
+        if role in ("user", "assistant") and content:
+            turns.append({"role": role, "content": content[:400]})
+    return turns
+
+
+def _build_project_context(
+    question: str, project_id: int | None, db: Session, facts: dict | None = None
+) -> tuple[str, list[dict]]:
+    """Build the context handed to the model.
+
+    A question naming a project gets that project's live record (plus its
+    MOM / EAR / SOW / material / construction detail). Anything else gets the
+    authoritative live fact pack from app.ai.facts. Returns
+    (context_text, sources_list).
     """
     context_parts: list[str] = []
     sources: list[dict] = []
@@ -162,7 +237,7 @@ def _build_project_context(question: str, project_id: int | None, db: Session) -
     # 3. Build context for each matched project
     for proj in matched_projects:
         proj_text = _fmt_project(proj)
-        context_parts.append(proj_text)
+        context_parts.append(proj_text)  # includes division, schedule, tracker state
         sources.append({"filename": f"Project {proj.pr_number}", "snippet": f"{proj.title} — Stage: {STAGE_LABELS.get(proj.stage or '', proj.stage or 'Unknown')}"})
 
         # MOM records
@@ -230,61 +305,15 @@ def _build_project_context(question: str, project_id: int | None, db: Session) -
             co_line = f"  Closeout: status={closeout.status}, final_cost={final_cost}, handover={handover}"
             context_parts.append(co_line)
 
-    # 4. If no specific PR matched, provide a project listing for generic queries
-    if not matched_projects and not project_id:
-        keyword_lower = question.lower()
-        search_terms = [w for w in keyword_lower.split() if len(w) > 3 and w not in {"what", "when", "where", "which", "that", "this", "with", "from", "have", "been", "about", "status"}]
-        if search_terms:
-            all_projects = db.query(Project).order_by(Project.updated_at.desc()).limit(50).all()
-            relevant = [
-                p for p in all_projects
-                if any(term in (p.title or "").lower() or term in (p.pr_number or "").lower() or term in (p.description or "").lower()
-                       for term in search_terms)
-            ]
-            if relevant:
-                context_parts.append(f"Relevant projects matching your query:")
-                for p in relevant[:5]:
-                    context_parts.append(_fmt_project(p))
-                    sources.append({"filename": f"Project {p.pr_number}", "snippet": f"{p.title} — {STAGE_LABELS.get(p.stage or '', p.stage or '')}"})
-
-    # 4. Nothing specific was referenced (no PR number, no scoped project).
-    #    Without this the assistant had NO data for portfolio questions such as
-    #    "how many EAR projects are there?" and answered from general knowledge.
-    #    A compact live overview is cheap and keeps the prompt small.
-    if not context_parts:
-        from collections import Counter
-
-        from ..services.planner_status import phase_for
-
-        projects = db.query(Project).all()
-        by_phase = Counter(
-            phase_for(bucket=p.planner_bucket, stage=p.stage) or "unassigned"
-            for p in projects
-        )
-        by_bucket = Counter((p.planner_bucket or "unassigned") for p in projects)
-        by_stage = Counter((p.stage or "unknown") for p in projects)
-        overview = [
-            "[Live IHP project database]",
-            f"Total projects: {len(projects)}",
-            "By division: " + ", ".join(f"{k} {v}" for k, v in by_phase.most_common()),
-            "By planner bucket: " + ", ".join(f"{k} {v}" for k, v in by_bucket.most_common()),
-            "By workflow stage: " + ", ".join(f"{k} {v}" for k, v in by_stage.most_common()),
-        ]
-        recent = sorted(projects, key=lambda p: p.id, reverse=True)[:12]
-        overview.append("Most recent projects:")
-        for p in recent:
-            overview.append(
-                f"  {p.pr_number} — {(p.title or '')[:70]} "
-                f"[{p.planner_bucket or '-'} | {p.stage}]"
-            )
-        context_parts.append("\n".join(overview))
-        sources.append({
-            "filename": "IHP project database",
-            "snippet": (
-                f"{len(projects)} projects — "
-                + ", ".join(f"{k} {v}" for k, v in by_phase.most_common())
-            ),
-        })
+    # 4. No specific project was named: hand the model the authoritative live
+    #    fact pack (totals, divisions, stages, overdue / due / on-hold lists).
+    #    The old keyword search over titles/descriptions matched generic words
+    #    such as "total" or "project" and answered with unrelated projects, so
+    #    it is gone; the fact pack always carries the real numbers.
+    if not matched_projects:
+        pack = facts if facts is not None else facts_mod.collect(db)
+        context_parts.append(facts_mod.render(pack))
+        sources = facts_mod.sources(pack) + sources
 
     return "\n".join(context_parts), sources
 
@@ -293,27 +322,35 @@ def _build_project_context(question: str, project_id: int | None, db: Session) -
 # System prompt
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = """You are the KAUST IHP (Infrastructure & Housing Projects) shadow engineer assistant.
+SYSTEM_PROMPT = """You are the KAUST IHP (Infrastructure & Housing Projects) assistant.
 
-You have access to live project data from the IHP platform database, including:
-- Projects (PR numbers, titles, stages, locations, PI names)
-- Minutes of Meeting (MOM) records
-- Engineering Assessment Reports (EAR)
-- Scope of Work (SOW) records
-- Material tracking and delivery status
-- Work permits
-- ICR handoffs and approvals
-- Construction progress
-- Closeout records
+The context you receive contains one or more of these blocks:
+- [Live IHP database - authoritative]: current facts read from the platform
+  database. The "QUICK ANSWERS" lines are exact values.
+- A single project record (when the question names a PR number, or when the
+  user is asking from that project's page), including division, stage, Planner
+  schedule, tracker state, MOM / EAR / SOW / material records.
+- [Knowledge base documents]: older reference documents.
 
-When answering:
-1. ALWAYS refer to projects by their PR number (e.g., PR-12623)
-2. Report exact data from the context provided — do not guess or make up values
-3. If a PR number is not found in the database context, say so clearly
-4. Be concise and structured (use bullet points for multiple items)
-5. "PR=XXXXX" in a user question means they are asking about project PR-XXXXX
+Rules:
+1. For any number, count, date, stage, division or list of projects use ONLY the
+   live fact pack. Copy the QUICK ANSWERS values exactly - never recompute them.
+2. Never invent a project, PR number, date, percentage or count. If the context
+   does not contain the answer, reply "I don't have that in the live data." and
+   name the missing field in one short sentence.
+3. If a list in the facts is empty (for example "Overdue: 0"), answer "None" -
+   never substitute examples from another list.
+4. Do not repeat a project list from an earlier turn unless it still answers the
+   current question.
+5. Keep answers short and structured: one direct answer line first, then at most
+   5 bullets. Use **bold** for key numbers and PR numbers. No preamble and do
+   not restate the question.
+6. When asked to draft, summarise or explain you may write prose, but every fact
+   in it must come from the context.
 
-Stage progression: Intake → MOM Confirmed → EAR Review → Disposition → SOW/BOQ → ICR → Construction → Closeout
+Stage progression: Intake -> MOM Confirmed -> EAR Review -> Disposition ->
+SOW/BOQ -> ICR -> Construction -> Closeout -> Punch List.
+Divisions: EAR, Design, Construction, Close-up.
 """
 
 
@@ -339,6 +376,32 @@ def chat(
     _user: User = Depends(get_current_user),
 ):
     """Project-scoped Q&A over the corpus + memory."""
+    # Counts and lists are answered straight from the database, so a small local
+    # model cannot get them wrong - and they still work with no AI provider at
+    # all. Open-ended questions go to the model below with the full context.
+    facts = facts_mod.collect(db)
+    pr_numbers = _extract_pr_numbers(body.message)
+    if body.project_id is not None and not _PORTFOLIO.search(body.message):
+        target = db.get(Project, body.project_id)
+        if target is not None:
+            direct = facts_mod.project_answer(
+                body.message, target, _derive(target)
+            )
+            if direct:
+                return ChatOut(
+                    reply=direct,
+                    citations=[facts_mod.project_source(target, _derive(target))],
+                    available=True,
+                )
+    if not pr_numbers and not (
+        body.project_id is not None and _DEICTIC.search(body.message)
+    ):
+        direct = facts_mod.answer(body.message, facts)
+        if direct:
+            return ChatOut(
+                reply=direct, citations=facts_mod.sources(facts), available=True
+            )
+
     is_available, reason = provider.available()
     if not is_available:
         return ChatOut(
@@ -350,7 +413,10 @@ def chat(
             citations=[],
             available=False,
         )
-    db_context, sources = _build_project_context(body.message, body.project_id, db)
+
+    db_context, sources = _build_project_context(
+        body.message, body.project_id, db, facts=facts
+    )
     hits = retrieval.search(body.message, db, k=5)
     citations = [{"filename": h["filename"], "snippet": h["text"][:200]} for h in hits]
 
@@ -363,11 +429,14 @@ def chat(
         system=SYSTEM_PROMPT,
         model=body.model,
     )
-    return ChatOut(
-        reply=reply or "(no response from provider)",
-        citations=citations + sources[:3],
-        available=True,
-    )
+    text = reply or "(no response from provider)"
+    unknown = facts_mod.unknown_pr_numbers(text, facts["pr_numbers"])
+    if unknown:
+        text += (
+            "\n\n_Note: " + ", ".join(unknown)
+            + " is not in the live database - treat that as unverified._"
+        )
+    return ChatOut(reply=text, citations=citations + sources[:3], available=True)
 
 
 # ---------------------------------------------------------------------------
@@ -382,20 +451,63 @@ def ask(
     _user: User = Depends(get_current_user),
 ):
     """Project-scoped Q&A returning the AiAnswer schema the frontend expects."""
+    # One database pass: the live fact pack feeds both the deterministic
+    # answers below and the model context.
+    facts = facts_mod.collect(db)
+
+    # Deterministic fast path. Nothing below invents data: "which projects are
+    # overdue?", "how many construction projects", "total projects", "ICR
+    # count" are answered from the database itself, and they work even when no
+    # AI provider is configured.
+    pr_numbers = _extract_pr_numbers(body.question)
+    portfolio_question = bool(_PORTFOLIO.search(body.question))
+
+    # Single-project questions (asked from a project page, or naming a PR
+    # number) get the record: finish date, progress, risks, tracker status.
+    target: Project | None = (
+        db.get(Project, body.project_id) if body.project_id is not None else None
+    )
+    if target is None and len(pr_numbers) == 1:
+        target = (
+            db.query(Project)
+            .filter(Project.pr_number.ilike(f"%{pr_numbers[0]}%"))
+            .first()
+        )
+    if target is not None and not portfolio_question:
+        derived = _derive(target)
+        direct = facts_mod.project_answer(body.question, target, derived)
+        if direct:
+            return AskOut(
+                answer=direct,
+                mode="live",
+                sources=[facts_mod.project_source(target, derived)],
+            )
+
+    if not pr_numbers and not (
+        body.project_id is not None and _DEICTIC.search(body.question)
+    ):
+        direct = facts_mod.answer(body.question, facts)
+        if direct:
+            return AskOut(
+                answer=direct, mode="live", sources=facts_mod.sources(facts)
+            )
+
     is_available, reason = provider.available()
     if not is_available:
         return AskOut(
             answer=(
-                "The AI provider is currently offline. "
-                "Configure AI_PROVIDER and the matching API key in .env to enable it."
+                "I can answer counts and lists from the live database, but the "
+                "language model is offline so open questions are unavailable. "
+                "Configure AI_PROVIDER and its API key in .env to enable it."
                 + (f" (reason: {reason})" if reason else "")
             ),
             mode="extractive",
-            sources=[],
+            sources=facts_mod.sources(facts),
         )
 
-    # Build live database context
-    db_context, db_sources = _build_project_context(body.question, body.project_id, db)
+    db_context, db_sources = _build_project_context(
+        body.question, body.project_id, db, facts=facts
+    )
 
     # Also do corpus retrieval
     hits = retrieval.search(body.question, db, k=5)
@@ -405,7 +517,7 @@ def ask(
     user_content = body.question
     context_blocks = []
     if db_context:
-        context_blocks.append(f"[Live project database context]\n{db_context}")
+        context_blocks.append(db_context)
     if hits:
         corpus_text = "\n\n".join(f"[{h['filename']}]: {h['text']}" for h in hits)
         context_blocks.append(f"[Knowledge base documents]\n{corpus_text}")
@@ -413,18 +525,23 @@ def ask(
     if context_blocks:
         user_content = "\n\n".join(context_blocks) + f"\n\nQuestion: {body.question}"
 
-    reply = provider.chat(
-        [{"role": "user", "content": user_content}],
-        system=SYSTEM_PROMPT,
-        model=body.model,
-    )
+    messages = _history_messages(body.history) + [
+        {"role": "user", "content": user_content}
+    ]
+    reply = provider.chat(messages, system=SYSTEM_PROMPT, model=body.model)
+    text = reply or "(no response from provider)"
+
+    # Hallucination guard: a PR number that is not in the database is flagged
+    # instead of being presented as fact.
+    unknown = facts_mod.unknown_pr_numbers(text, facts["pr_numbers"])
+    if unknown:
+        text += (
+            "\n\n_Note: " + ", ".join(unknown)
+            + " is not in the live database - treat that as unverified._"
+        )
 
     all_sources = db_sources + corpus_sources
-    return AskOut(
-        answer=reply or "(no response from provider)",
-        mode="llm",
-        sources=all_sources[:6],
-    )
+    return AskOut(answer=text, mode="llm", sources=all_sources[:6])
 
 
 # ---------------------------------------------------------------------------

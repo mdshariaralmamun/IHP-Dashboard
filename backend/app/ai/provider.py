@@ -179,10 +179,15 @@ def _chat_ollama(
 ) -> str | None:
     base = _eff("AI_BASE_URL", settings.AI_BASE_URL).rstrip("/")
     model = model or _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL)
+    # Ollama defaults to a 2048-token window, which is smaller than the
+    # assistant's live-context block - it then rejects the request with
+    # HTTP 400 and the chat looks empty. Always ask for an explicit window.
+    num_ctx = int(getattr(settings, "AI_NUM_CTX", 8192) or 8192)
     payload: dict[str, Any] = {
         "model": model,
         "messages": [{"role": m["role"], "content": m["content"]} for m in messages],
         "stream": False,
+        "options": {"num_ctx": num_ctx},
     }
     if system:
         payload["system"] = system

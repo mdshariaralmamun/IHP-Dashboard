@@ -17,7 +17,7 @@ interface Message {
   text: string;
   ts: number;
   sources?: AiSource[];
-  mode?: 'llm' | 'extractive';
+  mode?: 'llm' | 'extractive' | 'live';
   model?: string;
   error?: boolean;
 }
@@ -316,6 +316,11 @@ function MessageRow({ message, onCopy }: { message: Message; onCopy: () => void 
               <span className="font-mono">{message.model}</span>
             </>
           )}
+          {message.mode === 'live' && (
+            <span className="rounded-full bg-status-approved/15 px-1.5 py-px font-medium text-status-approved">
+              live database
+            </span>
+          )}
           {message.mode === 'extractive' && (
             <span className="rounded-full bg-status-warning/15 px-1.5 py-px font-medium text-status-warning">
               knowledge base only
@@ -459,6 +464,12 @@ export default function AiChat() {
     const question = (preset ?? input).trim();
     if (!question || busy) return;
     if (!preset) setInput('');
+    // Prior turns give follow-ups ("and which of those are overdue?") their
+    // context. The backend trims this to the last few exchanges.
+    const history = messages.slice(-4).map((message) => ({
+      role: message.role,
+      content: message.text,
+    }));
     const stamp = Date.now();
     setMessages((prev) => [
       ...prev,
@@ -467,7 +478,7 @@ export default function AiChat() {
     setBusy(true);
     const started = Date.now();
     try {
-      const res = await askAi(question, projectId, model || undefined);
+      const res = await askAi(question, projectId, model || undefined, history);
       setMessages((prev) => [
         ...prev,
         {

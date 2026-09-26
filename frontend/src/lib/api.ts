@@ -593,15 +593,22 @@ export async function parsePrForm(file: File): Promise<PrFormParseResult> {
 
 // --- AI assistant ---
 
+export interface AiChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export function askAi(
   question: string,
   projectId?: number,
   model?: string,
+  history?: AiChatTurn[],
 ): Promise<AiAnswer> {
   return request<AiAnswer>('/api/ai/ask', { method: 'POST' }, {
     question,
     project_id: projectId ?? null,
     model: model ?? null,
+    history: history?.length ? history : null,
   });
 }
 

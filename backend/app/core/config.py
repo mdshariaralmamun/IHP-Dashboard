@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     AI_BASE_URL: str = "http://localhost:11434"
     AI_CHAT_MODEL: str = "llama3.2:3b"
     AI_EMBED_MODEL: str = "nomic-embed-text"
+    # Context window sent to Ollama. Ollama's own default is only 2048 tokens,
+    # which is smaller than the assistant's live-context block, so requests
+    # came back as HTTP 400 "exceeds context" and the chat showed nothing.
+    AI_NUM_CTX: int = 8192
     # Optional bearer key for the base URL above (needed only when the
     # endpoint is hosted; local Ollama ignores it). Admins can override
     # this at runtime via /api/admin/settings.
