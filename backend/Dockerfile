@@ -23,6 +23,9 @@ COPY app ./app
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY templates ./templates
+# scripts/ holds the planner importer that app/api/imports.py reuses, so it
+# must ship with the image (its absence crashed the whole API at import).
+COPY scripts ./scripts
 RUN pip install .
 
 # Run as a non-root user. /data is the runtime file-storage dir (DATA_DIR);

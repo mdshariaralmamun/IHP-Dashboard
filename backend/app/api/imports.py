@@ -39,16 +39,38 @@ from ..services.tracker_import import (
     PlannerRow, OmRow, PrMismatch, compare, parse_om, parse_planner, summarise,
 )
 # import_planner exists as a script; reuse its core logic.
+# Imported defensively: a missing scripts/ directory must degrade this one
+# endpoint, not crash the entire API at startup.
 import sys
+
 _SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
-import import_planner  # type: ignore
-_run_planner_import = import_planner.import_xlsx
-_planner_map_stage = import_planner.map_stage
+try:  # pragma: no cover - depends on the deployment layout
+    import import_planner  # type: ignore
+
+    _run_planner_import = import_planner.import_xlsx
+    _planner_map_stage = import_planner.map_stage
+    IMPORTER_AVAILABLE = True
+except Exception:  # noqa: BLE001 - report clearly instead of dying
+    _run_planner_import = None  # type: ignore[assignment]
+    _planner_map_stage = None  # type: ignore[assignment]
+    IMPORTER_AVAILABLE = False
 
 
 router = APIRouter(prefix="/admin/import", tags=["admin_import"])
+
+
+def _require_importer() -> None:
+    """Fail this endpoint clearly when the importer module is not deployed."""
+    if not IMPORTER_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "The planner importer is not available in this deployment: "
+                "scripts/import_planner.py was not included in the image."
+            ),
+        )
 
 
 def _trackers_status():
@@ -116,6 +138,7 @@ def upload_planner(
     _cache["planner_path"] = saved
 
     # Run the importer (creates / updates projects, writes audit logs)
+    _require_importer()
     processed = _run_planner_import(saved, dry_run=dry_run)
 
     # Reparse for the cache (cheap; the importer just did the work)
@@ -365,6 +388,7 @@ def auto_import(
         )
 
     saved = Path(planner_path)
+    _require_importer()
     processed = _run_planner_import(saved, dry_run=dry_run)
 
     _cache["planner_path"] = saved
