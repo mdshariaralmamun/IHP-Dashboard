@@ -87,7 +87,7 @@ def feedback_stats() -> dict[str, Any]:
 
 
 SYSTEM_TEXT = (
-    "You are the KAUST IHP (Infrastructure & Housing Projects) assistant. "
+    "You are the KAUST IHP (In-House Projects) assistant. "
     "Answer from the live project data with exact numbers, name the PR number, "
     "and say so when the data does not contain the answer."
 )

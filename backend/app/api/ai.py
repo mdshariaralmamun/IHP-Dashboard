@@ -349,7 +349,7 @@ def _build_project_context(
 # System prompt
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = """You are the KAUST IHP (Infrastructure & Housing Projects) assistant.
+SYSTEM_PROMPT = """You are the KAUST IHP (In-House Projects) assistant.
 
 The context you receive contains one or more of these blocks:
 - [Live IHP database - authoritative]: current facts read from the platform

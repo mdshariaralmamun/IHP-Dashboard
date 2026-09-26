@@ -93,7 +93,7 @@ export default function PublicDashboardView() {
                 IHP Project Delivery Platform
               </p>
               <p className="text-[11px] text-apple-muted">
-                Infrastructure &amp; Housing Projects · read-only overview
+                In-House Projects · read-only overview
               </p>
             </div>
           </div>
