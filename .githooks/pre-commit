@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Pre-commit hook: block accidental secret commits.
+#
+# Installed by the security remediation pass on 2026-09-05.
+# To re-install after a fresh clone, run:
+#   cp .githooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+#
+# Scope: catches the keys we actually use (OpenRouter, Anthropic) plus a
+# generic high-entropy-string check. False positives are preferable to a
+# leaked credential. If a match is genuinely a non-secret, edit the file
+# to use a placeholder before committing.
+
+set -e
+
+# Files staged for commit (added/modified, excluding deletions).
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null || true)
+
+if [ -z "$STAGED" ]; then
+    exit 0
+fi
+
+RED=$'\033[0;31m'
+YELLOW=$'\033[0;33m'
+RESET=$'\033[0m'
+
+FAIL=0
+
+# 1) Known provider key prefixes.
+#    Pattern matches the literal prefix plus a long hex body.
+PROVIDER_PATTERNS=(
+    'sk-or-v1-[a-f0-9]{20,}'   # OpenRouter
+    'sk-ant-[A-Za-z0-9_-]{20,}' # Anthropic
+    'sk-[A-Za-z0-9_-]{32,}'    # OpenAI / generic "sk-" prefix
+    'ghp_[A-Za-z0-9]{20,}'     # GitHub PAT
+    'gho_[A-Za-z0-9]{20,}'     # GitHub OAuth
+    'ghs_[A-Za-z0-9]{20,}'     # GitHub server token
+    'ghr_[A-Za-z0-9]{20,}'     # GitHub refresh token
+)
+
+# 2) Generic high-entropy assignment: KEY=value where value is a 32+ char
+#    base64/hex blob. Catches secrets even when the provider prefix is new.
+HIGH_ENTROPY_ASSIGNMENT='[A-Z_][A-Z0-9_]{2,}=[A-Za-z0-9_/+=-]{32,}'
+
+# Files we never scan (placeholders, example templates, the hook itself).
+EXCLUDE_RE='^(\.githooks/|\.env\.example$|.*\.example$)'
+
+scan_file() {
+    local file="$1"
+    [ -f "$file" ] || return 0
+    # Skip binary files (best-effort: git attributes could be more precise).
+    if git diff --cached --numstat -- "$file" 2>/dev/null | awk '{exit ($2 ~ /^-/ ? 0 : 1)}'; then
+        local meta
+        meta=$(git diff --cached --numstat -- "$file" | awk '{print $1, $2}')
+        # Empty diff (new file, all-binary) or " - " in the printed counts.
+        case "$meta" in
+            *"- -"|"") return 0 ;;
+        esac
+    fi
+
+    local content
+    content=$(git show ":$file" 2>/dev/null) || return 0
+
+    for pat in "${PROVIDER_PATTERNS[@]}"; do
+        if echo "$content" | grep -E -q "$pat"; then
+            echo "${RED}BLOCKED${RESET}: $file matches provider key pattern ($pat)"
+            FAIL=1
+        fi
+    done
+
+    # Generic high-entropy check — only fire on lines that look like env-style
+    # assignments, to avoid noise from hashes/UUIDs in source code.
+    if echo "$content" | grep -E -q "$HIGH_ENTROPY_ASSIGNMENT"; then
+        # Whitelist common non-secret keys.
+        if echo "$content" | grep -E "$HIGH_ENTROPY_ASSIGNMENT" | grep -v -E '^(#|\s*#|.*_(HASH|CHECKSUM|UUID)=[0-9a-f-]{36})' >/dev/null 2>&1; then
+            echo "${YELLOW}WARNING${RESET}: $file has a high-entropy assignment that may be a secret. Review before pushing."
+        fi
+    fi
+}
+
+for file in $STAGED; do
+    if echo "$file" | grep -E -q "$EXCLUDE_RE"; then
+        continue
+    fi
+    scan_file "$file"
+done
+
+if [ "$FAIL" -eq 1 ]; then
+    echo
+    echo "${RED}Commit blocked: a known-secret pattern was found in staged files.${RESET}"
+    echo "If this is a false positive, replace the literal with a placeholder"
+    echo "(e.g. 'sk-or-v1-REPLACE_ME') and stage the corrected version."
+    exit 1
+fi
+
+exit 0

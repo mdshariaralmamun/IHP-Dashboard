@@ -1,0 +1,112 @@
+# KAUST IHP Project Delivery Platform — production/local compose stack.
+#
+# Usage:
+#   1. Copy .env.example to .env and fill in the values (compose reads .env
+#      from this directory automatically for ${VAR} interpolation).
+#   2. docker compose up -d --build
+#
+# No host ports are published by default: the site is reached through a
+# Cloudflare Zero Trust tunnel (see the `cloudflared` service below).
+# For local debugging you may temporarily add to the relevant service:
+#   backend:  ports: ["8000:8000"]
+#   frontend: ports: ["3000:3000"]
+
+name: ihp
+
+services:
+  db:
+    image: pgvector/pgvector:pg16  # Postgres 16 + pgvector (reserved for the later AI stage)
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ihp
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ihp
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ihp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    working_dir: /app  # alembic.ini lives here inside the image
+    # Apply DB migrations, then start the API.
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://ihp:${DB_PASSWORD}@db:5432/ihp
+      SECRET_KEY: ${SECRET_KEY}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      DATA_DIR: /data
+      TEMPLATES_DIR: /app/templates
+      # Optional SMTP settings; empty values mean "mail disabled".
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    volumes:
+      - ihp_data:/data  # generated documents / uploaded files
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Nightly Postgres backups kept for 14 days in ./backups on the host.
+  # Restore example:
+  #   gunzip < backups/ihp_2026-01-01T00-00-00.sql.gz \
+  #     | docker compose exec -T db psql -U ihp -d ihp
+  db-backup:
+    image: prodrigestivill/postgres-backup:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_USER: ihp
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ihp
+      SCHEDULE: "@daily"
+      BACKUP_KEEP_DAYS: 14
+      BACKUP_KEEP_WEEKS: 4
+      BACKUP_KEEP_MONTHS: 3
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    environment:
+      # Next.js server-side rewrites proxy /api/* to the backend, so no CORS
+      # config is needed. This name resolves on the compose network.
+      API_URL: http://backend:8000
+    depends_on:
+      - backend
+
+  # Cloudflare Zero Trust tunnel (optional).
+  #
+  # The VPS may already run its own cloudflared (e.g. as a system service for
+  # other hostnames on the owner's domain). Two options — pick ONE:
+  #   a) Preferred if cloudflared already runs on the host: add this site's
+  #      hostname (e.g. ihp.shariar.dev) to the existing tunnel's ingress
+  #      config pointing at http://localhost:3000 and publish port 3000 on
+  #      the frontend service (see debugging note at the top). Do NOT start
+  #      this service then.
+  #   b) Otherwise, create a new tunnel in the Cloudflare Zero Trust dashboard,
+  #      put its token in .env as CLOUDFLARE_TUNNEL_TOKEN, and start with:
+  #        docker compose --profile tunnel up -d
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - frontend
+
+volumes:
+  pgdata:
+  ihp_data:

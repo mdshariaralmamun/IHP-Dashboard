@@ -1,0 +1,264 @@
+"""LLM provider abstraction (local Ollama + OpenAI-compatible fallback).
+
+Per v2 spec:
+  - Section 4: chat completions with local Ollama
+  - Section 6: provider flexibility (local + OpenAI-compatible hosted APIs)
+
+Supported AI_PROVIDER values:
+  - "ollama"      : local Ollama instance at AI_BASE_URL
+  - "openrouter"  : OpenRouter hosted API (OPENROUTER_API_KEY)
+  - "anthropic"   : Anthropic API (ANTHROPIC_API_KEY)
+  - "openai"      : OpenAI API (OPENAI_API_KEY)
+"""
+
+from __future__ import annotations
+
+import json
+import urllib.request
+from typing import Any
+
+from ..core.config import get_settings
+from ..services import runtime_settings
+
+
+def _eff(key: str, env_default: str) -> str:
+    """Resolve a setting: admin override if present, else the env default."""
+    return runtime_settings.effective(key, env_default)
+
+
+def _post(url: str, payload: dict[str, Any], headers: dict[str, str] | None = None) -> dict[str, Any] | None:
+    """POST JSON to a URL and return decoded JSON response, or None on failure."""
+    try:
+        data = json.dumps(payload).encode("utf-8")
+        req_headers = {"Content-Type": "application/json"}
+        if headers:
+            req_headers.update(headers)
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers=req_headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        print(f"LLM provider request failed: {e}")
+        return None
+
+
+def available() -> tuple[bool, str | None]:
+    """Return (is_available, reason).
+
+    Checks whether the configured AI provider is reachable and usable.
+    Uses runtime overrides so admin-saved settings take effect.
+    """
+    settings = get_settings()
+    provider = _eff("AI_PROVIDER", settings.AI_PROVIDER).lower()
+
+    if provider == "ollama":
+        base_url = _eff("AI_BASE_URL", settings.AI_BASE_URL)
+        if not base_url:
+            return False, "AI_BASE_URL is not configured"
+        result = _post(f"{base_url.rstrip('/')}/api/tags", {})
+        if result is None:
+            return False, "Cannot reach Ollama at AI_BASE_URL (is Ollama running?)"
+        return True, None
+
+    if provider == "openrouter":
+        key = _eff("OPENROUTER_API_KEY", settings.OPENROUTER_API_KEY)
+        if not key:
+            return False, "OPENROUTER_API_KEY is not configured"
+        return True, None
+
+    if provider == "anthropic":
+        key = _eff("AI_API_KEY", settings.ANTHROPIC_API_KEY)
+        if not key:
+            return False, "ANTHROPIC_API_KEY is not configured"
+        return True, None
+
+    if provider == "openai":
+        key = _eff("AI_API_KEY", settings.OPENAI_API_KEY)
+        if not key:
+            return False, "OPENAI_API_KEY is not configured"
+        return True, None
+
+    if provider == "deepseek":
+        key = _eff("AI_API_KEY", settings.DEEPSEEK_API_KEY)
+        if not key:
+            return False, "DEEPSEEK_API_KEY is not configured"
+        return True, None
+
+    if provider == "kimi":
+        key = _eff("AI_API_KEY", settings.KIMI_API_KEY)
+        if not key:
+            return False, "KIMI_API_KEY is not configured"
+        return True, None
+
+    if provider == "glm":
+        key = _eff("AI_API_KEY", settings.GLM_API_KEY)
+        if not key:
+            return False, "GLM_API_KEY is not configured"
+        return True, None
+
+    return False, f"Unknown AI_PROVIDER: {provider!r}"
+
+
+def chat(messages: list[dict[str, str]], system: str | None = None) -> str | None:
+    """Send a chat completion request to the configured provider.
+
+    Returns the assistant's reply text, or None on error.
+    Uses runtime overrides so admin-saved settings take effect.
+    """
+    settings = get_settings()
+    provider = _eff("AI_PROVIDER", settings.AI_PROVIDER).lower()
+
+    if provider == "ollama":
+        return _chat_ollama(messages, system, settings)
+
+    if provider in ("openrouter", "openai", "deepseek", "kimi", "glm"):
+        return _chat_openai_compat(messages, system, settings, provider)
+
+    if provider == "anthropic":
+        return _chat_anthropic(messages, system, settings)
+
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+def _chat_ollama(
+    messages: list[dict[str, str]],
+    system: str | None,
+    settings: Any,
+) -> str | None:
+    base = _eff("AI_BASE_URL", settings.AI_BASE_URL).rstrip("/")
+    model = _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL)
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": [{"role": m["role"], "content": m["content"]} for m in messages],
+        "stream": False,
+    }
+    if system:
+        payload["system"] = system
+    response = _post(f"{base}/api/chat", payload)
+    if response is None:
+        return None
+    message = response.get("message")
+    if message and isinstance(message, dict):
+        return message.get("content")
+    return None
+
+
+def _chat_openai_compat(
+    messages: list[dict[str, str]],
+    system: str | None,
+    settings: Any,
+    provider: str,
+) -> str | None:
+    """OpenAI-compatible chat completions (OpenRouter, OpenAI, DeepSeek, Kimi, GLM).
+
+    Reads runtime overrides so admin-saved API keys and models take effect.
+    """
+    chat_model = _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL)
+
+    provider_config = {
+        "openrouter": (
+            "https://openrouter.ai/api/v1/chat/completions",
+            _eff("OPENROUTER_API_KEY", settings.OPENROUTER_API_KEY),
+            chat_model or "nvidia/nemotron-3-ultra-550b-a55b:free",
+        ),
+        "openai": (
+            "https://api.openai.com/v1/chat/completions",
+            _eff("AI_API_KEY", settings.OPENAI_API_KEY),
+            chat_model or "gpt-4o-mini",
+        ),
+        "deepseek": (
+            "https://api.deepseek.com/v1/chat/completions",
+            _eff("AI_API_KEY", settings.DEEPSEEK_API_KEY),
+            chat_model or "deepseek-chat",
+        ),
+        "kimi": (
+            "https://api.moonshot.cn/v1/chat/completions",
+            _eff("AI_API_KEY", settings.KIMI_API_KEY),
+            chat_model or "moonshot-v1-8k",
+        ),
+        "glm": (
+            "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+            _eff("AI_API_KEY", settings.GLM_API_KEY),
+            chat_model or "glm-4",
+        ),
+    }
+    url, api_key, model = provider_config[provider]
+
+    all_messages: list[dict[str, str]] = []
+    if system:
+        all_messages.append({"role": "system", "content": system})
+    all_messages.extend({"role": m["role"], "content": m["content"]} for m in messages)
+
+    payload = {"model": model, "messages": all_messages}
+    headers = {"Authorization": f"Bearer {api_key}"}
+    if provider == "openrouter":
+        headers["HTTP-Referer"] = "https://ihp-platform.kaust.edu.sa"
+        headers["X-Title"] = "IHP Design and Construction Platform"
+
+    response = _post(url, payload, headers)
+    if response is None:
+        return None
+    try:
+        return response["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+
+def _chat_anthropic(
+    messages: list[dict[str, str]],
+    system: str | None,
+    settings: Any,
+) -> str | None:
+    """Anthropic Messages API."""
+    url = "https://api.anthropic.com/v1/messages"
+    model = _eff("AI_CHAT_MODEL", settings.AI_CHAT_MODEL) or "claude-3-5-haiku-20241022"
+    payload: dict[str, Any] = {
+        "model": model,
+        "max_tokens": 2048,
+        "messages": [{"role": m["role"], "content": m["content"]} for m in messages],
+    }
+    if system:
+        payload["system"] = system
+    headers = {
+        "x-api-key": _eff("AI_API_KEY", settings.ANTHROPIC_API_KEY),
+        "anthropic-version": "2023-06-01",
+    }
+    response = _post(url, payload, headers)
+    if response is None:
+        return None
+    try:
+        return response["content"][0]["text"]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+
+def embed(text: str) -> list[float] | None:
+    """Return an embedding vector for the given text, or None if unavailable.
+
+    Currently only supported with Ollama provider.
+    """
+    settings = get_settings()
+    provider = _eff("AI_PROVIDER", settings.AI_PROVIDER)
+    if provider.lower() != "ollama":
+        return None
+    base = _eff("AI_BASE_URL", settings.AI_BASE_URL).rstrip("/")
+    embed_model = _eff("AI_EMBED_MODEL", settings.AI_EMBED_MODEL)
+    embed_url = f"{base}/api/embeddings"
+    payload = {"model": embed_model, "input": text}
+    response = _post(embed_url, payload)
+    if response is None:
+        return None
+    data = response.get("data")
+    if data and isinstance(data, list) and len(data) > 0:
+        emb = data[0].get("embedding")
+        if emb is not None:
+            return emb
+    return None

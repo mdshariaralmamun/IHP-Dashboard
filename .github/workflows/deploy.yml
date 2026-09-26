@@ -1,0 +1,46 @@
+name: Deploy
+
+# Deploys to the Contabo VPS (Ubuntu 24.04, Docker installed) on every push
+# to main. The GitHub repo is the source of truth; the VPS pulls and rebuilds.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# ---------------------------------------------------------------------------
+# Required GitHub secrets (Settings -> Secrets and variables -> Actions):
+#   VPS_HOST     - VPS IP or hostname
+#   VPS_USER     - SSH user (e.g. root or a sudo-capable user in the docker group)
+#   VPS_SSH_KEY  - private key for that user (the matching public key must be
+#                  in ~/.ssh/authorized_keys on the VPS)
+#
+# One-time VPS setup (manual):
+#   1. git clone <repo-url> /opt/ihp
+#   2. cd /opt/ihp && cp .env.example .env  # then fill in DB_PASSWORD,
+#      SECRET_KEY, ADMIN_USERNAME, ADMIN_PASSWORD (and SMTP_* / CLOUDFLARE_TUNNEL_TOKEN if used)
+#   3. Ensure the SSH user can run docker (member of the `docker` group).
+#   4. Cloudflare tunnel: either add the site hostname to an existing
+#      cloudflared on the VPS, or set CLOUDFLARE_TUNNEL_TOKEN in .env and
+#      start with `docker compose --profile tunnel up -d` once. The deploy
+#      below runs plain `docker compose up -d --build`, which leaves the
+#      `tunnel` profile service running if it was already started.
+# ---------------------------------------------------------------------------
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull latest code and rebuild on the VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/ihp
+            git pull
+            docker compose up -d --build
+            docker image prune -f

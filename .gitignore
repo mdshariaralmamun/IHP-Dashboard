@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# App data & env — never commit .env or any local Claude Code settings
+data/
+*.db
+.env
+.env.local
+app_data/
+
+# Claude Code / harness — settings.json / settings.local.json commonly carry
+# real API keys locally and must never be committed.
+.claude/
+*.local.json
+
+# Tracked git hooks live in .githooks/ so a fresh clone can install them.
+# The actual installed hook in .git/hooks/ is per-clone and stays local.
+
+# Build
+build/
+dist/
+
+# Pre-commit / scanner caches
+.secrets.baseline
+.gitleaks.toml
+detect-secrets/
+
+# Unrelated local repositories / Claude-harness tooling — not part of the app.
+OmniRoute/
+run-claude*.ps1
+switch-model.ps1
+claude-failover.js
+patch.py
+
+
+# Files that contained real API keys - never commit these.
+claude-failover.js
+run-claude-openrouter.ps1

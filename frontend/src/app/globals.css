@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html[data-text-size="small"] { font-size: 14px; }
+html[data-text-size="medium"] { font-size: 16px; }
+html[data-text-size="large"] { font-size: 18px; }
+
+/* -------------------------------------------------------------------------
+ * KAUST IHP - Apple-Tier Visual Standard Tokens
+ * ------------------------------------------------------------------------ */
+
+:root,
+:root[data-theme="kaust"] {
+  /* Apple Light Theme */
+  --color-bg: #F5F5F7;
+  --color-surface: rgba(255, 255, 255, 0.7); /* Translucent glass */
+  --color-text: #1D1D1F;
+  --color-muted: #86868b;
+  --color-border: rgba(0, 0, 0, 0.08);
+
+  /* Primary Accent: Graphite Blue (Light) */
+  --color-primary: #29527A;
+
+  /* KAUST brand palette (light) */
+  --kaust-primary: #29527A;
+  --kaust-primary-hover: #1E3D5C;
+  --kaust-blue: #006FC5;
+  --kaust-green: #006E4E;
+  --kaust-gold: #B78B2A;
+  --kaust-text: #1D1D1F;
+  --kaust-surface: rgba(255, 255, 255, 0.72);
+  --kaust-border: rgba(0, 0, 0, 0.08);
+}
+
+:root[data-theme="kaust-dark"] {
+  /* Apple Dark Theme */
+  --color-bg: #000000;
+  --color-surface: rgba(28, 28, 30, 0.7); /* Translucent dark glass */
+  --color-text: #F5F5F7;
+  --color-muted: #86868b;
+  --color-border: rgba(255, 255, 255, 0.12);
+
+  /* Primary Accent: Graphite Blue (Dark) */
+  --color-primary: #4F85B8;
+
+  /* KAUST brand palette (dark) */
+  --kaust-primary: #4F85B8;
+  --kaust-primary-hover: #6E9DCB;
+  --kaust-blue: #4FA8E8;
+  --kaust-green: #34C759;
+  --kaust-gold: #E0B84F;
+  --kaust-text: #F5F5F7;
+  --kaust-surface: rgba(28, 28, 30, 0.72);
+  --kaust-border: rgba(255, 255, 255, 0.12);
+}
+
+/* Ensure default text matches the theme */
+body {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+}
+
+/* Custom scrollbar to match sleek aesthetics */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+  border-radius: 4px;
+  opacity: 0.5;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
