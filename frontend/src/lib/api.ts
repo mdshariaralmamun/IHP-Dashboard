@@ -617,6 +617,42 @@ export function listAiModels(): Promise<AiModelsResponse> {
   return request<AiModelsResponse>('/api/ai/models');
 }
 
+export interface AiFeedbackInput {
+  question: string;
+  answer: string;
+  rating: 'up' | 'down';
+  mode?: string;
+  model?: string;
+  project_id?: number;
+  comment?: string;
+  sources?: { filename: string; snippet: string }[];
+}
+
+/** Record a rating on an answer - this is the local training signal. */
+export function sendAiFeedback(input: AiFeedbackInput): Promise<{ recorded: boolean }> {
+  return request<{ recorded: boolean }>('/api/ai/feedback', { method: 'POST' }, input);
+}
+
+export interface AiCorpusStats {
+  documents: number;
+  chunks: number;
+  embedded_chunks: number;
+  by_source: Record<string, number>;
+}
+
+/** Document retrieval (no model) - shows what the knowledge base can cite. */
+export function searchAiDocuments(
+  query: string,
+  k = 5,
+): Promise<{
+  count: number;
+  corpus: AiCorpusStats;
+  hits: { filename: string; snippet: string; score: number }[];
+}> {
+  const params = new URLSearchParams({ q: query, k: String(k) });
+  return request('/api/ai/search?' + params.toString(), { method: 'GET' });
+}
+
 export function listCorpus(): Promise<CorpusDoc[]> {
   return request<CorpusDoc[]>('/api/ai/corpus');
 }

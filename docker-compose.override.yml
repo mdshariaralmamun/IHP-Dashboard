@@ -15,5 +15,10 @@ services:
     # Planner / O&M tracker files are read from the host directory ./trackers
     # (read-only: the app never writes there). Set Settings -> Trackers dir
     # to /trackers so the newest _DDMMYYYY file is picked up automatically.
+    #
+    # ./archive_text holds the TEXT extracted from the engineering archive
+    # (one .txt per source document, same folder tree). The AI corpus ingest
+    # reads it from /archive_text; keep it read-only.
     volumes:
       - ./trackers:/trackers:ro
+      - ./archive_text:/archive_text:ro

@@ -291,25 +291,47 @@ def _chat_anthropic(
         return None
 
 
-def embed(text: str) -> list[float] | None:
-    """Return an embedding vector for the given text, or None if unavailable.
+def embed_many(texts: list[str], batch_size: int = 8) -> list[list[float] | None]:
+    """Embed several texts, batched. Returns one entry per input (None on failure).
 
-    Currently only supported with Ollama provider.
+    Uses Ollama's current /api/embed endpoint (which takes a list and is much
+    faster than one call per chunk) and falls back to the legacy single-input
+    /api/embeddings endpoint on older servers.
     """
+    results: list[list[float] | None] = [None] * len(texts)
+    if not texts:
+        return results
     settings = get_settings()
     provider = _eff("AI_PROVIDER", settings.AI_PROVIDER)
     if provider.lower() != "ollama":
-        return None
+        return results
     base = _eff("AI_BASE_URL", settings.AI_BASE_URL).rstrip("/")
     embed_model = _eff("AI_EMBED_MODEL", settings.AI_EMBED_MODEL)
-    embed_url = f"{base}/api/embeddings"
-    payload = {"model": embed_model, "input": text}
-    response = _post(embed_url, payload)
-    if response is None:
+
+    for start in range(0, len(texts), max(1, batch_size)):
+        window = texts[start:start + batch_size]
+        response = _post(
+            f"{base}/api/embed", {"model": embed_model, "input": window}
+        )
+        vectors = (response or {}).get("embeddings")
+        if isinstance(vectors, list) and len(vectors) == len(window):
+            for offset, vector in enumerate(vectors):
+                if isinstance(vector, list) and vector:
+                    results[start + offset] = vector
+            continue
+        # Legacy server: one request per text.
+        for offset, text in enumerate(window):
+            legacy = _post(
+                f"{base}/api/embeddings", {"model": embed_model, "prompt": text}
+            )
+            vector = (legacy or {}).get("embedding")
+            if isinstance(vector, list) and vector:
+                results[start + offset] = vector
+    return results
+
+
+def embed(text: str) -> list[float] | None:
+    """Return an embedding vector for the given text, or None if unavailable."""
+    if not (text or "").strip():
         return None
-    data = response.get("data")
-    if data and isinstance(data, list) and len(data) > 0:
-        emb = data[0].get("embedding")
-        if emb is not None:
-            return emb
-    return None
+    return embed_many([text])[0]

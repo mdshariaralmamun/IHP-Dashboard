@@ -488,6 +488,71 @@ def archive_reindex(
     return summary
 
 
+@router.post("/archive/ingest")
+def archive_ingest_start(
+    path: str | None = None,
+    max_files: int = 5000,
+    embed: bool = True,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_capability(CAP_USERS_MANAGE)),
+):
+    """Index documents into the AI corpus (background job).
+
+    Defaults to the configured ARCHIVE_PATH; `path` overrides it for one run.
+    Text from every supported document is chunked, embedded and stored, which
+    is what makes "how did we do this before?" answerable with citations.
+    """
+    from ..core.config import get_settings
+    from ..services import ai_ingest_jobs, runtime_settings
+
+    overrides = runtime_settings.read_overrides()
+    settings = get_settings()
+    target = (
+        path
+        or overrides.get("ARCHIVE_PATH")
+        or str(getattr(settings, "ARCHIVE_PATH", "") or "")
+    )
+    # The shipped text corpus (extracted archive documents) is mounted here.
+    if not target and Path("/archive_text").is_dir():
+        target = "/archive_text"
+    if not target:
+        raise HTTPException(400, "No archive path configured (set ARCHIVE_PATH).")
+    if not Path(target).is_dir():
+        raise HTTPException(400, f"Archive path is not a directory on the server: {target}")
+    return ai_ingest_jobs.start_archive_scan(
+        target, admin.id, max_files=max_files, embed=embed
+    )
+
+
+@router.get("/archive/ingest/status")
+def archive_ingest_status(
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Progress of the background archive scan + current corpus size."""
+    from ..ai import retrieval
+    from ..services import ai_ingest_jobs, archive_ingest
+
+    status = ai_ingest_jobs.read_status()
+    return {
+        "archive": status.get("archive"),
+        "backfill": status.get("backfill"),
+        "corpus": retrieval.stats(db),
+        "last_scan": archive_ingest.archive_status().get("last_scan"),
+    }
+
+
+@router.post("/archive/embeddings/backfill")
+def archive_embedding_backfill(
+    limit: int = 5000,
+    _admin: User = Depends(require_capability(CAP_USERS_MANAGE)),
+):
+    """Embed corpus chunks that were ingested while the AI provider was offline."""
+    from ..services import ai_ingest_jobs
+
+    return ai_ingest_jobs.start_backfill(limit=limit)
+
+
 @router.get("/archive/status")
 def archive_status(
     _user: User = Depends(get_current_user),

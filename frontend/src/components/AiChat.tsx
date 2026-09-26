@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { askAi, listAiModels } from '@/lib/api';
+import { askAi, listAiModels, sendAiFeedback } from '@/lib/api';
 import { useUser } from '@/lib/useUser';
 import type { AiModel, AiSource } from '@/lib/types';
 
@@ -84,6 +84,18 @@ function CopyIcon({ className = 'h-3.5 w-3.5' }: { className?: string }) {
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.8" />
       <path d="M15 6.5A2.5 2.5 0 0012.5 4H6a2 2 0 00-2 2v6.5A2.5 2.5 0 006.5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ThumbIcon({ down = false, className = 'h-3.5 w-3.5' }: { down?: boolean; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true"
+      style={down ? { transform: 'rotate(180deg)' } : undefined}>
+      <path
+        d="M7 10v10H4.5A1.5 1.5 0 013 18.5v-7A1.5 1.5 0 014.5 10H7zm0 0l4.2-6.3A1.6 1.6 0 0114 4.6V9h4.6a2 2 0 012 2.4l-1.2 6A2 2 0 0117.4 19H7"
+        stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -262,7 +274,17 @@ function AssistantAvatar() {
   );
 }
 
-function MessageRow({ message, onCopy }: { message: Message; onCopy: () => void }) {
+function MessageRow({
+  message,
+  onCopy,
+  rating,
+  onRate,
+}: {
+  message: Message;
+  onCopy: () => void;
+  rating?: 'up' | 'down';
+  onRate?: (rating: 'up' | 'down') => void;
+}) {
   const [showSources, setShowSources] = useState(false);
   const sources = message.sources ?? [];
 
@@ -335,6 +357,37 @@ function MessageRow({ message, onCopy }: { message: Message; onCopy: () => void 
               {sources.length} source{sources.length === 1 ? '' : 's'}
             </button>
           )}
+          {onRate && !message.error && (
+            <span className="ml-0.5 flex items-center gap-0.5">
+              <button
+                type="button"
+                title="Good answer (saved as training signal)"
+                onClick={() => onRate('up')}
+                className={
+                  'rounded p-0.5 transition ' +
+                  (rating === 'up'
+                    ? 'bg-status-approved/15 text-status-approved'
+                    : 'text-apple-muted hover:text-status-approved')
+                }
+              >
+                <ThumbIcon />
+              </button>
+              <button
+                type="button"
+                title="Bad answer (saved as training signal)"
+                onClick={() => onRate('down')}
+                className={
+                  'rounded p-0.5 transition ' +
+                  (rating === 'down'
+                    ? 'bg-status-rejected/15 text-status-rejected'
+                    : 'text-apple-muted hover:text-status-rejected')
+                }
+              >
+                <ThumbIcon down />
+              </button>
+              {rating && <span className="text-[10px]">saved</span>}
+            </span>
+          )}
         </div>
 
         {showSources && sources.length > 0 && (
@@ -369,6 +422,7 @@ export default function AiChat() {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
   const [models, setModels] = useState<AiModel[]>([]);
   const [provider, setProvider] = useState('');
   const [model, setModel] = useState('');
@@ -450,6 +504,21 @@ export default function AiChat() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
+
+  function rate(message: Message, question: string, rating: 'up' | 'down') {
+    setRatings((prev) => ({ ...prev, [message.id]: rating }));
+    void sendAiFeedback({
+      question,
+      answer: message.text,
+      rating,
+      mode: message.mode,
+      model: message.model,
+      project_id: projectId,
+      sources: message.sources,
+    }).catch(() => {
+      /* rating is best-effort */
+    });
+  }
 
   function selectModel(name: string) {
     setModel(name);
@@ -614,17 +683,25 @@ export default function AiChat() {
 
           {/* Messages */}
           <div ref={scrollRef} className="chat-scroll flex-1 space-y-4 overflow-y-auto px-4 py-4">
-            {thread.map((message) => (
-              <MessageRow
-                key={message.id}
-                message={message}
-                onCopy={() => {
-                  if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                    void navigator.clipboard.writeText(message.text);
-                  }
-                }}
-              />
-            ))}
+            {thread.map((message, index) => {
+              const question =
+                [...thread.slice(0, index)]
+                  .reverse()
+                  .find((item) => item.role === 'user')?.text ?? '';
+              return (
+                <MessageRow
+                  key={message.id}
+                  message={message}
+                  rating={ratings[message.id]}
+                  onRate={(value) => rate(message, question, value)}
+                  onCopy={() => {
+                    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                      void navigator.clipboard.writeText(message.text);
+                    }
+                  }}
+                />
+              );
+            })}
 
             {busy && (
               <div className="animate-msg-in flex gap-2.5">

@@ -21,7 +21,7 @@ from ..ai import facts as facts_mod
 from ..ai import provider, retrieval
 from ..ai.corpus import chunk_text
 from ..core.config import get_settings
-from ..core.rbac import get_current_user
+from ..core.rbac import CAP_USERS_MANAGE, get_current_user, require_capability
 from ..db import get_db
 from ..models import (
     BoqMtoItem,
@@ -73,6 +73,17 @@ class AskIn(BaseModel):
 class AskOut(BaseModel):
     answer: str
     mode: str  # "llm" (model answer) | "live" (exact database answer) | "extractive"
+    sources: list[dict] = []
+
+
+class FeedbackIn(BaseModel):
+    question: str
+    answer: str = ""
+    rating: str  # "up" | "down"
+    mode: str = "llm"
+    model: str | None = None
+    project_id: int | None = None
+    comment: str | None = None
     sources: list[dict] = []
 
 
@@ -347,6 +358,10 @@ Rules:
    not restate the question.
 6. When asked to draft, summarise or explain you may write prose, but every fact
    in it must come from the context.
+7. The reference-document excerpts come from the IHP engineering archive and from
+   documents uploaded to the dashboard. Prefer them for "how did we do this
+   before?", specifications, quantities and past wording, and name the file you
+   used. They may be older than the live facts.
 
 Stage progression: Intake -> MOM Confirmed -> EAR Review -> Disposition ->
 SOW/BOQ -> ICR -> Construction -> Closeout -> Punch List.
@@ -509,9 +524,12 @@ def ask(
         body.question, body.project_id, db, facts=facts
     )
 
-    # Also do corpus retrieval
-    hits = retrieval.search(body.question, db, k=5)
-    corpus_sources = [{"filename": h["filename"], "snippet": h["text"][:200]} for h in hits]
+    # Document retrieval: the engineering archive + documents uploaded to the
+    # dashboard, scoped to the project when the question is about one.
+    hits = retrieval.search(body.question, db, k=4, project_id=body.project_id)
+    corpus_sources = [
+        {"filename": h["filename"], "snippet": h["text"][:200]} for h in hits
+    ]
 
     # Build user message with all context
     user_content = body.question
@@ -519,8 +537,16 @@ def ask(
     if db_context:
         context_blocks.append(db_context)
     if hits:
-        corpus_text = "\n\n".join(f"[{h['filename']}]: {h['text']}" for h in hits)
-        context_blocks.append(f"[Knowledge base documents]\n{corpus_text}")
+        corpus_text = "\n\n".join(
+            f"[{h['filename']} | chunk {h['chunk_index']}]\n{h['text']}" for h in hits
+        )
+        context_blocks.append(
+            "[Reference documents - the IHP engineering archive and documents "
+            "uploaded to the dashboard, retrieved by relevance]\n"
+            "These excerpts are real project documents. When you use one, mention "
+            "its file name. Where a document disagrees with the live database "
+            "facts above, the live facts win.\n\n" + corpus_text
+        )
 
     if context_blocks:
         user_content = "\n\n".join(context_blocks) + f"\n\nQuestion: {body.question}"
@@ -542,6 +568,74 @@ def ask(
 
     all_sources = db_sources + corpus_sources
     return AskOut(answer=text, mode="llm", sources=all_sources[:6])
+
+
+# ---------------------------------------------------------------------------
+# Retrieval, feedback and training data
+# ---------------------------------------------------------------------------
+
+
+@router.get("/search")
+def ai_search(
+    q: str,
+    k: int = 5,
+    project_id: int | None = None,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Document retrieval only (no model) - used to verify the corpus."""
+    from ..ai import retrieval
+
+    hits = retrieval.search(q, db, k=max(1, min(k, 20)), project_id=project_id)
+    return {
+        "query": q,
+        "count": len(hits),
+        "corpus": retrieval.stats(db),
+        "hits": [
+            {
+                "filename": hit["filename"],
+                "chunk_index": hit["chunk_index"],
+                "score": hit["score"],
+                "keyword_score": hit["keyword_score"],
+                "vector_score": hit["vector_score"],
+                "snippet": hit["text"][:400],
+            }
+            for hit in hits
+        ],
+    }
+
+
+@router.post("/feedback")
+def ai_feedback(
+    body: FeedbackIn,
+    user: User = Depends(get_current_user),
+):
+    """Record a 👍/👎 on an answer; this is the local training signal."""
+    from ..services import ai_training
+
+    if body.rating not in ("up", "down"):
+        raise HTTPException(400, "rating must be 'up' or 'down'")
+    return ai_training.record_feedback(user.id, body.model_dump())
+
+
+@router.get("/feedback/stats")
+def ai_feedback_stats(
+    _admin: User = Depends(get_current_user),
+):
+    from ..services import ai_training
+
+    return ai_training.feedback_stats()
+
+
+@router.post("/training/export")
+def ai_training_export(
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_capability(CAP_USERS_MANAGE)),
+):
+    """Export the chat-format fine-tuning dataset (feedback + live fact pairs)."""
+    from ..services import ai_training
+
+    return ai_training.export_dataset(db)
 
 
 # ---------------------------------------------------------------------------

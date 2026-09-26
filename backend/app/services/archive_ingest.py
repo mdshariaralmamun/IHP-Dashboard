@@ -27,6 +27,7 @@ from typing import Any
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from ..ai import provider
 from ..ai.corpus import chunk_text
 from ..models import CorpusChunk, CorpusDocument, User
 
@@ -161,8 +162,15 @@ def scan_archive(
     db: Session,
     user: User,
     max_files: int = 1000,
+    embed: bool = True,
+    progress: Any = None,
 ) -> dict[str, Any]:
-    """Walk `root` and ingest supported documents into the corpus."""
+    """Walk `root` and ingest supported documents into the corpus.
+
+    `embed=True` also stores a vector per chunk (batched), which is what makes
+    semantic retrieval work; it needs the AI provider to be reachable.
+    `progress` is an optional callback receiving the running counters.
+    """
     root = Path(root)
     if not root.is_dir():
         raise ValueError(f"Not a directory: {root}")
@@ -172,6 +180,7 @@ def scan_archive(
 
     started = time.time()
     seen = ingested = skipped_unchanged = skipped_unsupported = failed = 0
+    chunks_total = embedded = 0
     bytes_total = 0
     by_type: dict[str, int] = {}
     errors: list[dict[str, str]] = []
@@ -227,25 +236,44 @@ def scan_archive(
         )
         db.add(doc)
         db.flush()
+        vectors: list[list[float] | None] = [None] * len(chunks)
+        if embed:
+            try:
+                vectors = provider.embed_many(chunks)
+            except Exception as exc:  # noqa: BLE001 — retrieval falls back to keywords
+                errors.append({"file": rel, "error": f"embedding failed: {exc}"[:200]})
+        embedded += sum(1 for v in vectors if v)
         for idx, text_chunk in enumerate(chunks):
             db.add(CorpusChunk(
                 document_id=doc.id,
                 chunk_index=idx,
                 text=text_chunk,
                 project_id=None,
+                embedding=vectors[idx] if idx < len(vectors) else None,
             ))
         db.commit()
 
+        chunks_total += len(chunks)
         files_state[rel] = {**fingerprint, "doc_id": doc.id}
         ingested += 1
         bytes_total += stat.st_size
         by_type[ext] = by_type.get(ext, 0) + 1
+        if progress:
+            progress({
+                "seen": seen, "ingested": ingested, "chunks": chunks_total + len(chunks),
+                "embedded": embedded, "failed": failed,
+                "skipped_unchanged": skipped_unchanged,
+                "current": rel, "bytes": bytes_total,
+                "elapsed_s": round(time.time() - started, 1),
+            })
 
     state["last_scan"] = {
         "root": str(root),
         "at": datetime.now(timezone.utc).isoformat(),
         "seen": seen,
         "ingested": ingested,
+        "chunks": chunks_total,
+        "embedded_chunks": embedded,
         "skipped_unchanged": skipped_unchanged,
         "skipped_unsupported": skipped_unsupported,
         "failed": failed,
@@ -258,6 +286,8 @@ def scan_archive(
         "root": str(root),
         "seen": seen,
         "ingested": ingested,
+        "chunks": chunks_total,
+        "embedded_chunks": embedded,
         "skipped_unchanged": skipped_unchanged,
         "skipped_unsupported": skipped_unsupported,
         "failed": failed,
@@ -275,4 +305,44 @@ def archive_status() -> dict[str, Any]:
     return {
         "last_scan": state.get("last_scan"),
         "tracked_files": len(state.get("files", {})),
+    }
+
+
+def backfill_embeddings(
+    db: Session,
+    limit: int = 2000,
+    batch_size: int = 8,
+    progress: Any = None,
+) -> dict[str, Any]:
+    """Embed corpus chunks that were ingested while the provider was offline.
+
+    Chunks with a NULL embedding still work for keyword search, but they cannot
+    take part in semantic ranking, so this runs until every chunk has a vector.
+    """
+    started = time.time()
+    rows = db.scalars(
+        select(CorpusChunk)
+        .where(CorpusChunk.embedding.is_(None))
+        .order_by(CorpusChunk.id)
+        .limit(limit)
+    ).all()
+    embedded = 0
+    for start in range(0, len(rows), batch_size):
+        window = rows[start:start + batch_size]
+        vectors = provider.embed_many([c.text for c in window], batch_size=batch_size)
+        for chunk, vector in zip(window, vectors):
+            if vector:
+                chunk.embedding = vector
+                embedded += 1
+        db.commit()
+        if progress:
+            progress({
+                "embedded": embedded, "scanned": min(start + batch_size, len(rows)),
+                "pending": max(len(rows) - start - batch_size, 0),
+                "elapsed_s": round(time.time() - started, 1),
+            })
+    return {
+        "candidates": len(rows),
+        "embedded": embedded,
+        "seconds": round(time.time() - started, 1),
     }
