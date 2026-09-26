@@ -286,11 +286,19 @@ _ON_HOLD = re.compile(r"\b(on[ -]?hold|paused|stopped)\b", re.I)
 _THIS_WEEK = re.compile(
     r"\b(this week|due today|today|next 7 days|coming week|due soon)\b", re.I
 )
+#: Tolerant of typos ("asign To") and of the many ways people ask this.
 _ASSIGN_ASK = re.compile(
-    r"\b(assigned to|assign to|assignee|assigned|owner|owns|responsible|"
-    r"who is (?:the )?ear|in charge|point of contact)\b",
+    r"(\bas+ign(?:ed|ee|ment)?\s*(?:to)?\b|\bowner\b|\bowns\b|"
+    r"\bresponsible\b|\bin charge\b|\bpoint of contact\b|\bwho is (?:the )?ear\b)",
     re.I,
 )
+
+
+def _people_in(value: str | None) -> list[str]:
+    """Split an "Assigned to" cell: MS Project joins resources with commas."""
+    if not value:
+        return []
+    return [p.strip() for p in re.split(r"[,;/]|\band\b", value) if p.strip()]
 _UNSCHEDULED = re.compile(
     r"\b(unscheduled|no finish date|without a finish|missing a finish|not scheduled)\b",
     re.I,
@@ -388,31 +396,82 @@ def _count_answer(question: str, facts: dict[str, Any]) -> str | None:
     return "Live totals:\n" + "\n".join(lines)
 
 
-def _assignment_answer(facts: dict[str, Any], division: str | None) -> str | None:
-    """Group the live rows by the person the Planner assigned them to."""
+def named_owner(facts: dict[str, Any], question: str) -> str | None:
+    """The owner named in the question, if any ("what is X working on?")."""
+    ql = question.lower()
+    for row in facts.get("assignments") or []:
+        for person in _people_in(row.get("assigned_to")) + _people_in(row.get("execution_lead")):
+            if len(person) > 3 and person.lower() in ql:
+                return person
+    return None
+
+
+def _assignment_answer(
+    facts: dict[str, Any], division: str | None, question: str = ""
+) -> str | None:
+    """Who holds the work: grouped by person, or one person's projects."""
     rows = facts.get("assignments") or []
     if division:
         rows = [row for row in rows if row["phase"] == division]
     if not rows:
+        others = facts.get("assignments") or []
+        if division and others:
+            # Do not dead-end: say where owner data does exist.
+            from collections import Counter as _Counter
+
+            by_division = _Counter(row["phase"] for row in others)
+            return (
+                f"**None** of the {division}-division rows carry an owner in the "
+                'Planner "Assigned to" column. Owners exist for: '
+                + ", ".join(f"{k} {v}" for k, v in by_division.most_common())
+                + "."
+            )
         if division:
             return (
                 f"**None.** No live {division}-division project carries an owner in "
                 'the Planner "Assigned to" column.'
             )
         return None
+
+    # "what is Assam Hmshw working on?" -> that person's projects.
+    ql = question.lower()
+    asked: str | None = None
+    for row in rows:
+        for person in _people_in(row.get("assigned_to")) + _people_in(row.get("execution_lead")):
+            if len(person) > 3 and person.lower() in ql:
+                asked = person
+                break
+        if asked:
+            break
+    if asked:
+        mine = [
+            row for row in rows
+            if asked.lower() in (row.get("assigned_to") or "").lower()
+            or asked.lower() in (row.get("execution_lead") or "").lower()
+        ]
+        lines = [
+            f"- **{row['pr_number']}** — {row['title'][:70]} | {row['phase']} | "
+            f"{(row.get('stage') or '').replace('_', ' ').title()}"
+            for row in mine[:12]
+        ]
+        extra = f"\n_+{len(mine) - 12} more_" if len(mine) > 12 else ""
+        return f"**{asked}** holds **{len(mine)}** live project(s):\n" + "\n".join(lines) + extra
+
     by_person: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
-        person = row.get("assigned_to") or row.get("execution_lead") or "unassigned"
-        by_person.setdefault(str(person), []).append(row)
-    lines: list[str] = []
+        for person in _people_in(row.get("assigned_to")) or [
+            row.get("execution_lead") or "unassigned"
+        ]:
+            by_person.setdefault(str(person), []).append(row)
+    lines = []
     for person, items in sorted(by_person.items(), key=lambda kv: -len(kv[1]))[:12]:
         sample = ", ".join(i["pr_number"] for i in items[:4])
         more = f" +{len(items) - 4} more" if len(items) > 4 else ""
         lines.append(f"- **{person}** ({len(items)}): {sample}{more}")
     scope = f" in the {division} division" if division else ""
     return (
-        f"**{len(rows)}** live projects{scope} have an owner in the Planner "
-        f"(column \"Assigned to\"):" + "\n" + "\n".join(lines)
+        f"**{len(rows)}** live projects{scope} carry an owner in the Planner "
+        '(column "Assigned to"):' + "\n" + "\n".join(lines)
     )
 
 
@@ -431,8 +490,10 @@ def answer(question: str, facts: dict[str, Any]) -> str | None:
     wants_count = bool(_ASK_COUNT.search(q))
 
     # "Who is the EAR assigned to?" - the Planner's "Assigned to" column.
-    if _ASSIGN_ASK.search(q):
-        assigned = _assignment_answer(facts, division)
+    # Also fires when the question names a person who owns work, so
+    # "what is Assam Hmshw working on?" works without a keyword.
+    if _ASSIGN_ASK.search(q) or named_owner(facts, q):
+        assigned = _assignment_answer(facts, division, q)
         if assigned:
             return assigned
 

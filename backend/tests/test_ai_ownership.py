@@ -84,6 +84,29 @@ def test_who_is_assigned_is_answered_deterministically(live_projects):
     assert direct is not None and "Test Engineer" in direct
 
 
+def test_typo_and_multi_name_cells_are_handled(live_projects):
+    """"EAR asign To" (typo) must work, and MS Project joins owners with commas."""
+    from app.models import Project
+
+    db = live_projects
+    project = db.query(Project).filter(Project.pr_number == "PR-99001").first()
+    # Move the row into the EAR division so the EAR-scoped question applies.
+    project.planner_bucket = "EAR"
+    project.description = (
+        project.description.replace("Division: Construction", "Division: EAR")
+        + "\nAssigned To: Test Engineer, Second Engineer\nExecution Lead: Test Lead"
+    )
+    db.commit()
+    pack = facts_mod.collect(db)
+
+    typo = facts_mod.answer("EAR asign To", pack)
+    assert typo is not None
+    assert "Test Engineer" in typo and "Second Engineer" in typo
+
+    mine = facts_mod.answer("what is Second Engineer working on?", pack)
+    assert mine is not None and "PR-99001" in mine and "Second Engineer" in mine
+
+
 def test_unknown_owner_does_not_crash(live_projects):
     """No ownership column at all: the assistant must say so, not invent one."""
     from app.db import SessionLocal
