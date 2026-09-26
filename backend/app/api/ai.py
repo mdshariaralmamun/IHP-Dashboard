@@ -242,6 +242,45 @@ def _build_project_context(question: str, project_id: int | None, db: Session) -
                     context_parts.append(_fmt_project(p))
                     sources.append({"filename": f"Project {p.pr_number}", "snippet": f"{p.title} — {STAGE_LABELS.get(p.stage or '', p.stage or '')}"})
 
+    # 4. Nothing specific was referenced (no PR number, no scoped project).
+    #    Without this the assistant had NO data for portfolio questions such as
+    #    "how many EAR projects are there?" and answered from general knowledge.
+    #    A compact live overview is cheap and keeps the prompt small.
+    if not context_parts:
+        from collections import Counter
+
+        from ..services.planner_status import phase_for
+
+        projects = db.query(Project).all()
+        by_phase = Counter(
+            phase_for(bucket=p.planner_bucket, stage=p.stage) or "unassigned"
+            for p in projects
+        )
+        by_bucket = Counter((p.planner_bucket or "unassigned") for p in projects)
+        by_stage = Counter((p.stage or "unknown") for p in projects)
+        overview = [
+            "[Live IHP project database]",
+            f"Total projects: {len(projects)}",
+            "By division: " + ", ".join(f"{k} {v}" for k, v in by_phase.most_common()),
+            "By planner bucket: " + ", ".join(f"{k} {v}" for k, v in by_bucket.most_common()),
+            "By workflow stage: " + ", ".join(f"{k} {v}" for k, v in by_stage.most_common()),
+        ]
+        recent = sorted(projects, key=lambda p: p.id, reverse=True)[:12]
+        overview.append("Most recent projects:")
+        for p in recent:
+            overview.append(
+                f"  {p.pr_number} — {(p.title or '')[:70]} "
+                f"[{p.planner_bucket or '-'} | {p.stage}]"
+            )
+        context_parts.append("\n".join(overview))
+        sources.append({
+            "filename": "IHP project database",
+            "snippet": (
+                f"{len(projects)} projects — "
+                + ", ".join(f"{k} {v}" for k, v in by_phase.most_common())
+            ),
+        })
+
     return "\n".join(context_parts), sources
 
 
