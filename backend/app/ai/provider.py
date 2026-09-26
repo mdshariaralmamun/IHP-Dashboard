@@ -26,7 +26,12 @@ def _eff(key: str, env_default: str) -> str:
     return runtime_settings.effective(key, env_default)
 
 
-def _post(url: str, payload: dict[str, Any], headers: dict[str, str] | None = None) -> dict[str, Any] | None:
+def _post(
+    url: str,
+    payload: dict[str, Any],
+    headers: dict[str, str] | None = None,
+    timeout: int = 120,
+) -> dict[str, Any] | None:
     """POST JSON to a URL and return decoded JSON response, or None on failure."""
     try:
         data = json.dumps(payload).encode("utf-8")
@@ -39,11 +44,18 @@ def _post(url: str, payload: dict[str, Any], headers: dict[str, str] | None = No
             headers=req_headers,
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except Exception as e:
-        print(f"LLM provider request failed: {e}")
+        print(f"LLM provider request failed ({url}): {e}")
         return None
+
+
+def _chat_timeout(settings: Any) -> int:
+    try:
+        return int(getattr(settings, "AI_CHAT_TIMEOUT", 600) or 600)
+    except (TypeError, ValueError):
+        return 600
 
 
 def _get(url: str, headers: dict[str, str] | None = None,
@@ -191,7 +203,7 @@ def _chat_ollama(
     }
     if system:
         payload["system"] = system
-    response = _post(f"{base}/api/chat", payload)
+    response = _post(f"{base}/api/chat", payload, timeout=_chat_timeout(settings))
     if response is None:
         return None
     message = response.get("message")
@@ -253,7 +265,7 @@ def _chat_openai_compat(
         headers["HTTP-Referer"] = "https://ihp-platform.kaust.edu.sa"
         headers["X-Title"] = "IHP Design and Construction Platform"
 
-    response = _post(url, payload, headers)
+    response = _post(url, payload, headers, timeout=_chat_timeout(settings))
     if response is None:
         return None
     try:
@@ -282,7 +294,7 @@ def _chat_anthropic(
         "x-api-key": _eff("AI_API_KEY", settings.ANTHROPIC_API_KEY),
         "anthropic-version": "2023-06-01",
     }
-    response = _post(url, payload, headers)
+    response = _post(url, payload, headers, timeout=_chat_timeout(settings))
     if response is None:
         return None
     try:

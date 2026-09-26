@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     AI_BASE_URL: str = "http://localhost:11434"
     AI_CHAT_MODEL: str = "llama3.2:3b"
     AI_EMBED_MODEL: str = "nomic-embed-text"
+    # Seconds to wait for one chat completion. CPU-only hosts need minutes for
+    # a long prompt (and more while an embedding job shares the CPU).
+    AI_CHAT_TIMEOUT: int = 600
     # Context window sent to Ollama. Ollama's own default is only 2048 tokens,
     # which is smaller than the assistant's live-context block, so requests
     # came back as HTTP 400 "exceeds context" and the chat showed nothing.
