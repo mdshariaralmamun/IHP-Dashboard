@@ -60,7 +60,9 @@ services:
   #   gunzip < backups/ihp_2026-01-01T00-00-00.sql.gz \
   #     | docker compose exec -T db psql -U ihp -d ihp
   db-backup:
-    image: prodrigestivill/postgres-backup:16
+    # NB: the maintained image name ends in -local (plain
+    # prodrigestivill/postgres-backup does not exist on Docker Hub).
+    image: prodrigestivill/postgres-backup-local:16
     restart: unless-stopped
     environment:
       POSTGRES_HOST: db
