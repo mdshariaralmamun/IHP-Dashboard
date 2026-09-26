@@ -526,7 +526,12 @@ def ask(
 
     # Document retrieval: the engineering archive + documents uploaded to the
     # dashboard, scoped to the project when the question is about one.
-    hits = retrieval.search(body.question, db, k=4, project_id=body.project_id)
+    # Excerpts are kept short: the Cloudflare proxy aborts a response after
+    # ~100 s, and on this CPU-only host every extra 1,000 prompt characters of
+    # prefill is several seconds of latency.
+    hits = retrieval.search(
+        body.question, db, k=4, project_id=body.project_id, max_chars=800
+    )
     corpus_sources = [
         {"filename": h["filename"], "snippet": h["text"][:200]} for h in hits
     ]

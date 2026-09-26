@@ -71,6 +71,9 @@ class Settings(BaseSettings):
     # Seconds to wait for one chat completion. CPU-only hosts need minutes for
     # a long prompt (and more while an embedding job shares the CPU).
     AI_CHAT_TIMEOUT: int = 600
+    # Cap the generated answer so one request cannot outlive the proxy timeout
+    # (~100 s at Cloudflare). 512 tokens is a few paragraphs.
+    AI_NUM_PREDICT: int = 512
     # Context window sent to Ollama. Ollama's own default is only 2048 tokens,
     # which is smaller than the assistant's live-context block, so requests
     # came back as HTTP 400 "exceeds context" and the chat showed nothing.

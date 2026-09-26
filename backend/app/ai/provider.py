@@ -195,11 +195,12 @@ def _chat_ollama(
     # assistant's live-context block - it then rejects the request with
     # HTTP 400 and the chat looks empty. Always ask for an explicit window.
     num_ctx = int(getattr(settings, "AI_NUM_CTX", 8192) or 8192)
+    num_predict = int(getattr(settings, "AI_NUM_PREDICT", 512) or 512)
     payload: dict[str, Any] = {
         "model": model,
         "messages": [{"role": m["role"], "content": m["content"]} for m in messages],
         "stream": False,
-        "options": {"num_ctx": num_ctx},
+        "options": {"num_ctx": num_ctx, "num_predict": num_predict},
     }
     if system:
         payload["system"] = system
