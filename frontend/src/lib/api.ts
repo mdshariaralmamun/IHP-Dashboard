@@ -617,6 +617,54 @@ export function listAiModels(): Promise<AiModelsResponse> {
   return request<AiModelsResponse>('/api/ai/models');
 }
 
+export interface AiProviderInfo {
+  id: string;
+  label: string;
+  kind: string;
+  local: boolean;
+  docs: string;
+  notes: string;
+  default_models: string[];
+  base_url: string;
+  model: string;
+  key_env: string;
+  key_present: boolean;
+  configured: boolean;
+  selected: boolean;
+  has_saved_key: boolean;
+}
+
+export interface AiProvidersResponse {
+  selected: string;
+  count: number;
+  providers: AiProviderInfo[];
+}
+
+/** The provider catalogue: every market API the platform can talk to. */
+export function listAiProviders(): Promise<AiProvidersResponse> {
+  return request<AiProvidersResponse>('/api/ai/providers');
+}
+
+export interface AiProviderTestResult {
+  ok: boolean;
+  provider: string;
+  label?: string;
+  model?: string;
+  seconds?: number;
+  reply?: string;
+  error?: string;
+}
+
+/** Probe one provider with credentials from the form (not stored). */
+export function testAiProvider(input: {
+  provider: string;
+  model?: string;
+  base_url?: string;
+  api_key?: string;
+}): Promise<AiProviderTestResult> {
+  return request<AiProviderTestResult>('/api/ai/providers/test', { method: 'POST' }, input);
+}
+
 export interface AiFeedbackInput {
   question: string;
   answer: string;

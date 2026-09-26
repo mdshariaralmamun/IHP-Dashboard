@@ -563,10 +563,15 @@ export interface AiModel {
   size: number | null;
   family?: string | null;
   params?: string | null;
+  /** Which provider serves this model. */
+  provider?: string;
+  /** "live" = listed by the vendor, "suggested" = catalogue default. */
+  source?: 'live' | 'suggested';
 }
 
 export interface AiModelsResponse {
   provider: string;
+  provider_label?: string;
   active: string;
   models: AiModel[];
 }

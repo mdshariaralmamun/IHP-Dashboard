@@ -13,6 +13,7 @@ Trade and viewer roles get 403 here and never see the page in the UI.
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,8 @@ from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from ..ai import provider as ai_provider
+from ..ai import providers_catalog
 from ..core.config import get_settings
 from ..core.rbac import CAP_USERS_MANAGE, require_capability
 from ..models import User
@@ -37,6 +40,13 @@ OVERRIDABLE_KEYS = {
     "AI_EMBED_MODEL",
     "AI_API_KEY",
     "OPENROUTER_API_KEY",
+    # Embeddings can stay local while chat uses a cloud vendor
+    "AI_EMBED_PROVIDER",
+    "AI_EMBED_BASE_URL",
+    # Stashed so switching the chat provider away from Ollama does not break
+    # local embeddings
+    "AI_BASE_URL_OLLAMA",
+    "AI_CHAT_MODEL_OLLAMA",
     # Project variables (used by budget / BOQ generation)
     "VAT_RATE",
     "USD_SAR_RATE",
@@ -63,10 +73,16 @@ _ARCHIVE_SUGGESTIONS = [
 class SettingsOut(BaseModel):
     # AI provider
     ai_provider: str
+    ai_provider_label: str
+    ai_provider_kind: str
+    ai_provider_docs: str
+    ai_provider_local: bool
     ai_base_url: str
     ai_chat_model: str
     ai_embed_model: str
+    ai_embed_provider: str
     ai_api_key_present: bool
+    ai_key_env: str
     # Project variables
     vat_rate: float
     usd_sar_rate: float
@@ -95,6 +111,7 @@ class SettingsUpdate(BaseModel):
     ai_base_url: str | None = None
     ai_chat_model: str | None = None
     ai_embed_model: str | None = None
+    ai_embed_provider: str | None = None
     ai_api_key: str | None = None
     openrouter_api_key: str | None = None
     vat_rate: float | None = None
@@ -108,6 +125,14 @@ class SettingsUpdate(BaseModel):
     clear: list[str] | None = None  # keys to revert to env
 
 
+#: Per-provider overrides written by the provider picker, e.g. AI_KEY_DEEPSEEK.
+_PER_PROVIDER_KEY = re.compile(r"^AI_(KEY|BASE_URL|CHAT_MODEL)_[A-Z0-9-]+$")
+
+
+def _is_overridable(key: str) -> bool:
+    return key in OVERRIDABLE_KEYS or bool(_PER_PROVIDER_KEY.match(key))
+
+
 def _archive_default() -> str:
     for candidate in _ARCHIVE_SUGGESTIONS:
         if Path(candidate).is_dir():
@@ -118,16 +143,20 @@ def _archive_default() -> str:
 def _settings_out() -> SettingsOut:
     s = get_settings()
     overrides = runtime_settings.read_overrides()
+    selected = ai_provider.effective_provider(s)
+    spec = providers_catalog.resolve(selected)
     return SettingsOut(
-        ai_provider=overrides.get("AI_PROVIDER", s.AI_PROVIDER),
-        ai_base_url=overrides.get("AI_BASE_URL", s.AI_BASE_URL),
-        ai_chat_model=overrides.get("AI_CHAT_MODEL", s.AI_CHAT_MODEL),
+        ai_provider=selected,
+        ai_provider_label=spec.label if spec else selected,
+        ai_provider_kind=spec.kind if spec else "",
+        ai_provider_docs=spec.docs if spec else "",
+        ai_provider_local=bool(spec.local) if spec else False,
+        ai_base_url=ai_provider.base_url_for(spec, s) if spec else s.AI_BASE_URL,
+        ai_chat_model=ai_provider.default_model_for(spec, s) if spec else "",
         ai_embed_model=overrides.get("AI_EMBED_MODEL", s.AI_EMBED_MODEL),
-        ai_api_key_present=bool(
-            overrides.get("OPENROUTER_API_KEY", s.OPENROUTER_API_KEY)
-            if overrides.get("AI_PROVIDER", s.AI_PROVIDER).lower() == "openrouter"
-            else overrides.get("AI_API_KEY", s.AI_API_KEY)
-        ),
+        ai_embed_provider=overrides.get("AI_EMBED_PROVIDER", "ollama"),
+        ai_api_key_present=bool(ai_provider.api_key_for(spec, s)) if spec else False,
+        ai_key_env=spec.env_key if spec else "",
         vat_rate=float(overrides.get("VAT_RATE") or 0.15),
         usd_sar_rate=float(overrides.get("USD_SAR_RATE") or 3.75),
         default_currency=overrides.get("DEFAULT_CURRENCY") or "SAR",
@@ -165,36 +194,69 @@ def update_settings(
 
     if body.clear:
         for key in body.clear:
-            if key not in OVERRIDABLE_KEYS:
+            if not _is_overridable(key):
                 raise HTTPException(400, f"Cannot clear unknown key {key!r}")
             overrides.pop(key, None)
 
+    settings = get_settings()
     updates: dict[str, Any] = {}
-    if body.ai_provider is not None:
-        allowed_providers = {"ollama", "openrouter", "openai", "anthropic", "deepseek", "kimi", "glm"}
-        pv = body.ai_provider.strip().lower()
-        if pv not in allowed_providers:
-            raise HTTPException(400, f"ai_provider must be one of {sorted(allowed_providers)}")
-        updates["AI_PROVIDER"] = pv
 
-        # Auto-migrate: if switching to openrouter and there's an OpenRouter
-        # key stored under the old generic AI_API_KEY field, move it.
-        if pv == "openrouter":
+    # Which provider are these values for? The one being switched to, else the
+    # one already selected.
+    active_id = ai_provider.effective_provider(settings)
+    if body.ai_provider is not None:
+        spec = providers_catalog.resolve(body.ai_provider)
+        if spec is None:
+            available = ", ".join(s.id for s in providers_catalog.all_specs())
+            raise HTTPException(400, f"Unknown ai_provider. Available: {available}")
+
+        # Remember the Ollama endpoint/model before leaving it, so retrieval
+        # (which embeds locally) keeps working after the switch.
+        if spec.id != "ollama":
+            current_base = overrides.get("AI_BASE_URL", settings.AI_BASE_URL)
+            if ":11434" in str(current_base) and not overrides.get("AI_BASE_URL_OLLAMA"):
+                updates["AI_BASE_URL_OLLAMA"] = current_base
+            current_model = overrides.get("AI_CHAT_MODEL", settings.AI_CHAT_MODEL)
+            if active_id == "ollama" and current_model and not overrides.get("AI_CHAT_MODEL_OLLAMA"):
+                updates["AI_CHAT_MODEL_OLLAMA"] = current_model
+
+        updates["AI_PROVIDER"] = spec.id
+
+        # Back-compat: keep the legacy OpenRouter slot in step.
+        if spec.id == "openrouter":
             old_key = overrides.get("AI_API_KEY", "")
             if old_key and not overrides.get("OPENROUTER_API_KEY"):
                 updates["OPENROUTER_API_KEY"] = old_key
                 overrides.pop("AI_API_KEY", None)
+        active_id = spec.id
 
+    spec = providers_catalog.resolve(active_id)
+    provider_key = (spec.id if spec else active_id).upper()
+
+    # Per-provider keys (`AI_*_<PROVIDER>`) are the source of truth, and the
+    # legacy generic keys are mirrored so old .env files and scripts keep
+    # working. `default_model_for`/\`api_key_for\` read the per-provider slot first.
     if body.ai_base_url is not None:
+        updates[f"AI_BASE_URL_{provider_key}"] = body.ai_base_url.strip()
         updates["AI_BASE_URL"] = body.ai_base_url.strip()
     if body.ai_chat_model is not None:
+        updates[f"AI_CHAT_MODEL_{provider_key}"] = body.ai_chat_model.strip()
         updates["AI_CHAT_MODEL"] = body.ai_chat_model.strip()
     if body.ai_embed_model is not None:
         updates["AI_EMBED_MODEL"] = body.ai_embed_model.strip()
+    if body.ai_embed_provider is not None:
+        embed_spec = providers_catalog.resolve(body.ai_embed_provider)
+        if embed_spec is None:
+            raise HTTPException(400, f"Unknown ai_embed_provider {body.ai_embed_provider!r}")
+        updates["AI_EMBED_PROVIDER"] = embed_spec.id
     if body.ai_api_key is not None:
+        updates[f"AI_KEY_{provider_key}"] = body.ai_api_key.strip()
         updates["AI_API_KEY"] = body.ai_api_key.strip()
+        if provider_key == "OPENROUTER":
+            updates["OPENROUTER_API_KEY"] = body.ai_api_key.strip()
     if body.openrouter_api_key is not None:
         updates["OPENROUTER_API_KEY"] = body.openrouter_api_key.strip()
+        updates["AI_KEY_OPENROUTER"] = body.openrouter_api_key.strip()
     if body.vat_rate is not None:
         if not 0 <= body.vat_rate <= 1:
             raise HTTPException(400, "vat_rate must be between 0 and 1 (e.g. 0.15 for 15%)")

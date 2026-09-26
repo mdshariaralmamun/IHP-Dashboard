@@ -6,13 +6,20 @@ import ErrorBox from '@/components/ErrorBox';
 import Header from '@/components/Header';
 import { useTheme } from '@/components/ThemeProvider';
 import { useUser } from '@/lib/useUser';
+import { listAiProviders, testAiProvider, type AiProviderInfo } from '@/lib/api';
 
 interface SettingsResp {
   ai_provider: string;
+  ai_provider_label: string;
+  ai_provider_kind: string;
+  ai_provider_docs: string;
+  ai_provider_local: boolean;
   ai_base_url: string;
   ai_chat_model: string;
   ai_embed_model: string;
+  ai_embed_provider: string;
   ai_api_key_present: boolean;
+  ai_key_env: string;
   theme: string;
   overrides: Record<string, unknown>;
   env: { AI_BASE_URL: string; AI_CHAT_MODEL: string; AI_EMBED_MODEL: string };
@@ -47,45 +54,13 @@ interface TestResp {
   hint?: string;
 }
 
-const PRESETS: { label: string; provider: string; base: string; chat: string; embed: string; apiKeyHelp: string }[] = [
-  {
-    label: 'Ollama (local)',
-    provider: 'ollama',
-    base: 'http://localhost:11434',
-    chat: 'gemma3:27b',
-    embed: 'nomic-embed-text',
-    apiKeyHelp: 'No API key needed for local Ollama.',
-  },
-  {
-    label: 'OpenRouter (free)',
-    provider: 'openrouter',
-    base: 'https://openrouter.ai/api/v1',
-    chat: 'nvidia/nemotron-3-ultra-550b-a55b:free',
-    embed: '',
-    apiKeyHelp: 'Get a free API key from https://openrouter.ai/keys.',
-  },
-  {
-    label: 'Anthropic',
-    provider: 'anthropic',
-    base: 'https://api.anthropic.com',
-    chat: 'claude-3-5-sonnet-20241022',
-    embed: '',
-    apiKeyHelp: 'Get an API key from https://console.anthropic.com/.',
-  },
-  {
-    label: 'OpenAI',
-    provider: 'openai',
-    base: 'https://api.openai.com/v1',
-    chat: 'gpt-4o-mini',
-    embed: 'text-embedding-3-small',
-    apiKeyHelp: 'Get an API key from https://platform.openai.com/.',
-  },
-];
+/** Providers offered as one-click chips (the full list lives in the select). */
+const QUICK_PICKS = ['ollama', 'deepseek', 'openai', 'anthropic', 'google-gemini', 'openrouter'];
 
 const OPENROUTER_FREE_MODELS = [
   { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', label: 'NVIDIA Nemotron 3 Ultra 550B' },
-  { id: 'deepseek/deepseek-v4-flash-0731:free', label: 'DeepSeek V4 Flash' },
-  { id: 'google/gemma-4-26b-a4b-it:free', label: 'Google Gemma 4 26B' },
+  { id: 'deepseek/deepseek-chat', label: 'DeepSeek Chat' },
+  { id: 'google/gemma-2-27b-it', label: 'Google Gemma 2 27B' },
 ];
 
 export default function SettingsPage() {
@@ -121,6 +96,7 @@ function SettingsView() {
   const [trackerFiles, setTrackerFiles] = useState<TrackerFilesResp | null>(null);
   const [test, setTest] = useState<TestResp | null>(null);
   const [testing, setTesting] = useState(false);
+  const [providers, setProviders] = useState<AiProviderInfo[]>([]);
 
   useEffect(() => {
     setToken(localStorage.getItem('ihp_access_token'));
@@ -149,6 +125,10 @@ function SettingsView() {
       setArchivePath(d.archive_path);
       setTrackersDir(d.trackers_dir ?? '');
       setPrRequestDir(d.pr_request_dir ?? '');
+      // The provider catalogue drives the picker below.
+      listAiProviders()
+        .then((catalogue) => setProviders(catalogue.providers))
+        .catch(() => setProviders([]));
       // Also fetch live tracker-file resolution (newest dated versions)
       fetch('/api/admin/settings/tracker-files', {
         headers: { Authorization: `Bearer ${token}` },
@@ -178,8 +158,7 @@ function SettingsView() {
           ai_base_url: baseUrl,
           ai_chat_model: chatModel,
           ai_embed_model: embedModel,
-          ai_api_key: aiProvider !== 'openrouter' && apiKey ? apiKey : undefined,
-          openrouter_api_key: aiProvider === 'openrouter' && apiKey ? apiKey : undefined,
+          ai_api_key: apiKey || undefined,
           theme,
           vat_rate: vatRate,
           usd_sar_rate: usdSarRate,
@@ -230,18 +209,25 @@ function SettingsView() {
     }
   }
 
+  /** Probe the provider exactly as typed - credentials are not stored. */
   async function testConnection() {
-    if (!token) return;
     setTesting(true);
     setTest(null);
     try {
-      // Persist the form first so the test uses the values the user just entered
-      await save();
-      const r = await fetch('/api/admin/settings/ai/test', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+      const result = await testAiProvider({
+        provider: aiProvider,
+        model: chatModel || undefined,
+        base_url: baseUrl || undefined,
+        api_key: apiKey || undefined,
       });
-      setTest(await r.json());
+      setTest({
+        ok: result.ok,
+        model: result.model,
+        reply: result.reply,
+        latency_ms: result.seconds ? Math.round(result.seconds * 1000) : undefined,
+        error: result.ok ? undefined : result.error ?? 'No response from the provider.',
+        hint: providers.find((p) => p.id === aiProvider)?.key_env,
+      });
     } catch (e) {
       setTest({ ok: false, error: e instanceof Error ? e.message : 'Test failed' });
     } finally {
@@ -249,11 +235,14 @@ function SettingsView() {
     }
   }
 
-  function applyPreset(p: typeof PRESETS[number]) {
-    setAiProvider(p.provider);
-    setBaseUrl(p.base);
-    setChatModel(p.chat);
-    setEmbedModel(p.embed);
+  function applyProvider(id: string) {
+    const info = providers.find((p) => p.id === id);
+    setAiProvider(id);
+    setApiKey('');
+    if (!info) return;
+    const needsUrl = ['custom', 'azure-openai', 'cloudflare'].includes(id);
+    setBaseUrl(needsUrl ? '' : info.base_url || '');
+    setChatModel(info.default_models?.[0] ?? '');
   }
 
   return (
@@ -283,34 +272,64 @@ function SettingsView() {
                 cloud providers work via OpenAI-compatible or Anthropic-compatible APIs.
               </p>
 
-              <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-                {PRESETS.map((p) => (
-                  <button
-                    key={p.label}
-                    type="button"
-                    onClick={() => applyPreset(p)}
-                    className="rounded-md border border-apple-border px-3 py-2 text-left text-xs font-semibold text-apple-text hover:bg-apple-surface/50"
-                  >
-                    {p.label}
-                  </button>
-                ))}
+              <div className="mt-4 flex flex-wrap gap-2">
+                {QUICK_PICKS.map((id) => {
+                  const info = providers.find((p) => p.id === id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => applyProvider(id)}
+                      className={
+                        'rounded-full border px-3 py-1.5 text-xs font-semibold transition ' +
+                        (aiProvider === id
+                          ? 'border-apple-primary bg-apple-primary/10 text-apple-primary'
+                          : 'border-apple-border text-apple-text hover:bg-apple-surface/50')
+                      }
+                    >
+                      {info?.label ?? id}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-                <Field label="AI Provider">
+                <Field label="AI Provider (all market APIs)">
                   <select
                     value={aiProvider}
-                    onChange={(e) => setAiProvider(e.target.value)}
+                    onChange={(e) => applyProvider(e.target.value)}
                     className="w-full rounded-md border border-apple-border px-3 py-1.5 text-sm bg-white"
                   >
-                    <option value="ollama">Ollama (local)</option>
-                    <option value="openrouter">OpenRouter</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="deepseek">DeepSeek</option>
-                    <option value="kimi">Kimi / Moonshot</option>
-                    <option value="glm">GLM</option>
+                    <optgroup label="Local / self-hosted">
+                      {providers.filter((p) => p.local).map((p) => (
+                        <option key={p.id} value={p.id}>{p.label}{p.key_present ? ' \u2713' : ''}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Cloud APIs">
+                      {providers.filter((p) => !p.local).map((p) => (
+                        <option key={p.id} value={p.id}>{p.label}{p.key_present ? ' \u2713' : ''}</option>
+                      ))}
+                    </optgroup>
                   </select>
+                  {(() => {
+                    const info = providers.find((p) => p.id === aiProvider);
+                    if (!info) return null;
+                    return (
+                      <p className="mt-1 text-[10px] text-apple-muted">
+                        {info.kind} API
+                        {info.key_env ? ' \u00b7 key from ' + info.key_env : ''}
+                        {info.notes ? ' \u00b7 ' + info.notes : ''}
+                        {info.docs && (
+                          <>
+                            {' '}\u00b7{' '}
+                            <a href={info.docs} target="_blank" rel="noopener noreferrer" className="underline text-primary">
+                              docs
+                            </a>
+                          </>
+                        )}
+                      </p>
+                    );
+                  })()}
                 </Field>
                 <Field label="Base URL">
                   <input
@@ -320,7 +339,7 @@ function SettingsView() {
                     className="w-full rounded-md border border-apple-border px-3 py-1.5 text-sm font-mono"
                   />
                 </Field>
-                <Field label={aiProvider === 'openrouter' ? 'OpenRouter API key' : 'API key (optional)'}>
+                <Field label={'API key' + (data.ai_key_env ? ' (' + data.ai_key_env + ')' : '')}>
                   <input
                     type="password"
                     value={apiKey}
@@ -328,14 +347,9 @@ function SettingsView() {
                     placeholder={data.ai_api_key_present ? '•••••• (set; leave empty to keep)' : 'paste key…'}
                     className="w-full rounded-md border border-apple-border px-3 py-1.5 text-sm font-mono"
                   />
-                  {aiProvider === 'openrouter' && (
-                    <p className="mt-1 text-[10px] text-apple-muted">
-                      Get a free key at{' '}
-                      <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="underline text-primary">
-                        openrouter.ai/keys
-                      </a>
-                    </p>
-                  )}
+                  <p className="mt-1 text-[10px] text-apple-muted">
+                    Stored per provider in settings.json; leave empty to keep the current key.
+                  </p>
                 </Field>
                 <Field label="Chat model">
                   {aiProvider === 'openrouter' ? (
@@ -362,12 +376,20 @@ function SettingsView() {
                       )}
                     </>
                   ) : (
-                    <input
-                      value={chatModel}
-                      onChange={(e) => setChatModel(e.target.value)}
-                      placeholder="gemma3:27b"
-                      className="w-full rounded-md border border-apple-border px-3 py-1.5 text-sm font-mono"
-                    />
+                    <>
+                      <input
+                        value={chatModel}
+                        onChange={(e) => setChatModel(e.target.value)}
+                        list="suggested-models"
+                        placeholder="model name"
+                        className="w-full rounded-md border border-apple-border px-3 py-1.5 text-sm font-mono"
+                      />
+                      <datalist id="suggested-models">
+                        {(providers.find((p) => p.id === aiProvider)?.default_models ?? []).map((m) => (
+                          <option key={m} value={m} />
+                        ))}
+                      </datalist>
+                    </>
                   )}
                 </Field>
                 <Field label="Embed model (optional)">

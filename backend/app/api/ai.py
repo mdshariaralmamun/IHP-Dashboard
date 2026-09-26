@@ -50,8 +50,10 @@ class ChatIn(BaseModel):
     project_id: int | None = None
     message: str
     scope: str = "all"  # "all" | "project" | "standards"
-    #: Optional per-request model override (local Ollama model name).
+    #: Optional per-request model override (Ollama model name or vendor model).
     model: str | None = None
+    #: Optional per-request provider override (see GET /api/ai/providers).
+    provider: str | None = None
 
 
 class ChatOut(BaseModel):
@@ -63,8 +65,10 @@ class ChatOut(BaseModel):
 class AskIn(BaseModel):
     question: str
     project_id: int | None = None
-    #: Optional per-request model override (local Ollama model name).
+    #: Optional per-request model override (Ollama model name or vendor model).
     model: str | None = None
+    #: Optional per-request provider override (see GET /api/ai/providers).
+    provider: str | None = None
     #: Previous turns, oldest first: [{"role": "user"|"assistant", "content": ...}].
     #: Lets "and which of those are overdue?" resolve against the last answer.
     history: list[dict[str, str]] | None = None
@@ -375,12 +379,125 @@ Divisions: EAR, Design, Construction, Close-up.
 
 
 @router.get("/models")
-def ai_models(_user: User = Depends(get_current_user)):
-    """Local models the assistant can use (so the UI can offer a switcher)."""
+def ai_models(
+    provider_id: str | None = None,
+    _user: User = Depends(get_current_user),
+):
+    """Models the assistant can use, for the chat model switcher.
+
+    Ollama returns the pulled local models; cloud vendors are asked for their
+    catalogue when a key is configured, otherwise the catalogue's suggestions
+    come back flagged `source: "suggested"`.
+    """
+    from ..ai import providers_catalog
+
+    settings = get_settings()
+    effective = provider_id or provider.effective_provider(settings)
+    spec = providers_catalog.resolve(effective)
+    model = provider.default_model_for(spec, settings) if spec else ""
     return {
-        "provider": provider._eff("AI_PROVIDER", get_settings().AI_PROVIDER),
-        "active": provider._eff("AI_CHAT_MODEL", get_settings().AI_CHAT_MODEL),
-        "models": provider.list_models(),
+        "provider": effective,
+        "provider_label": spec.label if spec else effective,
+        "active": model,
+        "models": provider.list_models(provider_id),
+    }
+
+
+@router.get("/providers")
+def ai_providers(_user: User = Depends(get_current_user)):
+    """The provider catalogue: every market API the platform can talk to.
+
+    A provider is `configured` when a key (or, for local servers, a reachable
+    base URL) is present. The Settings page renders this list.
+    """
+    from ..ai import providers_catalog
+    from ..services import runtime_settings
+
+    settings = get_settings()
+    overrides = runtime_settings.read_overrides()
+    selected = provider.effective_provider(settings)
+
+    out = []
+    for spec in providers_catalog.all_specs():
+        key = provider.api_key_for(spec, settings)
+        configured = bool(key) or spec.kind == "ollama" or spec.id == "custom"
+        out.append({
+            "id": spec.id,
+            "label": spec.label,
+            "kind": spec.kind,
+            "local": spec.local,
+            "docs": spec.docs,
+            "notes": spec.notes,
+            "default_models": list(spec.default_models),
+            "base_url": provider.base_url_for(spec, settings),
+            "model": provider.default_model_for(spec, settings),
+            "key_env": spec.env_key,
+            "key_present": bool(key),
+            "configured": configured,
+            "selected": spec.id == selected,
+            "has_saved_key": bool(overrides.get(f"AI_KEY_{spec.id.upper()}")),
+        })
+    return {"selected": selected, "count": len(out), "providers": out}
+
+
+class ProviderTestIn(BaseModel):
+    provider: str | None = None
+    model: str | None = None
+    base_url: str | None = None
+    api_key: str | None = None
+
+
+@router.post("/providers/test")
+def ai_provider_test(
+    body: ProviderTestIn,
+    _admin: User = Depends(require_capability(CAP_USERS_MANAGE)),
+):
+    """Send a one-token prompt to a provider and report what happened.
+
+    Lets an admin verify a key/base URL before switching the whole platform
+    over to it. Credentials in the body are used for this probe only and are
+    never stored here (save them through the Settings endpoint).
+    """
+    import time as _time
+
+    from ..ai import providers_catalog
+    from ..services import runtime_settings
+
+    settings = get_settings()
+    spec = providers_catalog.resolve(body.provider or provider.effective_provider(settings))
+    if spec is None:
+        raise HTTPException(400, f"Unknown provider {body.provider!r}")
+
+    saved = runtime_settings.read_overrides()
+    try:
+        if body.base_url:
+            runtime_settings.write_overrides(
+                {**saved, f"AI_BASE_URL_{spec.id.upper()}": body.base_url.strip()}
+            )
+        if body.api_key:
+            runtime_settings.write_overrides(
+                {**saved, f"AI_KEY_{spec.id.upper()}": body.api_key.strip()}
+            )
+        started = _time.time()
+        reply = provider.chat(
+            [{"role": "user", "content": "Reply with the single word: ready"}],
+            model=body.model,
+            provider=spec.id,
+        )
+        elapsed = round(_time.time() - started, 2)
+    finally:
+        runtime_settings.write_overrides(saved)
+
+    if reply is None:
+        return {
+            "ok": False, "provider": spec.id, "label": spec.label,
+            "seconds": elapsed,
+            "error": "No response - check the API key, the base URL and the model name.",
+        }
+    return {
+        "ok": True, "provider": spec.id, "label": spec.label,
+        "model": body.model or provider.default_model_for(spec, settings),
+        "seconds": elapsed, "reply": reply.strip()[:200],
     }
 
 
@@ -443,6 +560,7 @@ def chat(
         [{"role": "user", "content": user_content}],
         system=SYSTEM_PROMPT,
         model=body.model,
+        provider=body.provider,
     )
     text = reply or "(no response from provider)"
     unknown = facts_mod.unknown_pr_numbers(text, facts["pr_numbers"])
@@ -559,7 +677,9 @@ def ask(
     messages = _history_messages(body.history) + [
         {"role": "user", "content": user_content}
     ]
-    reply = provider.chat(messages, system=SYSTEM_PROMPT, model=body.model)
+    reply = provider.chat(
+        messages, system=SYSTEM_PROMPT, model=body.model, provider=body.provider
+    )
     text = reply or "(no response from provider)"
 
     # Hallucination guard: a PR number that is not in the database is flagged

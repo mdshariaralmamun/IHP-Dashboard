@@ -122,12 +122,16 @@ class TestSettings:
         )
         assert resp.status_code == 200
         assert resp.json()["ai_chat_model"] == "test-model"
-        assert resp.json()["overrides"] == {"AI_CHAT_MODEL": "test-model"}
+        overrides = resp.json()["overrides"]
+        # The generic key is kept for backwards compatibility and the
+        # per-provider key is what the provider layer reads first.
+        assert overrides["AI_CHAT_MODEL"] == "test-model"
+        assert set(overrides.values()) == {"test-model"}
 
         resp = client.patch(
             "/api/admin/settings",
             headers=admin_headers,
-            json={"clear": ["AI_CHAT_MODEL"]},
+            json={"clear": list(overrides.keys())},
         )
         assert resp.status_code == 200
         assert resp.json()["overrides"] == {}

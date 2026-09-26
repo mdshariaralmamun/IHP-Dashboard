@@ -425,6 +425,7 @@ export default function AiChat() {
   const [ratings, setRatings] = useState<Record<string, 'up' | 'down'>>({});
   const [models, setModels] = useState<AiModel[]>([]);
   const [provider, setProvider] = useState('');
+  const [providerLabel, setProviderLabel] = useState('');
   const [model, setModel] = useState('');
   const [modelsLoaded, setModelsLoaded] = useState(false);
 
@@ -461,6 +462,7 @@ export default function AiChat() {
       .then((res) => {
         if (!alive) return;
         setProvider(res.provider || '');
+        setProviderLabel(res.provider_label || '');
         setModels(res.models || []);
         const saved = typeof window !== 'undefined' ? window.localStorage.getItem(MODEL_KEY) : null;
         const savedModel = (res.models || []).find((item) => item.name === saved);
@@ -618,7 +620,7 @@ export default function AiChat() {
               <p className="flex items-center gap-1.5 text-[11px] text-apple-muted">
                 <span className="inline-block h-1.5 w-1.5 rounded-full bg-status-approved" />
                 <span className="truncate">
-                  {provider ? provider : 'AI'}
+                  {providerLabel || provider || 'AI'}
                   {model ? ' \u00b7 ' + model : ''}
                   {projectId ? ' \u00b7 PR ' + projectId : ' \u00b7 portfolio'}
                 </span>
@@ -665,6 +667,7 @@ export default function AiChat() {
                       {item.name}
                       {item.params ? ' (' + item.params + ')' : ''}
                       {item.size ? ' \u2013 ' + formatSize(item.size) : ''}
+                      {item.source === 'suggested' ? ' (suggested)' : ''}
                     </option>
                   ))}
                 </select>
