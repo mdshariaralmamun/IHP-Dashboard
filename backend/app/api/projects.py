@@ -512,9 +512,6 @@ def archive_ingest_start(
         or overrides.get("ARCHIVE_PATH")
         or str(getattr(settings, "ARCHIVE_PATH", "") or "")
     )
-    # The shipped text corpus (extracted archive documents) is mounted here.
-    if not target and Path("/archive_text").is_dir():
-        target = "/archive_text"
     if not target:
         raise HTTPException(400, "No archive path configured (set ARCHIVE_PATH).")
     if not Path(target).is_dir():
@@ -537,6 +534,7 @@ def archive_ingest_status(
     return {
         "archive": status.get("archive"),
         "backfill": status.get("backfill"),
+        "attachments": status.get("attachments"),
         "corpus": retrieval.stats(db),
         "last_scan": archive_ingest.archive_status().get("last_scan"),
     }
@@ -566,9 +564,25 @@ def archive_jobs_stop(
     """
     from ..services import ai_ingest_jobs
 
-    if kind not in ("archive", "backfill"):
-        raise HTTPException(400, "kind must be 'archive' or 'backfill'")
+    if kind not in ("archive", "backfill", "attachments"):
+        raise HTTPException(400, "kind must be 'archive', 'backfill' or 'attachments'")
     return ai_ingest_jobs.stop(kind)
+
+
+@router.post("/attachments/reindex")
+def attachments_reindex(
+    project_id: int | None = None,
+    limit: int = 5000,
+    admin: User = Depends(require_capability(CAP_USERS_MANAGE)),
+):
+    """Index stored project attachments into the AI corpus (background job).
+
+    The assistant answers from platform data only: the live database plus the
+    documents teams upload to projects.
+    """
+    from ..services import ai_ingest_jobs
+
+    return ai_ingest_jobs.start_attachment_index(admin.id, project_id, limit)
 
 
 @router.get("/archive/status")
@@ -1131,6 +1145,16 @@ async def upload_attachments(
     db.commit()
     for attachment in created:
         db.refresh(attachment)
+
+    # Index the uploaded documents into the AI corpus (text only: uploads stay
+    # fast, and the embedding backfill job adds vectors later).
+    from ..services import app_documents
+
+    for attachment in created:
+        try:
+            app_documents.index_attachment(db, attachment, user.id, embed=False)
+        except Exception:  # noqa: BLE001 — indexing must never fail an upload
+            db.rollback()
     return created
 
 
@@ -1153,6 +1177,13 @@ def delete_attachment(
     workflow.log_action(
         db, user, "attachment:delete", project, {"filename": attachment.filename}
     )
+    # The AI corpus keeps a text copy of the file; drop it with the file.
+    from ..services import app_documents
+
+    try:
+        app_documents.remove_attachment_index(db, attachment)
+    except Exception:  # noqa: BLE001 — never block a delete on corpus upkeep
+        db.rollback()
     _remove_file_best_effort(attachment.stored_path)
     db.delete(attachment)
     db.commit()

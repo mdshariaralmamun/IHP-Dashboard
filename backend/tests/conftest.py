@@ -86,6 +86,99 @@ def data_dir() -> Path:
     return Path(_TMP_DIR)
 
 
+@pytest.fixture()
+def live_projects():
+    """Three tracker-shaped test projects, removed again on teardown.
+
+    Shared by the AI fact-pack and app-document tests: they assert behaviour
+    that depends on real Planner fields (division, dates, flags).
+    """
+    from datetime import date, timedelta
+
+    from app.db import SessionLocal
+    from app.models import Project, User
+
+    def _tracker(*, division, start, finish, completion, priority="Medium", flags=""):
+        lines = [
+            "Type: BASELINE",
+            f"Division: {division}",
+            f"Priority: {priority}",
+            f"Start: {start}",
+            f"Finish: {finish}",
+            "Effort: 100 hours",
+            "Duration: 10 days",
+            f"Completion: {completion}%",
+            "Planner Sync: 2026-01-01",
+        ]
+        if flags:
+            lines.append(f"Flags: {flags}")
+        return "\n".join(lines)
+
+    today = date.today()
+    db = SessionLocal()
+    admin = db.query(User).filter(User.username == "admin").first()
+    created_by = admin.id if admin else 1
+    rows = [
+        Project(
+            pr_number="PR-99001",
+            title="Test overdue chiller replacement",
+            description=_tracker(
+                division="Construction",
+                priority="Urgent",
+                start=(today - timedelta(days=30)).isoformat(),
+                finish=(today - timedelta(days=9)).isoformat(),
+                completion=40,
+            ),
+            planner_bucket="CONSTRUCTION",
+            stage="CONSTRUCTION",
+            location="B4",
+            pi_name="Test PI",
+            created_by_id=created_by,
+        ),
+        Project(
+            pr_number="PR-99002",
+            title="Test design package",
+            description=_tracker(
+                division="Design",
+                start=(today - timedelta(days=2)).isoformat(),
+                finish=(today + timedelta(days=3)).isoformat(),
+                completion=10,
+            ),
+            planner_bucket="DESIGN",
+            stage="SOW_DRAFT",
+            created_by_id=created_by,
+        ),
+        Project(
+            pr_number="PR-99003",
+            title="Test on-hold works",
+            description=_tracker(
+                division="Construction",
+                start=(today - timedelta(days=5)).isoformat(),
+                finish=(today + timedelta(days=25)).isoformat(),
+                completion=50,
+                flags="ON HOLD",
+            ),
+            planner_bucket="CONSTRUCTION",
+            stage="CONSTRUCTION",
+            created_by_id=created_by,
+        ),
+    ]
+    for row in rows:
+        existing = db.query(Project).filter(Project.pr_number == row.pr_number).first()
+        if existing is None:
+            db.add(row)
+    db.commit()
+    try:
+        yield db
+    finally:
+        for pr in ["PR-99001", "PR-99002", "PR-99003"]:
+            row = db.query(Project).filter(Project.pr_number == pr).first()
+            if row is not None:
+                db.delete(row)
+        db.commit()
+        db.close()
+
+
 def login(client: TestClient, username: str, password: str) -> str:
     resp = client.post(
         "/api/auth/login", data={"username": username, "password": password}

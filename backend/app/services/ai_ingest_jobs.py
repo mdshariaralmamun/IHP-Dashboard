@@ -21,9 +21,11 @@ from ..models import User
 from . import archive_ingest
 
 _lock = threading.Lock()
-_state: dict[str, Any] = {"archive": None, "backfill": None}
+_state: dict[str, Any] = {"archive": None, "backfill": None, "attachments": None}
 #: Cooperative stop flags: the workers check them between batches/files.
-_stop: dict[str, bool] = {"archive": False, "backfill": False}
+_stop: dict[str, bool] = {
+    "archive": False, "backfill": False, "attachments": False,
+}
 
 
 def _should_stop(kind: str):
@@ -115,6 +117,54 @@ def _run_archive_scan(path: str, user_id: int, max_files: int, embed: bool) -> N
             _persist()
     finally:
         db.close()
+
+
+def _run_attachments(user_id: int, project_id: int | None, limit: int) -> None:
+    from . import app_documents
+
+    db = SessionLocal()
+    try:
+        summary = app_documents.index_attachments(
+            db, user_id=user_id, project_id=project_id, limit=limit,
+            embed=False, progress=_progress("attachments"),
+            should_stop=_should_stop("attachments"),
+        )
+        with _lock:
+            job = _state.get("attachments") or {}
+            job.update({
+                "running": False, "finished_at": _now(), "summary": summary,
+                "error": None,
+            })
+            _state["attachments"] = job
+            _persist()
+    except Exception as exc:  # noqa: BLE001
+        with _lock:
+            job = _state.get("attachments") or {}
+            job.update({"running": False, "finished_at": _now(), "error": str(exc)[:400]})
+            _state["attachments"] = job
+            _persist()
+    finally:
+        db.close()
+
+
+def start_attachment_index(
+    user_id: int, project_id: int | None = None, limit: int = 5000
+) -> dict[str, Any]:
+    with _lock:
+        if is_running("attachments"):
+            return {"started": False, "reason": "an attachment index is already running"}
+        _stop["attachments"] = False
+        _state["attachments"] = {
+            "running": True, "started_at": _now(), "updated_at": _now(),
+            "error": None, "stopping": False,
+            "scanned": 0, "indexed": 0, "chunks": 0, "skipped": 0, "failed": 0,
+        }
+        _persist()
+    thread = threading.Thread(
+        target=_run_attachments, args=(user_id, project_id, limit), daemon=True
+    )
+    thread.start()
+    return {"started": True, "project_id": project_id, "limit": limit}
 
 
 def _run_backfill(limit: int) -> None:
