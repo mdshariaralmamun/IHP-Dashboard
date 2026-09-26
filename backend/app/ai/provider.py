@@ -46,6 +46,18 @@ def _post(url: str, payload: dict[str, Any], headers: dict[str, str] | None = No
         return None
 
 
+def _get(url: str, headers: dict[str, str] | None = None,
+         timeout: int = 10) -> dict[str, Any] | None:
+    """GET JSON from a URL and return the decoded body, or None on failure."""
+    try:
+        req = urllib.request.Request(url, headers=headers or {}, method="GET")
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        print(f"LLM provider GET failed: {e}")
+        return None
+
+
 def available() -> tuple[bool, str | None]:
     """Return (is_available, reason).
 
@@ -59,7 +71,9 @@ def available() -> tuple[bool, str | None]:
         base_url = _eff("AI_BASE_URL", settings.AI_BASE_URL)
         if not base_url:
             return False, "AI_BASE_URL is not configured"
-        result = _post(f"{base_url.rstrip('/')}/api/tags", {})
+        # /api/tags is a GET endpoint. POSTing to it returns 405 and made the
+        # app report a perfectly healthy Ollama as "offline".
+        result = _get(f"{base_url.rstrip('/')}/api/tags")
         if result is None:
             return False, "Cannot reach Ollama at AI_BASE_URL (is Ollama running?)"
         return True, None
