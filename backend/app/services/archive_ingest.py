@@ -164,6 +164,7 @@ def scan_archive(
     max_files: int = 1000,
     embed: bool = True,
     progress: Any = None,
+    should_stop: Any = None,
 ) -> dict[str, Any]:
     """Walk `root` and ingest supported documents into the corpus.
 
@@ -185,7 +186,12 @@ def scan_archive(
     by_type: dict[str, int] = {}
     errors: list[dict[str, str]] = []
 
+    stopped = False
     for path in sorted(root.rglob("*")):
+        if should_stop is not None and should_stop():
+            stopped = True
+            errors.append({"file": "-", "error": "stopped on request"})
+            break
         if not path.is_file():
             continue
         seen += 1
@@ -278,6 +284,7 @@ def scan_archive(
         "skipped_unsupported": skipped_unsupported,
         "failed": failed,
         "by_type": by_type,
+        "stopped": stopped,
         "duration_s": round(time.time() - started, 2),
     }
     _save_state(state)
@@ -313,6 +320,7 @@ def backfill_embeddings(
     limit: int = 2000,
     batch_size: int = 8,
     progress: Any = None,
+    should_stop: Any = None,
 ) -> dict[str, Any]:
     """Embed corpus chunks that were ingested while the provider was offline.
 
@@ -327,7 +335,11 @@ def backfill_embeddings(
         .limit(limit)
     ).all()
     embedded = 0
+    stopped = False
     for start in range(0, len(rows), batch_size):
+        if should_stop is not None and should_stop():
+            stopped = True
+            break
         window = rows[start:start + batch_size]
         vectors = provider.embed_many([c.text for c in window], batch_size=batch_size)
         for chunk, vector in zip(window, vectors):
@@ -344,5 +356,6 @@ def backfill_embeddings(
     return {
         "candidates": len(rows),
         "embedded": embedded,
+        "stopped": stopped,
         "seconds": round(time.time() - started, 1),
     }

@@ -22,6 +22,26 @@ from . import archive_ingest
 
 _lock = threading.Lock()
 _state: dict[str, Any] = {"archive": None, "backfill": None}
+#: Cooperative stop flags: the workers check them between batches/files.
+_stop: dict[str, bool] = {"archive": False, "backfill": False}
+
+
+def _should_stop(kind: str):
+    return lambda: _stop.get(kind, False)
+
+
+def stop(kind: str) -> dict[str, Any]:
+    """Ask a running job to stop; in-flight work finishes, the rest is skipped."""
+    if kind not in _stop:
+        raise KeyError(kind)
+    _stop[kind] = True
+    with _lock:
+        job = _state.get(kind) or {}
+        job["stopping"] = True
+        job["updated_at"] = _now()
+        _state[kind] = job
+        _persist()
+    return {"stopping": True, "kind": kind}
 
 
 def _status_file() -> Path:
@@ -77,7 +97,7 @@ def _run_archive_scan(path: str, user_id: int, max_files: int, embed: bool) -> N
             raise RuntimeError(f"user {user_id} not found")
         summary = archive_ingest.scan_archive(
             Path(path), db, user, max_files=max_files, embed=embed,
-            progress=_progress("archive"),
+            progress=_progress("archive"), should_stop=_should_stop("archive"),
         )
         with _lock:
             job = _state.get("archive") or {}
@@ -101,7 +121,8 @@ def _run_backfill(limit: int) -> None:
     db = SessionLocal()
     try:
         summary = archive_ingest.backfill_embeddings(
-            db, limit=limit, progress=_progress("backfill")
+            db, limit=limit, progress=_progress("backfill"),
+            should_stop=_should_stop("backfill"),
         )
         with _lock:
             job = _state.get("backfill") or {}
@@ -126,9 +147,10 @@ def start_archive_scan(
     with _lock:
         if is_running("archive"):
             return {"started": False, "reason": "an archive scan is already running"}
+        _stop["archive"] = False
         _state["archive"] = {
             "running": True, "path": path, "started_at": _now(),
-            "updated_at": _now(), "error": None,
+            "updated_at": _now(), "error": None, "stopping": False,
             "seen": 0, "ingested": 0, "chunks": 0, "embedded": 0, "failed": 0,
         }
         _persist()
@@ -143,9 +165,11 @@ def start_backfill(limit: int = 5000) -> dict[str, Any]:
     with _lock:
         if is_running("backfill"):
             return {"started": False, "reason": "an embedding backfill is already running"}
+        _stop["backfill"] = False
         _state["backfill"] = {
             "running": True, "started_at": _now(), "updated_at": _now(),
-            "error": None, "embedded": 0, "scanned": 0, "pending": None,
+            "error": None, "stopping": False,
+            "embedded": 0, "scanned": 0, "pending": None,
         }
         _persist()
     thread = threading.Thread(target=_run_backfill, args=(limit,), daemon=True)

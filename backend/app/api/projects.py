@@ -553,6 +553,24 @@ def archive_embedding_backfill(
     return ai_ingest_jobs.start_backfill(limit=limit)
 
 
+@router.post("/archive/jobs/stop")
+def archive_jobs_stop(
+    kind: str = "backfill",
+    _admin: User = Depends(require_capability(CAP_USERS_MANAGE)),
+):
+    """Ask the archive scan or the embedding backfill to stop.
+
+    Long jobs share the CPU with the chat model, and a slow chat answer is cut
+    off by the ~100 s Cloudflare proxy limit, so being able to pause them (and
+    resume later - both are resumable) matters operationally.
+    """
+    from ..services import ai_ingest_jobs
+
+    if kind not in ("archive", "backfill"):
+        raise HTTPException(400, "kind must be 'archive' or 'backfill'")
+    return ai_ingest_jobs.stop(kind)
+
+
 @router.get("/archive/status")
 def archive_status(
     _user: User = Depends(get_current_user),
