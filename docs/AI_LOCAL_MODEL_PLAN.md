@@ -50,6 +50,34 @@ a document disagrees.
   (system/user/assistant) examples: rated-good answers plus exact question and
   answer pairs generated from the live fact pack.
 
+## 2b. What is actually loaded right now
+
+| Item | Value |
+| --- | --- |
+| Archive source | `E:\ENGINEERING_DATA` (IHP_Projects + archives), 473 GB drive |
+| Candidates selected | 3,161 engineering documents (SOW/BOQ/EAR/MOM/spec/quote/ICR) |
+| Extracted text | 3,011 documents, 100.8 MB of text (137 scanned PDFs had no text layer) |
+| Shipped to server | 13.6 MB gzip -> `/opt/ihp/archive_text` (read-only at `/archive_text`) |
+| Corpus | 3,011 documents, 52,743 chunks, keyword retrieval live |
+| Embeddings | embedding backfill is **paused** (552 of 52,743 chunks) - resume any time |
+| Verified | "Which archived document covers a nitrogen line installation?" -> answers and cites `archive/PR 9446 ... 03_WCH/...WCH.pdf.txt` in ~17 s |
+
+Long jobs share the CPU with the chat model, and **Cloudflare aborts a proxied
+request at ~100 s** (HTTP 524), so the knobs below matter:
+
+```bash
+# resume / stop the embedding backfill (resumable, ~2 chunks/s)
+curl -X POST "$API/api/projects/archive/embeddings/backfill?limit=60000" -H "Authorization: Bearer $TOKEN"
+curl -X POST "$API/api/projects/archive/jobs/stop?kind=backfill"          -H "Authorization: Bearer $TOKEN"
+# progress
+curl "$API/api/projects/archive/ingest/status" -H "Authorization: Bearer $TOKEN"
+```
+
+Best practice: run the backfill overnight (it is CPU-saturating), and keep chat
+answers short (`AI_NUM_PREDICT=512`, excerpts capped at 800 chars) so a single
+request stays well inside the 100 s proxy window. The proper long-term fix for
+long generations is streaming (SSE) or a submit-and-poll endpoint.
+
 ## 3. Hardware reality
 
 | Machine | CPU | RAM | GPU | Role |
