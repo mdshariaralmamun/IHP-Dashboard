@@ -47,6 +47,17 @@ def _seed_corpus(db):
     return nitrogen.id, chiller.id
 
 
+def test_chunk_text_bounds_every_chunk():
+    """A document with no blank lines must still produce bounded chunks."""
+    from app.ai.corpus import chunk_text
+
+    long_paragraph = ("Nitrogen line scope item with pressure test. " * 400).strip()
+    chunks = chunk_text(long_paragraph, max_chars=500)
+    assert len(chunks) > 1
+    assert all(len(chunk) <= 500 for chunk in chunks)
+    assert sum(len(chunk) for chunk in chunks) > 4000
+
+
 def test_chunk_text_strips_nul_bytes():
     """Postgres rejects NUL in text columns; extraction emits them."""
     from app.ai.corpus import chunk_text
