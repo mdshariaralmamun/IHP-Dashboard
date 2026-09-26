@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ApiError, getToken, login } from '@/lib/api';
 
@@ -85,7 +86,14 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="mt-12 text-xs text-apple-muted">
+        <p className="mt-8 text-sm text-apple-muted">
+          No account yet?{' '}
+          <Link href="/request-access" className="font-medium text-primary underline">
+            Request access
+          </Link>
+        </p>
+
+        <p className="mt-6 text-xs text-apple-muted">
           Project Delivery Platform &middot; Authorized Access Only
         </p>
       </div>

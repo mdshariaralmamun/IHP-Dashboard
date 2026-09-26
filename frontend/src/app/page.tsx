@@ -1,12 +1,35 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 import Header from '@/components/Header';
 import DashboardView from '@/components/DashboardView';
+import PublicDashboardView from '@/components/PublicDashboardView';
+import { getToken } from '@/lib/api';
 import { useUser } from '@/lib/useUser';
-import Link from 'next/link';
 
+/**
+ * Root route.
+ *
+ * Signed out -> the public read-only overview (aggregates only) with a single
+ * action: request access. Signed in -> the internal executive dashboard.
+ */
 export default function HomePage() {
+  const [mode, setMode] = useState<'checking' | 'public' | 'internal'>('checking');
+
+  useEffect(() => {
+    setMode(getToken() ? 'internal' : 'public');
+  }, []);
+
+  if (mode === 'checking') {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-apple-muted">
+        Loading…
+      </div>
+    );
+  }
+  if (mode === 'public') return <PublicDashboardView />;
   return (
     <AuthGuard>
       <HomeView />

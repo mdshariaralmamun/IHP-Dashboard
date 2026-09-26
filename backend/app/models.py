@@ -19,12 +19,25 @@ ROLE_TRADE = "trade"
 ROLE_PLANNING = "planning"
 ROLE_CONSTRUCTION_MANAGER = "construction_manager"
 ROLE_TEAM_MEMBER = "team_member"
+#: Read-only account: sees dashboards and the register, changes nothing.
+ROLE_VIEWER = "viewer"
 ROLES = {
     ROLE_ADMIN,
     ROLE_TRADE,
     ROLE_PLANNING,
     ROLE_CONSTRUCTION_MANAGER,
     ROLE_TEAM_MEMBER,
+    ROLE_VIEWER,
+}
+
+#: Roles a visitor may ask for on the public "request access" form. Admin is
+#: never self-service - it is granted only from inside the app.
+REQUESTABLE_ROLES: dict[str, str] = {
+    ROLE_VIEWER: "Viewer - read-only dashboards and project register",
+    ROLE_TEAM_MEMBER: "Team member - view + comment on assigned work",
+    ROLE_TRADE: "Trade engineer - submit input for one trade",
+    ROLE_PLANNING: "Planning - trackers, imports and schedule",
+    ROLE_CONSTRUCTION_MANAGER: "Construction manager - field execution",
 }
 
 # Trades (nullable; only meaningful for role == "trade")
@@ -745,4 +758,49 @@ class CrewAssignment(Base):
     )
 
     project: Mapped["Project"] = relationship()
+
+
+class AccessRequest(Base):
+    """A visitor's request for an account, decided by an admin in the app.
+
+    The public site is a read-only dashboard; nothing else is reachable without
+    an account. A visitor asks for access here, the request shows up in the
+    admin inbox, and approving it creates the user plus a one-time invite link
+    that the admin sends on whichever channel they prefer. The token is stored
+    on this row (single use, expiring) so no change to the users table is
+    needed.
+    """
+
+    __tablename__ = "access_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    full_name: Mapped[str] = mapped_column(String(200))
+    email: Mapped[str] = mapped_column(String(200), index=True)
+    phone: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    company: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    #: Role the visitor asked for (see REQUESTABLE_ROLES).
+    requested_role: Mapped[str] = mapped_column(String(32), default=ROLE_VIEWER)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: pending | approved | rejected
+    status: Mapped[str] = mapped_column(String(16), default="pending", index=True)
+    #: Admin note shown in the inbox (why it was rejected, etc).
+    decision_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    decided_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    #: Set on approval: the one-time link that lets the invitee set a password.
+    invite_token: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    invite_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    invite_used_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    #: The account created on approval.
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    #: Client metadata for the admin inbox (rate limiting + traceability).
+    source_ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
 

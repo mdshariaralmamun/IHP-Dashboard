@@ -132,6 +132,9 @@ ROLE_DEFAULT_PERMISSIONS: dict[str, frozenset[str]] = {
         }
     ),
     "team_member": frozenset({CAP_MOM_AGENDA}),
+    # Read-only: dashboards, register and documents, but no write capability.
+    # This is what the public "request access" form offers by default.
+    "viewer": frozenset(),
 }
 
 

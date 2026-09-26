@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from sqlalchemy import select
 
 from .api import (
+    access_requests,
     admin,
     ai,
     auth,
@@ -26,6 +27,7 @@ from .api import (
     intake,
     mom,
     projects,
+    public,
     roles,
     settings,
     sow_boq,
@@ -120,6 +122,10 @@ def create_app() -> FastAPI:
     app.include_router(settings.router, prefix="/api")
     app.include_router(mto.router, prefix="/api")
     app.include_router(data_points.router, prefix="/api")
+    # Public (no auth): the read-only dashboard + the access-request form.
+    app.include_router(public.router, prefix="/api")
+    # Admin inbox for those requests (users.manage capability).
+    app.include_router(access_requests.router, prefix="/api")
 
     # RBAC routers
     app.include_router(roles.router)

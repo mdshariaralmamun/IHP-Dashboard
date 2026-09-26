@@ -612,6 +612,125 @@ export function askAi(
   });
 }
 
+// --- Public access (no account) -------------------------------------------
+
+export interface PublicDashboard {
+  totals: { projects: number; scheduled: number; without_planner_date: number };
+  by_division: Record<string, number>;
+  by_stage: Record<string, number>;
+  windows: {
+    overdue: number;
+    this_week: number;
+    on_hold: number;
+    high_risk: number;
+    behind_plan: number;
+    design_gate: number;
+  };
+  planner_sync: string | null;
+  generated_at: string;
+  requestable_roles: { value: string; label: string }[];
+}
+
+export interface AccessRequestRow {
+  id: number;
+  reference: string;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  company: string | null;
+  requested_role: string;
+  requested_role_label: string;
+  message: string | null;
+  status: 'pending' | 'approved' | 'rejected';
+  decision_note: string | null;
+  created_at: string;
+  decided_at: string | null;
+  invite_token: string | null;
+  invite_url: string | null;
+  invite_expires_at: string | null;
+  invite_used_at: string | null;
+  user_id: number | null;
+  source_ip: string | null;
+}
+
+export interface AccessRequestInbox {
+  pending: number;
+  approved: number;
+  rejected: number;
+  roles: { value: string; label: string }[];
+  items: AccessRequestRow[];
+}
+
+/** Aggregate, anonymous portfolio metrics for the public dashboard. */
+export function getPublicDashboard(): Promise<PublicDashboard> {
+  return request<PublicDashboard>('/api/public/dashboard');
+}
+
+/** Ask for an account from the public form. */
+export function requestAccess(input: {
+  full_name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  requested_role: string;
+  message?: string;
+}): Promise<{ ok: boolean; reference: string; message: string }> {
+  return request('/api/public/access-request', { method: 'POST' }, input);
+}
+
+export function listAccessRequests(status?: string): Promise<AccessRequestInbox> {
+  const query = status ? '?status=' + encodeURIComponent(status) : '';
+  return request<AccessRequestInbox>('/api/admin/access-requests' + query);
+}
+
+export function getAccessNotifications(): Promise<{
+  pending_access_requests: number;
+  latest: { id: number; full_name: string; email: string; requested_role: string; created_at: string }[];
+}> {
+  return request('/api/admin/access-requests/notifications');
+}
+
+export function approveAccessRequest(
+  id: number,
+  role?: string,
+  note?: string,
+): Promise<{ ok: boolean; username?: string; request: AccessRequestRow; already_approved?: boolean }> {
+  return request('/api/admin/access-requests/' + id + '/approve', { method: 'POST' }, { role, note });
+}
+
+export function rejectAccessRequest(
+  id: number,
+  note?: string,
+): Promise<{ ok: boolean; request: AccessRequestRow }> {
+  return request('/api/admin/access-requests/' + id + '/reject', { method: 'POST' }, { note });
+}
+
+export function reissueAccessInvite(
+  id: number,
+): Promise<{ ok: boolean; request: AccessRequestRow }> {
+  return request('/api/admin/access-requests/' + id + '/reissue', { method: 'POST' });
+}
+
+/** Invite link details (public: identifies who is being invited). */
+export function getInvite(token: string): Promise<{
+  valid: boolean;
+  full_name: string;
+  email: string;
+  role: string;
+  username: string;
+  expires_at: string | null;
+}> {
+  return request('/api/auth/invite/' + encodeURIComponent(token), { method: 'GET' });
+}
+
+/** Finish an invite: set the password and receive a login token. */
+export function acceptInvite(
+  token: string,
+  password: string,
+): Promise<{ ok: boolean; username: string; access_token: string; token_type: string }> {
+  return request('/api/auth/invite/' + encodeURIComponent(token), { method: 'POST' }, { password });
+}
+
 /** Local/remote models the assistant can switch between. */
 export function listAiModels(): Promise<AiModelsResponse> {
   return request<AiModelsResponse>('/api/ai/models');

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { clearToken } from '@/lib/api';
+import { clearToken, getAccessNotifications } from '@/lib/api';
 import { useTheme } from '@/components/ThemeProvider';
 import type { User } from '@/lib/types';
 
@@ -75,6 +75,11 @@ const NAV_MENUS: NavMenu[] = [
 const ADMIN_MENU: NavMenu = {
   label: 'Admin',
   items: [
+    {
+      label: 'Access Requests',
+      href: '/admin/access-requests',
+      hint: 'Approve or reject visitors asking for an account',
+    },
     { label: 'Users', href: '/admin/users', hint: 'Accounts and access' },
     { label: 'Roles', href: '/admin/roles', hint: 'Capabilities per role' },
     { label: 'User Role Assignments', href: '/admin/users-roles', hint: 'Who holds which role' },
@@ -95,6 +100,21 @@ export default function Header({ user }: { user: User | null }) {
 
   const isAdmin = user?.role?.toLowerCase() === 'admin';
   const menus = isAdmin ? [...NAV_MENUS, ADMIN_MENU] : NAV_MENUS;
+  const [pendingRequests, setPendingRequests] = useState(0);
+
+  // Badge on the Admin menu: how many visitors are waiting for a decision.
+  useEffect(() => {
+    if (!isAdmin) return;
+    let alive = true;
+    const load = () => {
+      getAccessNotifications()
+        .then((res) => { if (alive) setPendingRequests(res.pending_access_requests); })
+        .catch(() => { if (alive) setPendingRequests(0); });
+    };
+    load();
+    const timer = window.setInterval(load, 120_000);
+    return () => { alive = false; window.clearInterval(timer); };
+  }, [isAdmin]);
 
   // Click outside closes whichever panel is open.
   useEffect(() => {
@@ -244,6 +264,11 @@ export default function Header({ user }: { user: User | null }) {
                     }`}
                   >
                     {m.label}
+                    {m.label === 'Admin' && pendingRequests > 0 && (
+                      <span className="ml-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                        {pendingRequests}
+                      </span>
+                    )}
                     <svg
                       viewBox="0 0 24 24"
                       fill="none"
