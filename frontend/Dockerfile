@@ -12,7 +12,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 # .dockerignore excludes node_modules and .next, so this copies source only.
 COPY . .
-# The build needs no env vars; API_URL is read at runtime by the rewrites.
+# API_URL is BAKED into the build: Next.js compiles the next.config rewrites
+# (the /api/* -> backend proxy) into the standalone output. Leaving it unset
+# here makes the container proxy to the dev fallback (localhost:8001) and
+# every API call fails with ECONNREFUSED. Override with --build-arg if the
+# backend is not reachable at this host name at runtime.
+ARG API_URL=http://backend:8000
+ENV API_URL=$API_URL
 RUN npm run build
 
 # ---- runner: minimal production image ----
@@ -20,7 +26,8 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000 \
-    HOSTNAME=0.0.0.0
+    HOSTNAME=0.0.0.0 \
+    API_URL=http://backend:8000
 
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 
