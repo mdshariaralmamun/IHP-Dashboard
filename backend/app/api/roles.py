@@ -76,7 +76,7 @@ def get_system_info(
     )
 
 
-@router.post("/", response_model=RoleResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=RoleResponse, status_code=status.HTTP_201_CREATED)
 def create_role(
     role_data: RoleCreate,
     current_user: User = Depends(require_admin),
@@ -119,7 +119,7 @@ def create_role(
     return role
 
 
-@router.get("/", response_model=list[RoleListItem])
+@router.get("", response_model=list[RoleListItem])
 def list_roles(
     include_inactive: bool = False,
     discipline: str | None = None,

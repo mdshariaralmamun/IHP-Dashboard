@@ -61,7 +61,7 @@ export default function UsersManagementPage() {
       const usersData = await usersResponse.json();
 
       // Load roles
-      const rolesResponse = await fetch("/api/roles/", {
+      const rolesResponse = await fetch("/api/roles", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("ihp_access_token")}`,
         },

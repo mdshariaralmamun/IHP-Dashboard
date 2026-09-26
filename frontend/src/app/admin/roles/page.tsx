@@ -67,8 +67,8 @@ export default function RolesManagementPage() {
 
       // Load roles
       const rolesUrl = filterDiscipline
-        ? `/api/roles/?discipline=${filterDiscipline}`
-        : "/api/roles/";
+        ? `/api/roles?discipline=${filterDiscipline}`
+        : "/api/roles";
 
       const rolesResponse = await fetch(rolesUrl, {
         headers: {

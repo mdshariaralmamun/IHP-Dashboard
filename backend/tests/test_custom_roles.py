@@ -100,3 +100,41 @@ def test_custom_trade_agenda_flow(client, admin_headers):
         headers=admin_headers,
     )
     assert client.delete(f"/api/projects/{pid}/mom/agenda/1", headers=headers).status_code == 403
+
+# ---------------------------------------------------------------------------
+# Regression: /api/roles must not redirect to an internal host
+#
+# The list route used to be declared as @router.get("/"), so the canonical URL
+# carried a trailing slash. Next.js strips it (308 /api/roles/ -> /api/roles)
+# and FastAPI added it back (307 -> http://backend:8000/api/roles/), which made
+# the browser's fetch() fail with "Failed to fetch" on /admin/roles.
+# ---------------------------------------------------------------------------
+
+
+def test_roles_list_has_no_trailing_slash_redirect(client, admin_headers):
+    ok = client.get("/api/roles", headers=admin_headers)
+    assert ok.status_code == 200, ok.text
+    assert isinstance(ok.json(), list)
+
+    slash = client.get("/api/roles/", headers=admin_headers, follow_redirects=False)
+    assert slash.status_code in (307, 308)
+    location = slash.headers.get("location", "")
+    # The redirect must target the public path, never the docker hostname.
+    assert "backend:8000" not in location
+    assert location.endswith("/api/roles")
+
+
+def test_roles_create_accepts_the_canonical_path(client, admin_headers):
+    resp = client.post(
+        "/api/roles",
+        json={
+            "name": "QA Inspector",
+            "display_name": "QA Inspector",
+            "description": "verification role",
+        },
+        headers=admin_headers,
+    )
+    assert resp.status_code in (200, 201), resp.text
+    role_id = resp.json().get("id")
+    if role_id:
+        client.delete(f"/api/roles/{role_id}", headers=admin_headers)

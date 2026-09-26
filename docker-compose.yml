@@ -35,7 +35,9 @@ services:
     restart: unless-stopped
     working_dir: /app  # alembic.ini lives here inside the image
     # Apply DB migrations, then start the API.
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    # --proxy-headers: build redirects with the public host/proto when the
+    # proxy forwards them (a 307 must never point at the docker hostname).
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips=*"
     environment:
       DATABASE_URL: postgresql+psycopg://ihp:${DB_PASSWORD}@db:5432/ihp
       SECRET_KEY: ${SECRET_KEY}
