@@ -6,7 +6,9 @@ placed in the working directory (backend/). No env prefix is used.
 
 import json
 from functools import lru_cache
+from typing import Any
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 #: Demo markup rates used by later budget/BOQ stages. Parsed from JSON.
@@ -94,6 +96,25 @@ class Settings(BaseSettings):
 
     # Force local embedder regardless of API keys (Ollama).
     AI_FORCE_LOCAL_EMBEDDER: int = 0
+
+    @model_validator(mode="before")
+    @classmethod
+    def _blank_env_is_unset(cls, data: Any) -> Any:
+        """Treat an empty environment variable as "not set".
+
+        Docker Compose passes optional variables through as empty strings
+        (``SMTP_PORT: ${SMTP_PORT:-}``), and pydantic would then fail to parse
+        "" as an int and crash the whole app at import time. Dropping blanks
+        lets each field fall back to its declared default, so a deployment
+        without SMTP (or any other optional setting) starts cleanly.
+        """
+        if isinstance(data, dict):
+            return {
+                k: v
+                for k, v in data.items()
+                if not (isinstance(v, str) and v.strip() == "")
+            }
+        return data
 
     @property
     def budget_markup_rates(self) -> dict:
