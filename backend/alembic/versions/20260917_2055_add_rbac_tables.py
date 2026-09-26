@@ -11,7 +11,10 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '20260917_2055_add_rbac_tables'
-down_revision = '20260916_1440_add_project_planner_bucket'
+# NB: must be the REVISION ID of the previous migration, not its file name.
+# The planner-bucket migration uses a custom id (c4d8e1f2a6b0); pointing at
+# the file name broke `alembic upgrade head` with KeyError on a fresh database.
+down_revision = 'c4d8e1f2a6b0'
 branch_labels = None
 depends_on = None
 
