@@ -180,6 +180,18 @@ def _fmt_project(p: Project, derived: dict | None = None) -> str:
         lines.append(ear)
     if derived.get("trades"):
         lines.append("  Trades: " + ", ".join(derived["trades"]))
+    # People: who the Planner assigned the task to, plus the execution lead
+    # and the requestor/PI column. "Assigned To" is what "EAR assigned to"
+    # means in the tracker.
+    people = []
+    if derived.get("assigned_to"):
+        people.append(f"assigned to {derived['assigned_to']}")
+    if derived.get("execution_lead"):
+        people.append(f"execution lead {derived['execution_lead']}")
+    if derived.get("requestor"):
+        people.append(f"requestor/PI {derived['requestor']}")
+    if people:
+        lines.append("  People: " + " | ".join(people))
     return "\n".join(lines)
 
 

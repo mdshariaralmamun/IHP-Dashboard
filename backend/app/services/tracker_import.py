@@ -153,8 +153,10 @@ class PlannerRow:
     checklist: str | None
     trade: str | None  # first recognised trade from labels
     project_type: str | None  # BASELINE / ASEPC from labels
+    #: IHP engineer the task is assigned to (Planner "Assigned to" column).
+    assigned_to: str | None
     execution_lead: str | None
-    requestor: str | None
+    requestor: str | None  # Planner "Requestor/PI" column
 
 
 _TRADE_TOKENS = {"CIVIL", "MECH", "ELEC", "PLUMB", "HVAC", "LC", "FIRE", "ARCH"}
@@ -250,9 +252,12 @@ def parse_planner(path: Path) -> list[PlannerRow]:
             percent=_pct(cells[11]),
             division=_s(cells[6]),
             building=_s(cells[25]),
-            # PI name comes from the PR intake form, not from the planner requestor
-            # (which contains IHP team members). Use cell 3 as a fallback only.
-            pi_name=_s(cells[3]),
+            # Columns (header row 9): 3 = "Assigned to", 26 = "Execution Lead",
+            # 27 = "Requestor/PI". Cell 3 was previously read as the PI, which
+            # put an IHP engineer into the PI field; the PI comes from the PR
+            # intake form, so it is no longer taken from here.
+            assigned_to=_s(cells[3]),
+            pi_name=None,
             priority=_s(cells[22]),
             sprint=_s(cells[23]),
             effort=_s(cells[13]),

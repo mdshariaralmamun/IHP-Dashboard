@@ -312,7 +312,10 @@ def resolve_mismatch(
 _FIELD_TO_PLANNER = {
     "location": "building",
     "division": "division",
-    "pi_name": "pi_name",
+    # The Planner's PI column is "Requestor/PI" (col 27); "Assigned to"
+    # (col 3) is the IHP engineer, never a Principal Investigator.
+    "pi_name": "requestor",
+    "assigned_to": "assigned_to",
     "start": "start",
     "finish": "finish",
 }

@@ -87,12 +87,26 @@ def collect(db: Session) -> dict[str, Any]:
     # count the same project) - the same rule the construction board uses.
     scheduled: list[Any] = []
     unscheduled: list[Project] = []
+    assignments: list[dict[str, Any]] = []
     for project in rows:
         info = derived[project.id]
         if sync and info.get("planner_sync_date") != sync:
             continue
         if (info.get("phase") or "") == "Close-up":
             continue
+        # Owner data is collected for every live row, scheduled or not: "who is
+        # the EAR assigned to?" must not depend on a Planner finish date.
+        if info.get("assigned_to") or info.get("execution_lead"):
+            assignments.append({
+                "pr_number": project.pr_number,
+                "title": project.title or "",
+                "phase": info.get("phase") or "Unassigned",
+                "stage": (project.stage or "").upper(),
+                "assigned_to": info.get("assigned_to"),
+                "execution_lead": info.get("execution_lead"),
+                "requestor": info.get("requestor"),
+                "priority": info.get("priority"),
+            })
         if not info.get("finish_date"):
             unscheduled.append(project)
             continue
@@ -134,6 +148,7 @@ def collect(db: Session) -> dict[str, Any]:
         "design_gate": design_gate,
         "high_risk": high_risk,
         "behind_plan": behind,
+        "assignments": assignments,
         "pr_numbers": {p.pr_number.upper() for p in rows if p.pr_number},
         # Division counts (what the dashboards show) vs workflow-stage counts.
         "active_construction": by_division.get("Construction", 0),
@@ -173,6 +188,8 @@ def _row_line(item: Any, *, with_risk: bool = False) -> str:
         parts.append(f"needs {item.required_hours_per_day:g} hrs/day")
     if with_risk and item.risks:
         parts.append("risks: " + ", ".join(item.risks))
+    if getattr(item, "assigned_to", None):
+        parts.append(f"assigned to {item.assigned_to}")
     return " | ".join(parts)
 
 
@@ -196,6 +213,7 @@ def render(facts: dict[str, Any]) -> str:
         f"- Scheduled rows in the live Planner: {len(facts['scheduled'])}",
         f"- Without a Planner finish date: {len(facts['unscheduled'])}",
         f"- High delay risk: {len(facts['high_risk'])} | behind plan: {len(facts['behind_plan'])}",
+        f"- Rows with an owner (Planner 'Assigned to'): {len(facts['assignments'])}",
         f"- Latest Planner sync: {facts['sync'] or 'n/a'}",
         "",
         "Workflow stages (raw counts): "
@@ -211,6 +229,15 @@ def render(facts: dict[str, Any]) -> str:
     if facts["on_hold"]:
         lines += ["", f"ON HOLD ({len(facts['on_hold'])}):"]
         lines += [_row_line(i) for i in facts["on_hold"][:MAX_HOLD_ROWS]]
+    if facts["assignments"]:
+        lines += ["", f"ASSIGNMENTS ({len(facts['assignments'])} live rows carry an owner):"]
+        for row in facts["assignments"][:MAX_ROWS]:
+            owner = row.get("assigned_to") or "n/a"
+            lead = row.get("execution_lead") or "n/a"
+            lines.append(
+                f"  {row['pr_number']} — {row['title'][:60]} | {row['phase']} | "
+                f"assigned to {owner} | execution lead {lead}"
+            )
     if facts["design_gate"]:
         lines += [
             "",
@@ -258,6 +285,11 @@ _OVERDUE = re.compile(r"\b(overdue|past due|late|behind schedule)\b", re.I)
 _ON_HOLD = re.compile(r"\b(on[ -]?hold|paused|stopped)\b", re.I)
 _THIS_WEEK = re.compile(
     r"\b(this week|due today|today|next 7 days|coming week|due soon)\b", re.I
+)
+_ASSIGN_ASK = re.compile(
+    r"\b(assigned to|assign to|assignee|assigned|owner|owns|responsible|"
+    r"who is (?:the )?ear|in charge|point of contact)\b",
+    re.I,
 )
 _UNSCHEDULED = re.compile(
     r"\b(unscheduled|no finish date|without a finish|missing a finish|not scheduled)\b",
@@ -356,6 +388,34 @@ def _count_answer(question: str, facts: dict[str, Any]) -> str | None:
     return "Live totals:\n" + "\n".join(lines)
 
 
+def _assignment_answer(facts: dict[str, Any], division: str | None) -> str | None:
+    """Group the live rows by the person the Planner assigned them to."""
+    rows = facts.get("assignments") or []
+    if division:
+        rows = [row for row in rows if row["phase"] == division]
+    if not rows:
+        if division:
+            return (
+                f"**None.** No live {division}-division project carries an owner in "
+                'the Planner "Assigned to" column.'
+            )
+        return None
+    by_person: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        person = row.get("assigned_to") or row.get("execution_lead") or "unassigned"
+        by_person.setdefault(str(person), []).append(row)
+    lines: list[str] = []
+    for person, items in sorted(by_person.items(), key=lambda kv: -len(kv[1]))[:12]:
+        sample = ", ".join(i["pr_number"] for i in items[:4])
+        more = f" +{len(items) - 4} more" if len(items) > 4 else ""
+        lines.append(f"- **{person}** ({len(items)}): {sample}{more}")
+    scope = f" in the {division} division" if division else ""
+    return (
+        f"**{len(rows)}** live projects{scope} have an owner in the Planner "
+        f"(column \"Assigned to\"):" + "\n" + "\n".join(lines)
+    )
+
+
 def answer(question: str, facts: dict[str, Any]) -> str | None:
     """A deterministic answer for counting/listing questions, else None.
 
@@ -369,6 +429,12 @@ def answer(question: str, facts: dict[str, Any]) -> str | None:
 
     division = _division_of(q)
     wants_count = bool(_ASK_COUNT.search(q))
+
+    # "Who is the EAR assigned to?" - the Planner's "Assigned to" column.
+    if _ASSIGN_ASK.search(q):
+        assigned = _assignment_answer(facts, division)
+        if assigned:
+            return assigned
 
     if _OVERDUE.search(q):
         return _list_answer(facts["overdue"], "overdue", division)
@@ -414,7 +480,11 @@ _RISK_ASK = re.compile(
 _SCHED_ASK = re.compile(
     r"\b(start|schedule|timeline|duration|effort|hours|man.?hours|pace|plan)\b", re.I
 )
-_PEOPLE_ASK = re.compile(r"\b(pi|owner|who|contact|location|where is|trades?)\b", re.I)
+_PEOPLE_ASK = re.compile(
+    r"\b(pi|owner|who|contact|location|where is|trades?|assigned|assignee|"
+    r"execution lead|responsible)\b",
+    re.I,
+)
 
 
 def project_answer(question: str, project: Any, derived: dict[str, Any]) -> str | None:
@@ -496,6 +566,15 @@ def project_answer(question: str, project: Any, derived: dict[str, Any]) -> str 
         lines.append(f"- EAR status: {derived['ear_substatus']}")
 
     if _PEOPLE_ASK.search(q):
+        # Planner ownership columns: "Assigned to" is the IHP engineer the task
+        # belongs to, "Execution Lead" the delivery lead, "Requestor/PI" the
+        # requester (an IHP team member, not the Principal Investigator).
+        if derived.get("assigned_to"):
+            lines.append(f"- Assigned to (Planner): {derived['assigned_to']}")
+        if derived.get("execution_lead"):
+            lines.append(f"- Execution lead: {derived['execution_lead']}")
+        if derived.get("requestor"):
+            lines.append(f"- Requestor/PI column: {derived['requestor']}")
         if getattr(project, "pi_name", None):
             lines.append(f"- PI: {project.pi_name} ({project.pi_email or 'no email on file'})")
         if getattr(project, "location", None):

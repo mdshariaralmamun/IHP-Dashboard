@@ -148,6 +148,9 @@ def _derive_tracker_fields(p) -> dict:
         "status_timeline": [], "flags": [], "checklist": None,
         "phase": None, "planner_sync_date": None, "ear_substatus": None,
         "ear_approved_date": None,
+        # Who the Planner assigned the task to, plus the execution lead and
+        # the requestor/PI column (all three are separate people/roles).
+        "assigned_to": None, "execution_lead": None, "requestor": None,
         # Planner schedule fields (drive the construction dashboard)
         "start_date": None, "finish_date": None, "effort": None, "duration": None,
     }
@@ -184,6 +187,12 @@ def _derive_tracker_fields(p) -> dict:
             out["phase"] = line[7:].strip() or None
         elif line.startswith("Planner Sync: "):
             out["planner_sync_date"] = line[14:].strip() or None
+        elif line.startswith("Assigned To: "):
+            out["assigned_to"] = line[13:].strip() or None
+        elif line.startswith("Execution Lead: "):
+            out["execution_lead"] = line[16:].strip() or None
+        elif line.startswith("Requestor: "):
+            out["requestor"] = line[11:].strip() or None
         elif line.startswith("EAR Status: "):
             out["ear_substatus"] = line[12:].strip() or None
         elif line.startswith("EAR Approved Date: "):

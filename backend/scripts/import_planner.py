@@ -216,6 +216,11 @@ def parse_row(row: tuple) -> dict:
         "effort": _clean(row[13]) or None,
         "duration": _clean(row[16]) or None,
         "design_etc": _date(row[5]),
+        # Header row 9: ... | Assigned to | ... | Execution Lead | Requestor/PI
+        # "Assigned to" is the IHP engineer the task is assigned to (e.g. the
+        # EAR owner). It used to be dropped entirely, so the assistant could
+        # not answer "who is the EAR assigned to?".
+        "assigned_to": _clean(row[3]) or None,
         "execution_lead": _clean(row[26]) or None,
         "requestor": _clean(row[27]) or None,
         "type": types_[0] if types_ else None,
@@ -247,8 +252,12 @@ def build_description(r: dict, sync_date: str | None = None) -> str:
         parts.append(f"Effort: {r['effort']}")
     if r.get("duration"):
         parts.append(f"Duration: {r['duration']}")
+    if r.get("assigned_to"):
+        parts.append(f"Assigned To: {r['assigned_to']}")
     if r.get("execution_lead"):
         parts.append(f"Execution Lead: {r['execution_lead']}")
+    if r.get("requestor"):
+        parts.append(f"Requestor: {r['requestor']}")
     if r.get("start"):
         parts.append(f"Start: {r['start'].strftime('%Y-%m-%d')}")
     if r.get("finish"):

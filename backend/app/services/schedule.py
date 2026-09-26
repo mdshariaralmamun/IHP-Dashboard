@@ -96,6 +96,9 @@ class ScheduleItem:
     location: str | None = None
     phase: str | None = None
     bucket: str | None = None
+    #: Planner "Assigned to" column - the IHP person who owns the task.
+    assigned_to: str | None = None
+    execution_lead: str | None = None
     stage: str = "INTAKE"
     current_stage: str = "INTAKE"
     next_gate: str | None = None
@@ -150,6 +153,8 @@ def build_item(p: object, derived: dict, today: date | None = None) -> ScheduleI
         pi_name=getattr(p, "pi_name"),
         location=getattr(p, "location"),
         phase=derived.get("phase"),
+        assigned_to=derived.get("assigned_to"),
+        execution_lead=derived.get("execution_lead"),
         bucket=getattr(p, "planner_bucket", None),
         stage=getattr(p, "stage") or "INTAKE",
         current_stage=getattr(p, "stage") or "INTAKE",
