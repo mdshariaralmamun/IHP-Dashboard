@@ -87,12 +87,24 @@ TRADE_SORT_ORDER = [
 ]
 
 
+def _trade_rank(trade: str | None) -> int:
+    """Position of a trade in the house order.
+
+    Matches on the base name so qualifiers do not push a row to the end:
+    "Civil/Architectural (Equipment Layout)" is still Civil/Architectural, and
+    "Electrical:" is still Electrical.
+    """
+    key = (trade or "").strip().lower().rstrip(":").split("(")[0].strip()
+    for index, known in enumerate(TRADE_SORT_ORDER):
+        if key == known or key.startswith(known) or known.startswith(key) and key:
+            return index
+    return len(TRADE_SORT_ORDER)
+
+
 def _sort_agenda_by_trade(agenda: list[dict]) -> list[dict]:
     def key(index_item):
         index, item = index_item
-        trade = (item.get("trade") or "").strip().lower()
-        rank = TRADE_SORT_ORDER.index(trade) if trade in TRADE_SORT_ORDER else len(TRADE_SORT_ORDER)
-        return (rank, index)  # stable within the same trade
+        return (_trade_rank(item.get("trade")), index)  # stable within a trade
 
     return [item for _, item in sorted(enumerate(agenda), key=key)]
 

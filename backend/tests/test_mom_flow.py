@@ -544,3 +544,22 @@ def test_email_link_and_eml_can_omit_the_attachments(client, admin_headers):
         f"/api/projects/{pid}/mom/email.eml", params={"attach": "true"}, headers=admin_headers
     )
     assert list(_parse_eml(with_doc.content).iter_attachments())
+
+def test_qualified_trade_names_keep_their_house_rank():
+    """\"Civil/Architectural (Equipment Layout)\" must stay first, not fall last."""
+    from app.api.mom import _sort_agenda_by_trade
+
+    agenda = [
+        {"trade": "General"},
+        {"trade": "Electrical:"},
+        {"trade": "Civil/Architectural (Equipment Layout)"},
+        {"trade": "Plumbing"},
+        {"trade": "HVAC"},
+    ]
+    assert [item["trade"] for item in _sort_agenda_by_trade(agenda)] == [
+        "Civil/Architectural (Equipment Layout)",
+        "Plumbing",
+        "HVAC",
+        "Electrical:",
+        "General",
+    ]
