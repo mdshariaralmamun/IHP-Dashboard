@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import ErrorBox from '@/components/ErrorBox';
 import MomStatusBadge from '@/components/MomStatusBadge';
-import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailLink, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
+import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailLink, openMomWebView, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { canDo } from '@/lib/useUser';
 import { TRADE_OPTIONS as USER_TRADE_OPTIONS } from '@/lib/types';
@@ -383,6 +383,11 @@ export default function MomPanel({
         .map((a) => ({ ...a, trade: (a.trade ?? '').trim() || null })),
     };
     void run('generate', () => generateMom(projectId, payload));
+  }
+
+  /** The same minute as a web page (what the email body shows too). */
+  function handleOpenWebView() {
+    void run('webview', () => openMomWebView(projectId));
   }
 
   function handleDownload(fmt: 'docx' | 'pdf') {
@@ -978,6 +983,14 @@ export default function MomPanel({
           )}
 
           <div className="flex flex-wrap items-center gap-2 border-t border-apple-border pt-4">
+            <button
+              type="button"
+              onClick={() => void handleOpenWebView()}
+              disabled={busy !== null}
+              className={secondaryButton}
+            >
+              {busy === 'webview' ? 'Opening…' : 'Open web view'}
+            </button>
             <button
               type="button"
               onClick={handlePreviewToggle}

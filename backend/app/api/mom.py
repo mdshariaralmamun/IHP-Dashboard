@@ -5,7 +5,7 @@ from datetime import datetime
 from email.message import EmailMessage
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session
 
 from ..core.config import get_settings
@@ -20,7 +20,7 @@ from ..db import get_db
 from ..models import MomRecord, Project, User
 from ..schemas import MomAgendaItem, MomDetails, MomOut, MomStatusUpdate
 from ..services import docgen, emailer, storage, workflow
-from .projects import get_project_or_404
+from .projects import _derive_tracker_fields, get_project_or_404
 
 router = APIRouter(prefix="/projects/{project_id}/mom", tags=["mom"])
 
@@ -358,6 +358,60 @@ def download_mom(
     return FileResponse(path, filename=filename, media_type=media_type)
 
 
+def _mom_html_body(project: Project, mom: MomRecord, details: dict) -> str | None:
+    """The minute as HTML - what makes the email read like a web page."""
+    from ..services import mom_html
+
+    try:
+        context = build_mom_context(project, details, mom.version)
+        return mom_html.render_html(
+            mom_html.build_html_context(
+                project=project,
+                details=details,
+                derived=_derive_tracker_fields(project),
+                version=mom.version,
+                context=context,
+                base_url=None,
+                for_email=True,
+            )
+        )
+    except Exception as exc:  # noqa: BLE001 - never block the email on formatting
+        print(f"MOM html body failed: {exc}")
+        return None
+
+
+@router.get("/view", response_class=HTMLResponse)
+def mom_web_view(
+    project_id: int,
+    base_url: str | None = Query(default=None, description="Where the logo is served from"),
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """The minute as a self-contained HTML document.
+
+    Used for the in-app preview (and downloadable as a web page). The same
+    renderer produces the HTML body of the MOM email, so what the team reviews
+    here is exactly what the recipient sees.
+    """
+    from ..services import mom_html
+
+    project = get_project_or_404(db, project_id)
+    mom = get_mom_or_404(project)
+    details = mom.details or {}
+    context = build_mom_context(project, details, mom.version)
+    html = mom_html.render_html(
+        mom_html.build_html_context(
+            project=project,
+            details=details,
+            derived=_derive_tracker_fields(project),
+            version=mom.version,
+            context=context,
+            base_url=base_url,
+        )
+    )
+    return HTMLResponse(content=html)
+
+
 @router.get("/email-link")
 def mom_email_link(
     project_id: int,
@@ -461,6 +515,9 @@ def mom_email_draft(
     message["X-Unsent"] = "1"
     if attach:
         message.set_content(mom.email_body or "")
+        html_body = _mom_html_body(project, mom, details)
+        if html_body:
+            message.add_alternative(html_body, subtype="html")
     else:
         # No document attached: the minute travels inside the email body instead,
         # so the sender can attach their own images/files in Outlook.
@@ -473,6 +530,9 @@ def mom_email_draft(
             include_attachments=False,
         )
         message.set_content(body)
+        html_body = _mom_html_body(project, mom, details)
+        if html_body:
+            message.add_alternative(html_body, subtype="html")
 
     mom_dir = storage.project_dir(project.pr_number, "mom")
     # The PDF needs LibreOffice, so it may be absent; the DOCX always exists.

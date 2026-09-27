@@ -1012,6 +1012,29 @@ export function getMomEmailLink(
   );
 }
 
+/**
+ * Open the minute as a web page in a new tab.
+ *
+ * The document is fetched with the bearer token and handed to the browser as a
+ * blob, so the app view, the print view and the email body are the same
+ * artifact.
+ */
+export async function openMomWebView(projectId: number): Promise<void> {
+  const headers = new Headers();
+  const token = getToken();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const res = await fetch(
+    `/api/projects/${projectId}/mom/view?base_url=${encodeURIComponent(origin)}`,
+    { headers },
+  );
+  if (!res.ok) throw new ApiError(res.status, await parseErrorMessage(res));
+  const html = await res.text();
+  const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  window.open(url, '_blank', 'noopener');
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 /** Let the AI agent draft the trade-wise agenda from the PR request. */
 export function suggestMomAgenda(projectId: number): Promise<{
   items: { trade: string; scope: string; action: string; etc: string }[];

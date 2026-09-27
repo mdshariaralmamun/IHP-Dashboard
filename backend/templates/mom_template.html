@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Minutes of Meeting — {{ pr_number }}</title>
+<style>
+  :root {
+    --primary: #0056b3;      /* KAUST Blue */
+    --accent: #00a651;       /* KAUST Green */
+    --ink: #1f2933;
+    --muted: #6b7280;
+    --line: #e3e8ee;
+    --page: #f4f6f8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 12px 48px;
+    background: var(--page);
+    color: var(--ink);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .card {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  }
+  /* ---------- header ---------- */
+  .head {
+    padding: 22px 28px 18px;
+    border-bottom: 4px solid var(--primary);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  }
+  .logos { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .logos img { max-height: 54px; }
+  .wordmark {
+    display: inline-block; padding: 8px 14px; border-radius: 8px;
+    background: var(--primary); color: #ffffff; text-align: right;
+  }
+  .wordmark strong { display: block; font-size: 18px; letter-spacing: 0.5px; }
+  .wordmark span { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.9; }
+  .title-row { margin-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 26px; color: var(--primary); letter-spacing: -0.2px; }
+  .pr-badge {
+    display: inline-block; padding: 7px 14px; border-radius: 999px;
+    background: var(--primary); color: #fff; font-weight: 600; font-size: 13px;
+  }
+  .subtitle { margin: 6px 0 0; color: var(--muted); font-size: 12.5px; }
+  /* ---------- sections ---------- */
+  section { padding: 20px 28px; border-bottom: 1px solid var(--line); }
+  section:last-of-type { border-bottom: none; }
+  h2 {
+    margin: 0 0 12px; font-size: 13px; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--primary);
+    border-left: 4px solid var(--accent); padding-left: 9px;
+  }
+  /* two-column label/value grid (modern clients + the app view) */
+  .grid { display: grid; grid-template-columns: 200px 1fr; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .grid dt, .grid dd { margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  .grid dt { background: #f7f9fc; color: var(--muted); font-weight: 600; font-size: 12.5px; }
+  .grid dd { background: #fff; }
+  .grid > *:nth-last-child(-n+2) { border-bottom: none; }
+  /* table fallback with the same look (Outlook renders email with Word) */
+  table.grid-table { width: 100%; border-collapse: collapse; border: 1px solid var(--line); border-radius: 8px; }
+  table.grid-table th {
+    width: 200px; text-align: left; padding: 8px 12px; background: #f7f9fc;
+    color: var(--muted); font-weight: 600; font-size: 12.5px; border-bottom: 1px solid var(--line);
+  }
+  table.grid-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  /* ---------- data tables ---------- */
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.data thead th {
+    background: var(--primary); color: #fff; text-align: left;
+    padding: 9px 12px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  table.data tbody td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.data tbody tr:nth-child(even) td { background: #f8fafc; }
+  .sn { width: 46px; text-align: center; font-weight: 600; color: var(--primary); }
+  .trade { font-weight: 700; color: var(--primary); display: block; margin-bottom: 4px; }
+  .bullets { margin: 0; padding-left: 0; list-style: none; }
+  .bullets li { margin: 2px 0 2px 0; padding-left: 14px; position: relative; }
+  .bullets li:before { content: "\00d8"; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+  /* ---------- badges ---------- */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  .badge-green { background: #e6f7ee; color: #067647; border: 1px solid #b7e4c7; }
+  .badge-amber { background: #fff6e5; color: #b45309; border: 1px solid #fde3b0; }
+  .badge-gray  { background: #f1f3f5; color: #495057; border: 1px solid #dee2e6; }
+  .badge-red   { background: #fdecec; color: #b42318; border: 1px solid #f7c8c4; }
+  .badge-blue  { background: #e8f1fb; color: #0056b3; border: 1px solid #c5dcf6; }
+  .timeline { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+  .timeline li { position: relative; padding: 0 0 10px 22px; border-left: 2px solid var(--line); margin-left: 5px; }
+  .timeline li:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .timeline li:before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: -9px; top: 0; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--accent); color: #fff;
+    font-size: 9px; line-height: 16px; text-align: center; font-weight: 700;
+  }
+  .invitation {
+    white-space: pre-wrap; background: #f7f9fc; border: 1px dashed var(--line);
+    border-radius: 8px; padding: 12px 14px; font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 12.5px; color: #333;
+  }
+  footer { padding: 16px 28px 22px; background: #f7f9fc; border-top: 1px solid var(--line); }
+  footer .confirm { color: var(--primary); font-weight: 600; }
+  footer .meta { color: var(--muted); font-size: 11.5px; margin-top: 4px; }
+  @media print {
+    body { background: #fff; padding: 0; font-size: 11.5px; }
+    .card { max-width: none; border: none; border-radius: 0; box-shadow: none; }
+    section { padding: 14px 18px; page-break-inside: avoid; }
+    table.data thead th { background: #0056b3 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    table.data tbody tr:nth-child(even) td { background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div class="head">
+    <div class="logos">
+      {% if kaust_logo %}<img src="{{ kaust_logo }}" alt="KAUST Logo" />{% endif %}
+      <span class="wordmark"><strong>IHP</strong><span>In-House Projects</span></span>
+    </div>
+    <div class="title-row">
+      <div>
+        <h1>Minutes of Meeting</h1>
+        <p class="subtitle">{{ title }}{% if revision_no %} &middot; Revision {{ revision_no }}{% endif %}{% if document_code %} &middot; {{ document_code }}{% endif %}</p>
+      </div>
+      <span class="pr-badge">PR {{ pr_number }}</span>
+    </div>
+  </div>
+
+  <section>
+    <h2>Meeting details</h2>
+    {% if for_email %}
+    <table class="grid-table" role="presentation">
+      {% for label, value in meeting_rows %}<tr><th>{{ label }}</th><td>{{ value }}</td></tr>{% endfor %}
+    </table>
+    {% else %}
+    <dl class="grid">
+      {% for label, value in meeting_rows %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+    </dl>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Attendees ({{ attendees|length }})</h2>
+    {% if attendees %}
+    <table class="data">
+      <thead><tr><th>Name</th><th>Role / Title</th><th>Email</th></tr></thead>
+      <tbody>
+      {% for person in attendees %}
+        <tr>
+          <td>{{ person.name or 'N/A' }}{% if person.organizer %} <span class="badge badge-blue">Organizer</span>{% endif %}</td>
+          <td>{{ person.title or 'N/A' }}</td>
+          <td>{{ person.email or 'N/A' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p>N/A</p>{% endif %}
+  </section>
+
+  {% if invitation_lines %}
+  <section>
+    <h2>Invitation</h2>
+    <div class="invitation">{% for line in invitation_lines %}{{ line }}
+{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  <section>
+    <h2>Project information</h2>
+    {% if for_email %}
+    <table class="grid-table" role="presentation">
+      {% for label, value in project_rows %}<tr><th>{{ label }}</th><td>{{ value }}</td></tr>{% endfor %}
+    </table>
+    {% else %}
+    <dl class="grid">
+      {% for label, value in project_rows %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+    </dl>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Project status</h2>
+    {% if for_email %}
+    <table class="grid-table" role="presentation">
+      {% for label, value, badge_class in status_rows %}
+        <tr><th>{{ label }}</th><td>{% if badge_class %}<span class="badge {{ badge_class }}">{{ value }}</span>{% else %}{{ value }}{% endif %}</td></tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <dl class="grid">
+      {% for label, value, badge_class in status_rows %}
+        <dt>{{ label }}</dt>
+        <dd>{% if badge_class %}<span class="badge {{ badge_class }}">{{ value }}</span>{% else %}{{ value }}{% endif %}</dd>
+      {% endfor %}
+    </dl>
+    {% endif %}
+    {% if status_timeline %}
+      <h2 style="margin-top:18px">Milestone history</h2>
+      <ul class="timeline">{% for step in status_timeline %}<li>{{ step }}</li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2>Agenda &mdash; Preliminary Scope of Work</h2>
+    {% if agenda %}
+    <table class="data">
+      <thead><tr><th class="sn">Sn.</th><th>Scope of Work</th><th style="width:110px">Action By</th><th style="width:80px">ETC</th></tr></thead>
+      <tbody>
+      {% for item in agenda %}
+        <tr>
+          <td class="sn">{{ loop.index }}</td>
+          <td>
+            {% if item.trade %}<span class="trade">{{ item.trade }}</span>{% endif %}
+            <ul class="bullets">{% for line in item.lines %}<li>{{ line }}</li>{% endfor %}</ul>
+          </td>
+          <td>{% if item.action %}<span class="badge {% if item.action == 'PI' %}badge-amber{% else %}badge-blue{% endif %}">{{ item.action }}</span>{% else %}N/A{% endif %}</td>
+          <td>{% if item.etc %}{{ item.etc }}{% else %}<span class="badge badge-gray">TBD</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p>N/A</p>{% endif %}
+  </section>
+
+  <section>
+    <h2>Action items</h2>
+    {% if action_items %}
+    <table class="data">
+      <thead><tr><th class="sn">#</th><th>Action Item</th><th style="width:140px">Responsible</th><th style="width:120px">Status</th></tr></thead>
+      <tbody>
+      {% for row in action_items %}
+        <tr>
+          <td class="sn">{{ loop.index }}</td>
+          <td>{{ row.text }}</td>
+          <td>{{ row.responsible }}</td>
+          <td><span class="badge {{ row.badge_class }}">{{ row.status }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p>N/A</p>{% endif %}
+  </section>
+
+  <footer>
+    <div class="confirm">Please review and confirm the accuracy of this document.</div>
+    <div class="meta">Generated by IHP Project Delivery Platform &middot; Confidential &middot; {{ generated_at }}</div>
+  </footer>
+</div>
+</body>
+</html>
