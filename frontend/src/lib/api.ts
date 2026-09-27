@@ -970,15 +970,55 @@ export function downloadMomEmail(
   projectId: number,
   to?: string,
   cc?: string,
+  attach = true,
 ): Promise<void> {
   const params = new URLSearchParams();
   if (to?.trim()) params.set('to', to.trim());
   if (cc?.trim()) params.set('cc', cc.trim());
-  const query = params.toString();
+  params.set('attach', attach ? 'true' : 'false');
   return downloadFile(
-    `/api/projects/${projectId}/mom/email.eml${query ? '?' + query : ''}`,
+    `/api/projects/${projectId}/mom/email.eml?${params.toString()}`,
     'MOM.eml',
   );
+}
+
+/**
+ * The mailto: link that opens the MOM straight in the local mail client.
+ *
+ * Nothing is attached: the minute is inline, so the sender can add their own
+ * images or files in Outlook. The body comes from the server so it matches the
+ * stored draft exactly.
+ */
+export function getMomEmailLink(
+  projectId: number,
+  to?: string,
+  cc?: string,
+): Promise<{
+  to: string[];
+  cc: string[];
+  subject: string;
+  body: string;
+  mailto: string;
+  body_chars: number;
+  note: string | null;
+}> {
+  const params = new URLSearchParams();
+  if (to?.trim()) params.set('to', to.trim());
+  if (cc?.trim()) params.set('cc', cc.trim());
+  const query = params.toString();
+  return request(
+    `/api/projects/${projectId}/mom/email-link${query ? '?' + query : ''}`,
+    { method: 'GET' },
+  );
+}
+
+/** Let the AI agent draft the trade-wise agenda from the PR request. */
+export function suggestMomAgenda(projectId: number): Promise<{
+  items: { trade: string; scope: string; action: string; etc: string }[];
+  count: number;
+  raw: string;
+}> {
+  return request(`/api/projects/${projectId}/mom/suggest`, { method: 'POST' }, {});
 }
 
 /** Fetch the MOM DOCX as a blob for in-browser preview (docx-preview). */

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from ..core.config import get_settings
 from ..core.rbac import (
     CAP_MOM_AGENDA,
     CAP_MOM_MANAGE,
@@ -71,8 +72,19 @@ def get_mom_or_404(project: Project) -> MomRecord:
     return project.mom
 
 
-# Standard trade order for the agenda table; custom/other trades follow.
-TRADE_SORT_ORDER = ["civil/architectural", "electrical", "plumbing", "hvac"]
+# House order for the agenda table (matches how the minute is read):
+# Civil/Architectural -> Plumbing -> HVAC -> Electrical -> General, then any
+# other/custom trade in the order it was entered.
+TRADE_SORT_ORDER = [
+    "civil/architectural",
+    "plumbing",
+    "hvac",
+    "electrical",
+    "general",
+    "low current",
+    "fire protection",
+    "mechanical",
+]
 
 
 def _sort_agenda_by_trade(agenda: list[dict]) -> list[dict]:
@@ -83,6 +95,35 @@ def _sort_agenda_by_trade(agenda: list[dict]) -> list[dict]:
         return (rank, index)  # stable within the same trade
 
     return [item for _, item in sorted(enumerate(agenda), key=key)]
+
+
+#: Characters already used as bullets in the house format.
+_BULLETS = ("Ø", "•", "-", "*", "▪")
+
+
+def _agenda_display_scope(item: dict) -> str:
+    """The scope cell as it must read in the minute: trade, then the work.
+
+    The template prints a single {{ item.scope }} cell, so the trade name is
+    written as the first line and every work item becomes a bullet below it:
+
+        Plumbing:
+        Ø Supply and install the 6-bar CDA network.
+        Ø Test and commission to KAUST standards.
+
+    docxtpl turns the newlines into real Word line breaks.
+    """
+    trade = (item.get("trade") or "").strip()
+    scope = (item.get("scope") or item.get("description") or "").strip()
+    body: list[str] = []
+    for raw_line in scope.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        body.append(line if line.startswith(_BULLETS) else f"Ø {line}")
+    if trade:
+        return trade + "\n" + "\n".join(body) if body else trade
+    return "\n".join(body)
 
 
 def _with_contributor(item: dict) -> dict:
@@ -126,7 +167,16 @@ def build_mom_context(project: Project, details: dict, version: int) -> dict:
     agenda = _sort_agenda_by_trade(agenda)
     # Contributor mark ("By: name, title") — rendered in the MOM document only.
     agenda = [_with_contributor(item) for item in agenda]
+    # The scope cell carries the trade heading followed by the work items.
+    agenda = [{**item, "scope": _agenda_display_scope(item)} for item in agenda]
+    # Outlook invitation pasted by the user (one entry per line, optional).
+    invitation_lines = [
+        line.strip()
+        for line in str(details.get("invitation") or "").splitlines()
+        if line.strip()
+    ]
     return {
+        "invitation_lines": invitation_lines,
         "pr_number": project.pr_number,
         "title": project.title,
         "revision_no": revision_no,
@@ -293,11 +343,71 @@ def download_mom(
     return FileResponse(path, filename=filename, media_type=media_type)
 
 
+@router.get("/email-link")
+def mom_email_link(
+    project_id: int,
+    to: str | None = Query(default=None),
+    cc: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """A mailto: link that opens the MOM directly in the local mail client.
+
+    Nothing is attached (the minute is inline), which is what the desktop
+    workflow wants: the sender reviews it in Outlook and attaches their own
+    images or files before sending. Long bodies can be truncated by some
+    handlers, so the .eml export stays available as the full-fidelity option.
+    """
+    from urllib.parse import quote
+
+    project = get_project_or_404(db, project_id)
+    mom = get_mom_or_404(project)
+    details = mom.details or {}
+
+    def _split(value: str | None) -> list[str]:
+        return [
+            part.strip()
+            for part in (value or "").replace(";", ",").split(",")
+            if part.strip()
+        ]
+
+    recipients = _split(to) or emailer.mom_recipients(project, details)
+    context = build_mom_context(project, details, mom.version)
+    _, body = emailer.build_mom_draft(
+        project,
+        context["items"],
+        details=details,
+        context=context,
+        include_attachments=False,
+    )
+    subject = mom.email_subject or f"PR {project.pr_number} - {project.title}"
+    params = [f"subject={quote(subject)}", f"body={quote(body)}"]
+    copied = _split(cc)
+    if copied:
+        params.append(f"cc={quote(','.join(copied))}")
+    mailto = f"mailto:{quote(','.join(recipients))}?" + "&".join(params)
+    return {
+        "to": recipients,
+        "cc": copied,
+        "subject": subject,
+        "body": body,
+        "mailto": mailto,
+        "body_chars": len(body),
+        "note": (
+            "Long emails can be truncated by mailto links; use the email file "
+            "option if the text is cut off."
+            if len(body) > 1800
+            else None
+        ),
+    }
+
+
 @router.get("/email.eml")
 def mom_email_draft(
     project_id: int,
     to: str | None = Query(default=None, description="Comma separated recipients"),
     cc: str | None = Query(default=None),
+    attach: bool = Query(default=True, description="Attach the MOM DOCX/PDF"),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
@@ -334,7 +444,20 @@ def mom_email_draft(
     if copied:
         message["Cc"] = ", ".join(copied)
     message["X-Unsent"] = "1"
-    message.set_content(mom.email_body or "")
+    if attach:
+        message.set_content(mom.email_body or "")
+    else:
+        # No document attached: the minute travels inside the email body instead,
+        # so the sender can attach their own images/files in Outlook.
+        fresh = build_mom_context(project, details, mom.version)
+        _, body = emailer.build_mom_draft(
+            project,
+            fresh["items"],
+            details=details,
+            context=fresh,
+            include_attachments=False,
+        )
+        message.set_content(body)
 
     mom_dir = storage.project_dir(project.pr_number, "mom")
     # The PDF needs LibreOffice, so it may be absent; the DOCX always exists.
@@ -350,11 +473,12 @@ def mom_email_draft(
             "pdf",
         ),
     ]
-    for path, maintype, subtype in attachments:
-        if path and path.exists():
-            message.add_attachment(
-                path.read_bytes(), maintype=maintype, subtype=subtype, filename=path.name
-            )
+    if attach:
+        for path, maintype, subtype in attachments:
+            if path and path.exists():
+                message.add_attachment(
+                    path.read_bytes(), maintype=maintype, subtype=subtype, filename=path.name
+                )
 
     filename = f"MOM_{storage.safe_name(project.pr_number)}_v{mom.version}.eml"
     return Response(
@@ -362,6 +486,123 @@ def mom_email_draft(
         media_type="message/rfc822",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+SUGGEST_SYSTEM = (
+    "You are the KAUST IHP (In-House Projects) assistant. You draft the scope of "
+    "work for a Minutes-of-Meeting from a lab-modification request. Be specific, "
+    "practical and concise. Never invent a PR number or a person."
+)
+
+SUGGEST_PROMPT = """Draft the MOM agenda for this request.
+
+Project: {pr} - {title}
+Location: {location}
+Requested work (PR request text): {description}
+{attachments}{documents}
+Rules:
+- Group the work by trade, in EXACTLY this order, and skip a trade only when it
+  has no work: Civil/Architectural, Plumbing, HVAC, Electrical, General.
+- The General trade holds items another party (the proponent/PI) must do, e.g.
+  toxic-gas purging and decommissioning by the Proponent.
+- Each trade gets 2 to 6 short work items, one per line, written the way an IHP
+  scope of work reads ("Supply and install ...", "Dismantle ...", "Testing &
+  Commissioning as per KAUST Standards."). No bullet characters, no numbering.
+- Action is "IHP" for work IHP executes and "PI" for work the proponent does.
+- ETC stays "" unless the text gives a duration.
+
+Reply with JSON only: a list of objects with keys trade, scope, action, etc.
+Example: [{{"trade": "Plumbing", "scope": "Supply and install (1) new 6-bar CDA stainless-steel piping network.\nDismantle the existing gas networks.", "action": "IHP", "etc": ""}}]"""
+
+
+@router.post("/suggest")
+def suggest_mom_agenda(
+    project_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_MOM_MANAGE)),
+):
+    """Let the AI agent draft the trade-wise agenda from the PR request.
+
+    Returns suggestions only: nothing is stored until the user applies them, so
+    the Planner keeps control of the minutes.
+    """
+    from ..ai import provider, retrieval
+    from ..services.ai_materials import _extract_json_array
+
+    project = get_project_or_404(db, project_id)
+    if not provider.available()[0]:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The AI provider is offline. Configure it in Settings and retry.",
+        )
+
+    # Ground the draft on the project's own uploaded documents when there are any.
+    try:
+        hits = retrieval.search(
+            f"{project.title} scope of work", db, k=3, project_id=project.id, max_chars=700
+        )
+    except Exception:  # noqa: BLE001 — retrieval is best effort
+        hits = []
+    documents = ""
+    if hits:
+        documents = "\nUploaded documents (use them for the technical detail):\n" + "\n".join(
+            f"- {hit['filename']}: {hit['text']}" for hit in hits
+        )
+
+    attachment_names = [a.filename for a in project.attachments]
+    prompt = SUGGEST_PROMPT.format(
+        pr=project.pr_number,
+        title=project.title,
+        location=project.location or "-",
+        description=(project.description or project.title)[:4000],
+        attachments=(
+            "Attachments: " + ", ".join(attachment_names) + "\n" if attachment_names else ""
+        ),
+        documents=documents,
+    )
+
+    reply = provider.chat(
+        [{"role": "user", "content": prompt}], system=SUGGEST_SYSTEM
+    )
+    if not reply:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="The AI provider did not answer. Try again or add the items manually.",
+        )
+    items = _extract_json_array(reply) or []
+
+    order = {name: index for index, name in enumerate(TRADE_SORT_ORDER)}
+    cleaned: list[dict] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        scope = str(item.get("scope") or "").strip()
+        if not scope:
+            continue
+        trade = str(item.get("trade") or "General").strip()
+        cleaned.append(
+            {
+                "trade": trade,
+                "scope": scope,
+                "action": "PI" if str(item.get("action", "")).strip().upper() == "PI" else "IHP",
+                "etc": str(item.get("etc") or "").strip(),
+            }
+        )
+    cleaned.sort(key=lambda row: order.get(row["trade"].strip().lower(), len(order)))
+
+    workflow.log_action(
+        db,
+        user,
+        "mom:suggest",
+        project,
+        {"items": len(cleaned), "provider": provider.effective_provider(get_settings())},
+    )
+    db.commit()
+    return {
+        "items": cleaned,
+        "count": len(cleaned),
+        "raw": reply[:600],
+    }
 
 
 @router.post("/agenda", response_model=MomOut)

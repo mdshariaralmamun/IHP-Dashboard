@@ -341,6 +341,9 @@ class MomDetails(BaseModel):
     meeting_time: str | None = None
     attendees: list[MomAttendee] = []
     agenda: list[MomAgendaItem] = []
+    #: The Outlook meeting invitation, pasted as-is (when, where, who, body).
+    #: Rendered as its own section in the minute and in the email.
+    invitation: str | None = None
 
 
 # ---------- audit ----------

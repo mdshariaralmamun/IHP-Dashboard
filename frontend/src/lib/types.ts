@@ -374,6 +374,8 @@ export interface MomDetails {
   meeting_time?: string | null;
   attendees?: MomAttendee[];
   agenda?: MomAgendaItem[];
+  /** Outlook meeting invitation pasted as-is; its own section in the minute. */
+  invitation?: string | null;
 }
 
 export interface MomRecord {

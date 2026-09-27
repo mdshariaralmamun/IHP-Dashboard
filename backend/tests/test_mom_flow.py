@@ -446,3 +446,95 @@ def test_mom_email_requires_auth(client, admin_headers):
     project = _flow_project(client, admin_headers)
     resp = client.get(f"/api/projects/{project['id']}/mom/email.eml")
     assert resp.status_code == 401
+
+# ---------------------------------------------------------------------------
+# House format: trade-headed agenda rows, the pasted invitation and the
+# no-attachment Outlook link.
+# ---------------------------------------------------------------------------
+
+
+def test_agenda_rows_carry_the_trade_heading_and_bullets():
+    from app.api.mom import _agenda_display_scope
+
+    rendered = _agenda_display_scope(
+        {"trade": "Plumbing", "scope": "Supply and install the CDA network.\nTest and commission."}
+    )
+    lines = rendered.splitlines()
+    assert lines[0] == "Plumbing"
+    assert lines[1].startswith("\u00d8 Supply and install")
+    assert lines[2].startswith("\u00d8 Test and commission")
+
+
+def test_agenda_is_ordered_civil_plumbing_hvac_electrical_general():
+    from app.api.mom import _sort_agenda_by_trade
+
+    agenda = [
+        {"trade": "General"},
+        {"trade": "Electrical"},
+        {"trade": "HVAC"},
+        {"trade": "Plumbing"},
+        {"trade": "Civil/Architectural"},
+    ]
+    assert [item["trade"] for item in _sort_agenda_by_trade(agenda)] == [
+        "Civil/Architectural",
+        "Plumbing",
+        "HVAC",
+        "Electrical",
+        "General",
+    ]
+
+
+def test_invitation_is_rendered_in_the_minute_and_the_email(client, admin_headers, data_dir):
+    project = _flow_project(client, admin_headers)
+    pid = project["id"]
+    invitation = (
+        "PR 12693 Nanofabricator Lite Site Visit\n"
+        "Wed, Sep 9, 10:30 AM - 11:00 AM\n"
+        "3-2635\n"
+        "Participants (5)"
+    )
+    resp = client.post(
+        f"/api/projects/{pid}/mom/generate",
+        json={"meeting_title": "Site Visit", "invitation": invitation},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200, resp.text
+    mom = resp.json()
+    assert mom["details"]["invitation"] == invitation
+
+    # The Word minute carries the invitation as its own section.
+    import zipfile
+
+    docx = data_dir / "projects" / project["pr_number"] / "mom" / mom["docx_filename"]
+    with zipfile.ZipFile(docx) as archive:
+        xml = archive.read("word/document.xml").decode("utf-8", "replace")
+    assert "Invitation:" in xml
+    assert "Wed, Sep 9, 10:30 AM - 11:00 AM" in xml
+
+    # ... and so does the email body.
+    link = client.get(f"/api/projects/{pid}/mom/email-link", headers=admin_headers)
+    assert link.status_code == 200, link.text
+    payload = link.json()
+    assert "Invitation:" in payload["body"]
+    assert payload["mailto"].startswith("mailto:")
+    assert "subject=" in payload["mailto"] and "body=" in payload["mailto"]
+    assert payload["to"]
+
+
+def test_email_link_and_eml_can_omit_the_attachments(client, admin_headers):
+    pid, _project, _details = _mom_with_participants(client, admin_headers)
+
+    plain = client.get(
+        f"/api/projects/{pid}/mom/email.eml", params={"attach": "false"}, headers=admin_headers
+    )
+    assert plain.status_code == 200, plain.text
+    message = _parse_eml(plain.content)
+    assert list(message.iter_attachments()) == []
+    body = message.get_body(preferencelist=("plain",)).get_content()
+    assert "Agenda - Preliminary Scope of Work" in body
+    assert "Attachments:" not in body
+
+    with_doc = client.get(
+        f"/api/projects/{pid}/mom/email.eml", params={"attach": "true"}, headers=admin_headers
+    )
+    assert list(_parse_eml(with_doc.content).iter_attachments())

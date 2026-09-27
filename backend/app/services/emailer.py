@@ -39,6 +39,7 @@ def build_mom_draft(
     items: list[str],
     details: dict | None = None,
     context: dict | None = None,
+    include_attachments: bool = True,
 ) -> tuple[str, str]:
     """Return (subject, body) for the MOM email.
 
@@ -80,6 +81,10 @@ def build_mom_draft(
     if meeting:
         lines += ["", "Meeting details:", *meeting]
 
+    invitation = str(details.get("invitation") or "").strip()
+    if invitation:
+        lines += ["", "Invitation:", *[f"  {line}" for line in invitation.splitlines()]]
+
     attendees = details.get("attendees") or []
     if attendees:
         lines += ["", f"Participants ({len(attendees)}):"]
@@ -113,11 +118,12 @@ def build_mom_draft(
             lines.append(f"     Action by: {action_by}    ETC: {etc}")
             lines.append("")
 
-    lines += ["Attachments:"]
-    if items:
-        lines.extend(f"  - {name}" for name in items)
-    else:
-        lines.append("  - none")
+    if include_attachments:
+        lines += ["Attachments:"]
+        if items:
+            lines.extend(f"  - {name}" for name in items)
+        else:
+            lines.append("  - none")
     lines += [
         "",
         "Kind regards,",

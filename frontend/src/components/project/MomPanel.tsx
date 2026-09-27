@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import ErrorBox from '@/components/ErrorBox';
 import MomStatusBadge from '@/components/MomStatusBadge';
-import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, setMomStatus, updateMomAgendaItem } from '@/lib/api';
+import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailLink, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { canDo } from '@/lib/useUser';
 import { TRADE_OPTIONS as USER_TRADE_OPTIONS } from '@/lib/types';
@@ -128,6 +128,11 @@ export default function MomPanel({
   const [sendTo, setSendTo] = useState('');
   const [sendCc, setSendCc] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
+  // Attach the Word/PDF to the email file? Off by default: the minute travels in
+  // the email body and the sender adds their own images/files in Outlook.
+  const [attachMom, setAttachMom] = useState(false);
+  // The Outlook invitation, pasted as-is (its own section in the minute).
+  const [invitation, setInvitation] = useState('');
 
   const participantEmails = ((mom?.details?.attendees ?? []) as MomAttendee[])
     .map((person) => (person.email || '').trim())
@@ -140,14 +145,56 @@ export default function MomPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mom?.version, mom?.details]);
 
+  /** Open a compose window in the local mail client (no attachment). */
+  async function handleOpenInOutlook() {
+    if (!mom) return;
+    setBusy('outlook');
+    setError(null);
+    try {
+      const link = await getMomEmailLink(projectId, sendTo, sendCc);
+      if (link.note) setError(link.note);
+      window.location.href = link.mailto;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not open the email');
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function handleSendEmail() {
     if (!mom) return;
     setBusy('send');
     setError(null);
     try {
-      await downloadMomEmail(projectId, sendTo, sendCc);
+      await downloadMomEmail(projectId, sendTo, sendCc, attachMom);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not prepare the email');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** Ask the AI agent for a trade-wise draft and add the items to the agenda. */
+  async function handleSuggest() {
+    setBusy('suggest');
+    setError(null);
+    try {
+      const result = await suggestMomAgenda(projectId);
+      if (!result.items.length) {
+        setError('The AI did not return any scope items. Add them manually below.');
+        return;
+      }
+      for (const item of result.items) {
+        await addMomAgendaItem(projectId, {
+          scope: item.scope,
+          action: item.action,
+          etc: item.etc,
+          trade: item.trade,
+        });
+      }
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not draft the scope with AI');
     } finally {
       setBusy(null);
     }
@@ -300,6 +347,7 @@ export default function MomPanel({
     });
     setAttendees(d.attendees ?? []);
     setAgenda(d.agenda ?? []);
+    setInvitation(d.invitation ?? '');
     setDetailsLoaded(true);
   }, [mom, detailsLoaded]);
 
@@ -324,6 +372,7 @@ export default function MomPanel({
       meeting_number: meeting.meeting_number.trim() || null,
       meeting_date: meeting.meeting_date.trim() || null,
       meeting_time: meeting.meeting_time.trim() || null,
+      invitation: invitation.trim() || null,
       attendees: attendees.filter((a) => a.name.trim() || a.title.trim() || a.email.trim()),
       agenda: agenda
         .filter(
@@ -465,6 +514,24 @@ export default function MomPanel({
               </div>
 
               <div>
+                <label className="block text-xs font-medium text-apple-muted">
+                  Invitation (paste it from Outlook — optional)
+                </label>
+                <textarea
+                  rows={6}
+                  value={invitation}
+                  onChange={(e) => setInvitation(e.target.value)}
+                  placeholder={'Paste the meeting invitation here, e.g.\nPR 12693 Nanofabricator Lite Site Visit\nWed, Sep 9, 10:30 AM - 11:00 AM\n3-2635\nParticipants (5)'}
+                  className={`${inputClass} font-mono text-xs`}
+                />
+                <p className="mt-1 text-[11px] text-apple-muted">
+                  Copied straight into the minute and the email as an
+                  &ldquo;Invitation&rdquo; section. Images or extra files are attached by you in
+                  Outlook.
+                </p>
+              </div>
+
+              <div>
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-xs font-medium text-apple-muted">Attendees</span>
                   <button
@@ -523,17 +590,28 @@ export default function MomPanel({
                   <span className="text-xs font-medium text-apple-muted">
                     Agenda / Preliminary Scope of Work
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setAgenda((prev) => [...prev, { scope: '', action: '', etc: '' }])}
-                    className="text-xs font-medium text-apple-text underline"
-                  >
-                    + Add item
-                  </button>
+                  <span className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => void handleSuggest()}
+                      disabled={busy !== null}
+                      className="rounded-md border border-apple-border px-2 py-1 text-[11px] font-medium text-apple-text hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+                    >
+                      {busy === 'suggest' ? 'Drafting…' : '✨ Suggest from the PR (AI)'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAgenda((prev) => [...prev, { scope: '', action: '', etc: '' }])}
+                      className="text-xs font-medium text-apple-text underline"
+                    >
+                      + Add item
+                    </button>
+                  </span>
                 </div>
                 {agenda.length === 0 ? (
                   <p className="text-xs text-apple-muted">
-                    Empty — defaults to the PR description when generating.
+                    Empty — defaults to the PR description when generating. Use “Suggest from
+                    the PR” to have the AI draft the scope trade by trade.
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -823,17 +901,41 @@ export default function MomPanel({
                 />
               </div>
 
-              <button
-                type="button"
-                onClick={() => void handleSendEmail()}
-                disabled={busy !== null}
-                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === 'send' ? 'Preparing…' : 'Open in Outlook (.eml)'}
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void handleOpenInOutlook()}
+                  disabled={busy !== null}
+                  className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === 'outlook' ? 'Opening…' : 'Open in Outlook (no attachment)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSendEmail()}
+                  disabled={busy !== null}
+                  className={secondaryButton}
+                >
+                  {busy === 'send' ? 'Preparing…' : 'Download email file (.eml)'}
+                </button>
+              </div>
+
+              <label className="flex items-center gap-2 text-xs text-apple-text">
+                <input
+                  type="checkbox"
+                  checked={attachMom}
+                  onChange={(e) => setAttachMom(e.target.checked)}
+                  className="h-3.5 w-3.5"
+                />
+                Attach the MOM document to the email file
+                {mom.pdf_filename ? ' (Word + PDF)' : ' (Word)'}
+              </label>
+
               <p className="text-[11px] text-apple-muted">
-                Attached: the MOM document
-                {mom.pdf_filename ? ' (DOCX + PDF)' : ' (DOCX)'}.
+                &ldquo;Open in Outlook&rdquo; starts a new message with everyone in To and the
+                minute in the body — no attachment, so add your own images or files before
+                sending. The email file is the full-fidelity option (nothing is truncated)
+                and honours the attachment checkbox.
               </p>
             </div>
           </div>

@@ -68,8 +68,11 @@ def test_generate_with_details(client, admin_headers, data_dir):
     assert "2026-09-10" in text
     assert "Mohammed Al Mamun" in text
     assert "Confirm chilled water tie-in point" in text
-    # Trade-wise ordering: Electrical sorts before Plumbing regardless of input order.
-    assert text.index("Utility matrix review") < text.index("Confirm chilled water tie-in point")
+    # House order: Civil/Architectural -> Plumbing -> HVAC -> Electrical ->
+    # General, regardless of the order the items were entered in. Each row also
+    # starts with its trade name so the minute reads trade by trade.
+    assert text.index("Plumbing") < text.index("Electrical")
+    assert text.index("Confirm chilled water tie-in point") < text.index("Utility matrix review")
 
 
 def test_regenerate_keeps_details_and_bumps_revision(client, admin_headers, data_dir):
