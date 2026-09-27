@@ -245,6 +245,7 @@ function ProjectDetailView() {
               <MomPanel
                 projectId={project.id}
                 mom={project.mom}
+                stage={project.stage}
                 currentUser={user}
                 onChanged={load}
               />

@@ -54,14 +54,68 @@ function agendaTradeLabel(trade: string): string {
     .join(' ');
 }
 
+/** Delivery order, used to tell "before" from "after" the intake meeting. */
+const STAGE_ORDER = [
+  'INTAKE',
+  'MOM_SENT',
+  'MOM_CONFIRMED',
+  'DISPOSITION',
+  'EAR_DRAFT',
+  'EAR_REVIEW',
+  'EAR_APPROVED',
+  'SOW_DRAFT',
+  'SOW_REVIEW',
+  'SOW_APPROVED',
+  'MTO_DRAFT',
+  'MTO_APPROVED',
+  'PROCUREMENT',
+  'WORK_PERMIT',
+  'CONSTRUCTION',
+  'CLOSEOUT',
+  'PUNCH_LIST',
+  'ICR_DONE',
+];
+
+const STAGE_LABELS: Record<string, string> = {
+  INTAKE: 'Intake',
+  MOM_SENT: 'MOM sent',
+  MOM_CONFIRMED: 'MOM confirmed',
+  DISPOSITION: 'Disposition',
+  EAR_DRAFT: 'EAR draft',
+  EAR_REVIEW: 'EAR review',
+  EAR_APPROVED: 'EAR approved',
+  SOW_DRAFT: 'SOW draft',
+  SOW_REVIEW: 'SOW review',
+  SOW_APPROVED: 'SOW approved',
+  MTO_DRAFT: 'MTO draft',
+  MTO_APPROVED: 'MTO approved',
+  PROCUREMENT: 'Procurement',
+  WORK_PERMIT: 'Work permit',
+  CONSTRUCTION: 'Construction',
+  CLOSEOUT: 'Closeout',
+  PUNCH_LIST: 'Punch list',
+  ICR_DONE: 'ICR done',
+};
+
+/** True when the project already moved past the intake meeting. */
+function pastMomStage(stage?: string): boolean {
+  if (!stage) return false;
+  const here = STAGE_ORDER.indexOf(stage);
+  const mom = STAGE_ORDER.indexOf('MOM_SENT');
+  return here > mom && mom !== -1;
+}
+
 export default function MomPanel({
   projectId,
   mom,
+  stage,
   currentUser,
   onChanged,
 }: {
   projectId: number;
   mom: MomRecord | null;
+  /** Current workflow stage: minutes may be issued at any stage. */
+  stage?: string;
   currentUser: User | null;
   onChanged: () => void;
 }) {
@@ -320,6 +374,14 @@ export default function MomPanel({
         <div className="mb-4">
           <ErrorBox message={error} />
         </div>
+      )}
+
+      {canManageMom && !mom && pastMomStage(stage) && (
+        <p className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-800 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
+          This project has already moved past intake (now at{' '}
+          <strong>{STAGE_LABELS[stage ?? ''] ?? stage}</strong>). You can still draft or
+          re-issue the minutes here — generating a MOM never moves the stage backwards.
+        </p>
       )}
 
       {canManageMom && (

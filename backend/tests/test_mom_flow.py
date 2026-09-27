@@ -183,7 +183,13 @@ def test_mom_regenerate_increments_version(client, admin_headers):
     assert detail["mom"]["version"] == 2
 
 
-def test_mom_generate_conflict_after_confirmation(client, admin_headers):
+def test_mom_can_be_regenerated_after_confirmation(client, admin_headers):
+    """Re-issuing minutes is allowed at any stage; it only adds a revision.
+
+    It used to be a 409 outside INTAKE/MOM_SENT, which blocked the screen for
+    every Planner-imported project and made correcting a confirmed MOM
+    impossible. The stage is not touched by generation.
+    """
     project = _flow_project(client, admin_headers)
     pid = project["id"]
     client.post(f"/api/projects/{pid}/mom/generate", headers=admin_headers)
@@ -195,8 +201,19 @@ def test_mom_generate_conflict_after_confirmation(client, admin_headers):
         f"/api/projects/{pid}/mom/status", json={"status": "acknowledged"},
         headers=admin_headers,
     )
+
     resp = client.post(f"/api/projects/{pid}/mom/generate", headers=admin_headers)
-    assert resp.status_code == 409
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["version"] == 2
+
+    from app.db import SessionLocal
+    from app.models import Project
+
+    db = SessionLocal()
+    try:
+        assert db.get(Project, pid).stage == "MOM_CONFIRMED"
+    finally:
+        db.close()
 
 
 def test_mom_status_transitions_enforced(client, admin_headers):
@@ -229,3 +246,104 @@ def test_mom_status_transitions_enforced(client, admin_headers):
         headers=admin_headers,
     )
     assert resp.status_code == 422
+
+# ---------------------------------------------------------------------------
+# MOM at a later stage
+#
+# Planner-imported projects arrive at EAR_REVIEW / CONSTRUCTION, but the team
+# still has to produce (or correct) their minutes. Generation used to be
+# rejected with 409 outside INTAKE/MOM_SENT, which made the whole MOM screen
+# dead for those projects.
+# ---------------------------------------------------------------------------
+
+
+def _project_at_stage(client, headers, stage: str):
+    """Create a project and force its stage, with a valid transition path."""
+    project = _flow_project(client, headers)
+    pid = project["id"]
+    from app.db import SessionLocal
+    from app.models import Project
+
+    db = SessionLocal()
+    try:
+        row = db.get(Project, pid)
+        row.stage = stage
+        db.commit()
+    finally:
+        db.close()
+    return pid
+
+
+def test_mom_generates_at_a_later_stage(client, admin_headers, data_dir):
+    pid = _project_at_stage(client, admin_headers, "EAR_REVIEW")
+
+    resp = client.post(f"/api/projects/{pid}/mom/generate", headers=admin_headers)
+    assert resp.status_code == 200, resp.text
+    mom = resp.json()
+    assert mom["status"] == "draft"
+    assert mom["version"] == 1
+    assert mom["email_subject"]
+
+    # Regenerating (fixing attendance, adding an agenda item) also works there.
+    again = client.post(f"/api/projects/{pid}/mom/generate", headers=admin_headers)
+    assert again.status_code == 200, again.text
+    assert again.json()["version"] == 2
+
+
+def test_mom_sent_and_acknowledged_never_move_a_later_stage_backwards(
+    client, admin_headers
+):
+    pid = _project_at_stage(client, admin_headers, "EAR_REVIEW")
+    assert client.post(
+        f"/api/projects/{pid}/mom/generate", headers=admin_headers
+    ).status_code == 200
+
+    # Marking it sent on an EAR_REVIEW project must not undo the stage.
+    sent = client.post(
+        f"/api/projects/{pid}/mom/status",
+        json={"status": "sent"},
+        headers=admin_headers,
+    )
+    assert sent.status_code == 200, sent.text
+    assert sent.json()["status"] == "sent"
+
+    ack = client.post(
+        f"/api/projects/{pid}/mom/status",
+        json={"status": "acknowledged"},
+        headers=admin_headers,
+    )
+    assert ack.status_code == 200, ack.text
+    assert ack.json()["status"] == "acknowledged"
+
+    from app.db import SessionLocal
+    from app.models import Project
+
+    db = SessionLocal()
+    try:
+        assert db.get(Project, pid).stage == "EAR_REVIEW"
+    finally:
+        db.close()
+
+
+def test_first_mom_still_advances_an_intake_project(client, admin_headers):
+    """The normal intake path keeps working: sent moves INTAKE -> MOM_SENT."""
+    project = _flow_project(client, admin_headers)
+    pid = project["id"]
+    assert client.post(
+        f"/api/projects/{pid}/mom/generate", headers=admin_headers
+    ).status_code == 200
+    sent = client.post(
+        f"/api/projects/{pid}/mom/status",
+        json={"status": "sent"},
+        headers=admin_headers,
+    )
+    assert sent.status_code == 200, sent.text
+
+    from app.db import SessionLocal
+    from app.models import Project
+
+    db = SessionLocal()
+    try:
+        assert db.get(Project, pid).stage == "MOM_SENT"
+    finally:
+        db.close()

@@ -48,6 +48,19 @@ def trade_agenda_label(trade: str) -> str:
     )
 
 
+def _stage_reached(current: str | None, target: str) -> bool:
+    """True when the project has already reached (or passed) `target`.
+
+    The lifecycle order lives in workflow.STAGES; an unknown stage falls back to
+    "not reached" so the caller attempts the normal transition and its own
+    validation reports the problem.
+    """
+    try:
+        return workflow.STAGES.index(current or "") >= workflow.STAGES.index(target)
+    except ValueError:
+        return False
+
+
 def get_mom_or_404(project: Project) -> MomRecord:
     if project.mom is None:
         raise HTTPException(
@@ -198,13 +211,15 @@ def generate_mom(
     user: User = Depends(require_capability(CAP_MOM_MANAGE)),
 ):
     project = get_project_or_404(db, project_id)
-    if project.stage not in (workflow.INTAKE, workflow.MOM_SENT):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"MOM can only be generated while stage is INTAKE or MOM_SENT "
-            f"(current: {project.stage})",
-        )
 
+    # The MOM may be generated (and re-issued) at ANY stage.
+    #
+    # It used to be restricted to INTAKE / MOM_SENT, which made the screen
+    # unusable for every project that arrives from the Planner tracker already
+    # at EAR / Design / Construction: those projects still need their minutes
+    # (and a corrected revision). Generating only records a document and an
+    # audit entry - it never moves the stage - so there is nothing to protect
+    # here. Stage changes remain guarded in workflow.transition().
     mom = project.mom
     version = (mom.version + 1) if mom else 1
     # A payload with actual content wins; an empty payload ({}) or no body
@@ -451,11 +466,13 @@ def update_mom_status(
         if sent:
             detail["email_sent"] = True
         mom.status = "sent"
-        if project.stage != workflow.MOM_SENT:
+        if _stage_reached(project.stage, workflow.MOM_SENT):
+            # Already at (or past) MOM_SENT - a Planner-imported project can be
+            # at EAR_REVIEW here. Never move the stage backwards; just record it.
+            workflow.log_action(db, user, "mom:sent", project, detail)
+        else:
             workflow.transition(project, workflow.MOM_SENT, user, db, detail,
                                 action="mom:sent")
-        else:
-            workflow.log_action(db, user, "mom:sent", project, detail)
 
     elif payload.status == "acknowledged":
         if mom.status != "sent":
@@ -464,8 +481,11 @@ def update_mom_status(
                 detail=f"Cannot acknowledge MOM from status '{mom.status}'",
             )
         mom.status = "acknowledged"
-        workflow.transition(project, workflow.MOM_CONFIRMED, user, db, detail,
-                            action="mom:acknowledged")
+        if _stage_reached(project.stage, workflow.MOM_CONFIRMED):
+            workflow.log_action(db, user, "mom:acknowledged", project, detail)
+        else:
+            workflow.transition(project, workflow.MOM_CONFIRMED, user, db, detail,
+                                action="mom:acknowledged")
 
     else:  # disputed
         if mom.status != "sent":
