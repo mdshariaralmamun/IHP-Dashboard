@@ -121,8 +121,11 @@ def _agenda_display_scope(item: dict) -> str:
         if not line:
             continue
         body.append(line if line.startswith(_BULLETS) else f"Ø {line}")
-    if trade:
-        return trade + "\n" + "\n".join(body) if body else trade
+    # House style: bare trades get a colon ("Plumbing:"), a trade that
+    # already ends in punctuation or a qualifier ("Civil/Architectural\n    # (Equipment Layout)") is left exactly as the user wrote it.
+    heading = trade if not trade or trade.endswith((":", ".", ")")) else trade + ":"
+    if heading:
+        return heading + "\n" + "\n".join(body) if body else heading
     return "\n".join(body)
 
 
@@ -396,7 +399,7 @@ def mom_email_link(
         "note": (
             "Long emails can be truncated by mailto links; use the email file "
             "option if the text is cut off."
-            if len(body) > 1800
+            if len(body) > 2400
             else None
         ),
     }

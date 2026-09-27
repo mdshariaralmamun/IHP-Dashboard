@@ -131,6 +131,7 @@ export default function MomPanel({
   // Attach the Word/PDF to the email file? Off by default: the minute travels in
   // the email body and the sender adds their own images/files in Outlook.
   const [attachMom, setAttachMom] = useState(false);
+  const [sendNote, setSendNote] = useState<string | null>(null);
   // The Outlook invitation, pasted as-is (its own section in the minute).
   const [invitation, setInvitation] = useState('');
 
@@ -152,7 +153,7 @@ export default function MomPanel({
     setError(null);
     try {
       const link = await getMomEmailLink(projectId, sendTo, sendCc);
-      if (link.note) setError(link.note);
+      setSendNote(link.note);
       window.location.href = link.mailto;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open the email');
@@ -937,6 +938,11 @@ export default function MomPanel({
                 sending. The email file is the full-fidelity option (nothing is truncated)
                 and honours the attachment checkbox.
               </p>
+              {sendNote && (
+                <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                  {sendNote}
+                </p>
+              )}
             </div>
           </div>
 

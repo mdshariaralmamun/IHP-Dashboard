@@ -460,7 +460,13 @@ def test_agenda_rows_carry_the_trade_heading_and_bullets():
         {"trade": "Plumbing", "scope": "Supply and install the CDA network.\nTest and commission."}
     )
     lines = rendered.splitlines()
-    assert lines[0] == "Plumbing"
+    assert lines[0] == "Plumbing:"
+    # A trade that already carries its qualifier keeps the house style.
+    from app.api.mom import _agenda_display_scope as scope_of
+
+    assert scope_of(
+        {"trade": "Civil/Architectural (Equipment Layout)", "scope": "Wall works."}
+    ).splitlines()[0] == "Civil/Architectural (Equipment Layout)"
     assert lines[1].startswith("\u00d8 Supply and install")
     assert lines[2].startswith("\u00d8 Test and commission")
 
