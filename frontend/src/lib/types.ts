@@ -385,6 +385,9 @@ export interface MomRecord {
   note: string | null;
   details?: MomDetails | null;
   updated_at: string;
+  /** Generated documents on disk (PDF needs LibreOffice, so it can be null). */
+  docx_filename?: string | null;
+  pdf_filename?: string | null;
 }
 
 export interface PrFormParseResult {

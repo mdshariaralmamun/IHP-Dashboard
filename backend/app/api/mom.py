@@ -2,8 +2,9 @@
 
 import copy
 from datetime import datetime
+from email.message import EmailMessage
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -238,7 +239,9 @@ def generate_mom(
     docx_path = docgen.render_docx(MOM_TEMPLATE_NAME, context, mom_dir / docx_name)
     pdf_path = docgen.docx_to_pdf(docx_path)
 
-    subject, body = emailer.build_mom_draft(project, context["items"])
+    subject, body = emailer.build_mom_draft(
+        project, context["items"], details=details, context=context
+    )
     if mom is None:
         mom = MomRecord(project_id=project.id, version=version)
         db.add(mom)
@@ -288,6 +291,77 @@ def download_mom(
             status_code=status.HTTP_404_NOT_FOUND, detail="MOM file missing on disk"
         )
     return FileResponse(path, filename=filename, media_type=media_type)
+
+
+@router.get("/email.eml")
+def mom_email_draft(
+    project_id: int,
+    to: str | None = Query(default=None, description="Comma separated recipients"),
+    cc: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """A ready-to-send email file for the MOM (opens in Outlook on the desktop).
+
+    The platform has no access to a mailbox, so instead of sending from the
+    server this returns an .eml message: recipients, subject, body and the MOM
+    attached. Opening it (double-click on Windows) gives a compose window in the
+    user's own Outlook - it is sent from their account, and the sent copy stays
+    in their Sent Items.
+
+    `X-Unsent: 1` is what makes Outlook treat the file as an editable draft
+    rather than a received message, and no From header is written so Outlook
+    fills in the user's default account.
+    """
+    project = get_project_or_404(db, project_id)
+    mom = get_mom_or_404(project)
+    details = mom.details or {}
+
+    def _split(value: str | None) -> list[str]:
+        return [part.strip() for part in (value or "").replace(";", ",").split(",") if part.strip()]
+
+    recipients = _split(to) or emailer.mom_recipients(project, details)
+    if not recipients:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No recipients: add participants to the MOM or pass ?to=email@example.com",
+        )
+
+    message = EmailMessage()
+    message["Subject"] = mom.email_subject or f"PR {project.pr_number} - {project.title}"
+    message["To"] = ", ".join(recipients)
+    copied = _split(cc)
+    if copied:
+        message["Cc"] = ", ".join(copied)
+    message["X-Unsent"] = "1"
+    message.set_content(mom.email_body or "")
+
+    mom_dir = storage.project_dir(project.pr_number, "mom")
+    # The PDF needs LibreOffice, so it may be absent; the DOCX always exists.
+    attachments = [
+        (
+            mom_dir / mom.docx_filename if mom.docx_filename else None,
+            "application",
+            "vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ),
+        (
+            mom_dir / mom.pdf_filename if mom.pdf_filename else None,
+            "application",
+            "pdf",
+        ),
+    ]
+    for path, maintype, subtype in attachments:
+        if path and path.exists():
+            message.add_attachment(
+                path.read_bytes(), maintype=maintype, subtype=subtype, filename=path.name
+            )
+
+    filename = f"MOM_{storage.safe_name(project.pr_number)}_v{mom.version}.eml"
+    return Response(
+        content=message.as_bytes(),
+        media_type="message/rfc822",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post("/agenda", response_model=MomOut)

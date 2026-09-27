@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import ErrorBox from '@/components/ErrorBox';
 import MomStatusBadge from '@/components/MomStatusBadge';
-import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, generateMom, getMomDefaults, getMomDocxBlob, setMomStatus, updateMomAgendaItem } from '@/lib/api';
+import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, setMomStatus, updateMomAgendaItem } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { canDo } from '@/lib/useUser';
 import { TRADE_OPTIONS as USER_TRADE_OPTIONS } from '@/lib/types';
@@ -124,6 +124,44 @@ export default function MomPanel({
   const [error, setError] = useState<string | null>(null);
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [disputeNote, setDisputeNote] = useState('');
+  // "Send to" for the Outlook export: every participant by default.
+  const [sendTo, setSendTo] = useState('');
+  const [sendCc, setSendCc] = useState('');
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const participantEmails = ((mom?.details?.attendees ?? []) as MomAttendee[])
+    .map((person) => (person.email || '').trim())
+    .filter((email) => email.includes('@'));
+
+  useEffect(() => {
+    if (participantEmails.length) {
+      setSendTo((current) => current || participantEmails.join(', '));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mom?.version, mom?.details]);
+
+  async function handleSendEmail() {
+    if (!mom) return;
+    setBusy('send');
+    setError(null);
+    try {
+      await downloadMomEmail(projectId, sendTo, sendCc);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not prepare the email');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function copyText(label: string, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(label);
+      window.setTimeout(() => setCopied(null), 2000);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [meeting, setMeeting] = useState<MeetingFields>(EMPTY_MEETING);
   const [attendees, setAttendees] = useState<MomAttendee[]>([]);
@@ -721,6 +759,83 @@ export default function MomPanel({
             <span className="text-xs text-apple-muted">
               Updated {formatDateTime(mom.updated_at)}
             </span>
+          </div>
+
+          <div className="rounded-md border border-apple-border bg-apple-surface/50">
+            <div className="border-b border-apple-border px-4 py-2 text-xs font-semibold uppercase tracking-wide text-apple-muted">
+              Send the MOM from your Outlook
+            </div>
+            <div className="space-y-3 px-4 py-3">
+              <p className="text-xs text-apple-muted">
+                Downloads a ready-to-send message with every participant in &ldquo;To&rdquo;
+                and the minute attached. Double-click the file on your PC — Outlook opens a
+                compose window and sends it from your own account (your copy stays in Sent
+                Items).
+              </p>
+
+              <div>
+                <label className="block text-xs font-medium text-apple-text">
+                  Send to ({participantEmails.length} participant
+                  {participantEmails.length === 1 ? '' : 's'} + the PI)
+                </label>
+                <input
+                  value={sendTo}
+                  onChange={(e) => setSendTo(e.target.value)}
+                  placeholder="name@kaust.edu.sa, another@kaust.edu.sa"
+                  className={inputClass}
+                />
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSendTo(participantEmails.join(', '))}
+                    disabled={!participantEmails.length}
+                    className="text-[11px] font-medium text-apple-text underline disabled:opacity-40"
+                  >
+                    Use all participants
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void copyText('to', sendTo)}
+                    disabled={!sendTo.trim()}
+                    className="text-[11px] font-medium text-apple-muted underline disabled:opacity-40"
+                  >
+                    {copied === 'to' ? 'Recipients copied ✓' : 'Copy recipients'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void copyText('body', (mom.email_subject ?? '') + '\n\n' + (mom.email_body ?? ''))}
+                    className="text-[11px] font-medium text-apple-muted underline"
+                  >
+                    {copied === 'body' ? 'Email text copied ✓' : 'Copy email text'}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-apple-text">
+                  Cc (optional)
+                </label>
+                <input
+                  value={sendCc}
+                  onChange={(e) => setSendCc(e.target.value)}
+                  placeholder="leave empty for none"
+                  className={inputClass}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void handleSendEmail()}
+                disabled={busy !== null}
+                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy === 'send' ? 'Preparing…' : 'Open in Outlook (.eml)'}
+              </button>
+              <p className="text-[11px] text-apple-muted">
+                Attached: the MOM document
+                {mom.pdf_filename ? ' (DOCX + PDF)' : ' (DOCX)'}.
+              </p>
+            </div>
           </div>
 
           <div className="rounded-md border border-apple-border bg-apple-surface/50">

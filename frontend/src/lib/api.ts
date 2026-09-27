@@ -959,6 +959,28 @@ export function downloadMom(projectId: number, fmt: 'docx' | 'pdf'): Promise<voi
   return downloadFile(`/api/projects/${projectId}/mom/download?fmt=${fmt}`, `mom.${fmt}`);
 }
 
+/**
+ * Download the MOM as a ready-to-send email (.eml).
+ *
+ * Opening the file in Outlook gives a compose window with every participant in
+ * "To", the subject and body filled in and the minute attached - it is sent from
+ * the user's own mailbox, and no mail server credentials are involved.
+ */
+export function downloadMomEmail(
+  projectId: number,
+  to?: string,
+  cc?: string,
+): Promise<void> {
+  const params = new URLSearchParams();
+  if (to?.trim()) params.set('to', to.trim());
+  if (cc?.trim()) params.set('cc', cc.trim());
+  const query = params.toString();
+  return downloadFile(
+    `/api/projects/${projectId}/mom/email.eml${query ? '?' + query : ''}`,
+    'MOM.eml',
+  );
+}
+
 /** Fetch the MOM DOCX as a blob for in-browser preview (docx-preview). */
 export function getMomDocxBlob(projectId: number): Promise<Blob> {
   return fetchBlob(`/api/projects/${projectId}/mom/download?fmt=docx`);

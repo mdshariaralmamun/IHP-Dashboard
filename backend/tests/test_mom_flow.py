@@ -347,3 +347,102 @@ def test_first_mom_still_advances_an_intake_project(client, admin_headers):
         assert db.get(Project, pid).stage == "MOM_SENT"
     finally:
         db.close()
+
+# ---------------------------------------------------------------------------
+# Sending the MOM from the user's own Outlook
+#
+# The platform has no mailbox access, so the MOM is exported as an .eml that
+# opens as a compose window in Outlook: recipients, subject, body and the
+# attached minute. These tests pin the file structure.
+# ---------------------------------------------------------------------------
+
+
+def _mom_with_participants(client, headers):
+    project = _flow_project(client, headers)
+    pid = project["id"]
+    details = {
+        "meeting_title": "PR 12693 Nanofabricator Lite Site Visit",
+        "meeting_number": "01",
+        "meeting_date": "2026-09-09",
+        "meeting_time": "10:30 AM",
+        "meeting_location": "3-2635",
+        "attendees": [
+            {"name": "Chris Asis", "title": "Meeting Organizer", "email": "chris.asus@kaust.edu.sa"},
+            {"name": "Nazek El Atab", "title": "Accepted Meeting", "email": "nazek.elatab@kaust.edu.sa"},
+            {"name": "In-House Projects Design", "title": "", "email": "ihp.design@kaust.edu.sa"},
+        ],
+        "agenda": [
+            {"trade": "Civil/Architectural", "scope": "Modify the gypsum board wall.", "action": "IHP", "etc": ""},
+            {"trade": "General", "scope": "Toxic gas purging by the Proponent.", "action": "PI", "etc": "TBD"},
+        ],
+    }
+    resp = client.post(
+        f"/api/projects/{pid}/mom/generate", json=details, headers=headers
+    )
+    assert resp.status_code == 200, resp.text
+    return pid, project, details
+
+
+def _parse_eml(raw: bytes):
+    from email import policy
+    from email.parser import BytesParser
+
+    return BytesParser(policy=policy.default).parsebytes(raw)
+
+
+def test_mom_email_draft_carries_recipients_and_attachments(client, admin_headers):
+    pid, project, details = _mom_with_participants(client, admin_headers)
+
+    resp = client.get(f"/api/projects/{pid}/mom/email.eml", headers=admin_headers)
+    assert resp.status_code == 200, resp.text
+    assert resp.headers["content-type"].startswith("message/rfc822")
+    assert ".eml" in resp.headers["content-disposition"]
+
+    message = _parse_eml(resp.content)
+    # Recipients: every participant, in order, plus the PI.
+    to = message["To"]
+    assert "chris.asus@kaust.edu.sa" in to
+    assert "nazek.elatab@kaust.edu.sa" in to
+    assert "ihp.design@kaust.edu.sa" in to
+    assert "flow@example.kaust.edu.sa" in to
+    # Outlook opens it as an editable draft, and picks the sender account.
+    assert message["X-Unsent"] == "1"
+    assert message["From"] is None
+    assert project["pr_number"] in message["Subject"]
+
+    body = message.get_body(preferencelist=("plain",)).get_content()
+    assert "Participants (3)" in body
+    assert "Meeting details:" in body
+    assert "Agenda - Preliminary Scope of Work" in body
+    assert "Action by: IHP" in body
+    assert "ETC: TBD" in body
+
+    names = [part.get_filename() for part in message.iter_attachments()]
+    assert any(name and name.endswith(".docx") for name in names), names
+
+
+def test_mom_email_draft_accepts_explicit_recipients(client, admin_headers):
+    pid, _project, _details = _mom_with_participants(client, admin_headers)
+
+    resp = client.get(
+        f"/api/projects/{pid}/mom/email.eml",
+        params={"to": "planner@kaust.edu.sa, boss@kaust.edu.sa", "cc": "pm@kaust.edu.sa"},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200, resp.text
+    message = _parse_eml(resp.content)
+    assert message["To"] == "planner@kaust.edu.sa, boss@kaust.edu.sa"
+    assert message["Cc"] == "pm@kaust.edu.sa"
+    assert "chris.asus@kaust.edu.sa" not in message["To"]
+
+
+def test_mom_email_draft_without_a_mom_is_404(client, admin_headers):
+    project = _flow_project(client, admin_headers)
+    resp = client.get(f"/api/projects/{project['id']}/mom/email.eml", headers=admin_headers)
+    assert resp.status_code == 404
+
+
+def test_mom_email_requires_auth(client, admin_headers):
+    project = _flow_project(client, admin_headers)
+    resp = client.get(f"/api/projects/{project['id']}/mom/email.eml")
+    assert resp.status_code == 401
