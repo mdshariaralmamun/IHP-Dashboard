@@ -19,6 +19,11 @@ _TMP_DIR = tempfile.mkdtemp(prefix="ihp_test_")
 os.environ["DATABASE_URL"] = "sqlite://"  # in-memory (StaticPool keeps it alive)
 os.environ["DATA_DIR"] = _TMP_DIR
 os.environ["TEMPLATES_DIR"] = str(BACKEND_DIR / "templates")
+# Isolate the tracker folders: without this, tracker resolution falls back
+# to the developer's real drop folder (E:\ENGINEERING_DATA\trackers) and a
+# test could silently read live Planner exports.
+os.environ["TRACKERS_DIR"] = str(Path(_TMP_DIR) / "drop")
+os.environ["PR_REQUEST_DIR"] = str(Path(_TMP_DIR) / "pr-requests")
 os.environ["SECRET_KEY"] = "test-secret-key-with-at-least-32-bytes"
 os.environ["ADMIN_USERNAME"] = "admin"
 os.environ["ADMIN_PASSWORD"] = "admin123"

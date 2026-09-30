@@ -223,6 +223,11 @@ function BucketDashboard() {
                     {sources.planner_date}
                   </span>
                 )}
+                {sources.planner_source === 'upload' && (
+                  <span className="ml-1 rounded bg-blue-50 px-1.5 py-0.5 font-medium text-blue-700">
+                    uploaded
+                  </span>
+                )}
               </>
             ) : (
               <span className="italic">no planner file resolved</span>
@@ -236,10 +241,16 @@ function BucketDashboard() {
                     {sources.om_date}
                   </span>
                 )}
+                {sources.om_source === 'upload' && (
+                  <span className="ml-1 rounded bg-blue-50 px-1.5 py-0.5 font-medium text-blue-700">
+                    uploaded
+                  </span>
+                )}
               </div>
             )}
             <div className="mt-1 text-[11px] italic">
-              Always the newest _DDMMYYYY export (.xlsx or .md) — no manual upload needed.
+              Always the newest _DDMMYYYY export (.xlsx or .md), whether it was uploaded here or
+              dropped in the Planner&apos;s folder.
             </div>
           </div>
           {isAdmin && (

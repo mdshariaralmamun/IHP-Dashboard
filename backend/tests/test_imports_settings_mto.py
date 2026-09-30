@@ -17,7 +17,7 @@ import pytest
 
 from app.api import imports as imports_api
 from app.db import SessionLocal
-from app.services import runtime_settings
+from app.services import runtime_settings, tracker_sources
 from app.models import BoqMtoItem, MasterPricing, Project
 
 
@@ -81,8 +81,15 @@ def om_file():
 
 @pytest.fixture()
 def isolated_import_dir(tmp_path, monkeypatch):
-    """Keep test uploads out of backend/data/imports."""
-    monkeypatch.setattr(imports_api, "IMPORT_DIR", tmp_path)
+    """Keep test uploads out of the real scratch + tracker stores.
+
+    `IMPORT_DIR` is the scratch folder an upload lands in first; the store
+    it is published to (`tracker_sources.upload_dir`) and the Planner's drop
+    folder are redirected too, so each test sees only the files it uploaded.
+    """
+    monkeypatch.setattr(imports_api, "IMPORT_DIR", tmp_path / "imports")
+    monkeypatch.setattr(tracker_sources, "upload_dir", lambda: tmp_path / "trackers")
+    monkeypatch.setattr(tracker_sources, "configured_dir", lambda: tmp_path / "drop")
     return tmp_path
 
 
@@ -271,6 +278,175 @@ class TestImports:
             data={"pr_key": "PR-9001", "field": "location", "source": "gut"},
         )
         assert resp.status_code == 400
+
+
+_XLSX_MIME = (
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+
+class TestUploadPublishing:
+    """An upload must become the tracker version the whole app resolves.
+
+    Regression: uploads were written to a scratch folder nothing else read
+    — and that a container rebuild wiped — so the O&M sheet had no effect
+    at all, the Planner rewrote DB rows but the app kept pointing at (and
+    naming) the previous tracker file.
+    """
+
+    def _upload_planner(
+        self, client, admin_headers, name="planner.xlsx", dry_run="false",
+    ):
+        return client.post(
+            "/api/admin/import/planner",
+            files={"file": (name, _build_planner_xlsx(), _XLSX_MIME)},
+            data={"dry_run": dry_run},
+            headers=admin_headers,
+        )
+
+    def test_planner_upload_is_published_and_resolved(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        resp = self._upload_planner(client, admin_headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["published"] is True
+
+        stored = tracker_sources.upload_dir() / body["active_file"]
+        assert stored.is_file(), "the upload must land in the tracker store"
+        assert tracker_sources.planner_path() == stored
+        assert body["active_source"] == "upload"
+
+    def test_undated_upload_is_stamped_with_todays_date(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        stamp = datetime.now().strftime("%d%m%Y")
+        resp = self._upload_planner(
+            client, admin_headers, name="IHP- Construction Projects.xlsx",
+        )
+        assert resp.status_code == 200
+        assert resp.json()["active_file"] == (
+            f"IHP- Construction Projects_{stamp}.xlsx"
+        )
+
+    def test_a_misnamed_upload_is_stored_under_the_tracker_name(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        """Resolution matches the tracker's filename prefix, so a file that
+        arrives as "planner.xlsx" must be stored under the canonical name —
+        otherwise it would sit in the store and never be resolved."""
+        stamp = datetime.now().strftime("%d%m%Y")
+        resp = self._upload_planner(client, admin_headers, name="planner.xlsx")
+        assert resp.status_code == 200
+        assert resp.json()["active_file"] == (
+            f"IHP- Construction Projects_{stamp}.xlsx"
+        )
+
+    def test_a_misnamed_upload_keeps_the_date_in_its_name(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        resp = self._upload_planner(
+            client, admin_headers,
+            name="Copy of IHP- Construction Projects_26092026.xlsx",
+        )
+        assert resp.status_code == 200
+        assert resp.json()["active_file"] == (
+            "IHP- Construction Projects_26092026.xlsx"
+        )
+
+    def test_upload_beats_an_older_file_in_the_drop_folder(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        drop = isolated_import_dir / "drop"
+        drop.mkdir(parents=True, exist_ok=True)
+        (drop / "IHP- Construction Projects_07092026.xlsx").write_bytes(
+            _build_planner_xlsx()
+        )
+        resp = self._upload_planner(
+            client, admin_headers,
+            name="IHP- Construction Projects_30092026.xlsx",
+        )
+        assert resp.status_code == 200
+        assert tracker_sources.planner_path().name == (
+            "IHP- Construction Projects_30092026.xlsx"
+        )
+        assert resp.json()["active_source"] == "upload"
+
+    def test_an_older_upload_never_rolls_the_app_backwards(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        """Priority is the DATE, not the folder: uploading an older export
+        must not make the app serve it over a newer file already present."""
+        resp = self._upload_planner(
+            client, admin_headers,
+            name="IHP- Construction Projects_07092026.xlsx",
+        )
+        assert resp.status_code == 200
+        drop = isolated_import_dir / "drop"
+        drop.mkdir(parents=True, exist_ok=True)
+        newer = drop / "IHP- Construction Projects_26092026.xlsx"
+        newer.write_bytes(_build_planner_xlsx())
+        assert tracker_sources.planner_path() == newer
+        assert tracker_sources.status()["planner_source"] == "folder"
+
+    def test_dry_run_stages_without_publishing(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        resp = self._upload_planner(client, admin_headers, dry_run="true")
+        assert resp.status_code == 200
+        assert resp.json()["published"] is False
+        assert tracker_sources.planner_path() is None
+
+    def test_om_upload_becomes_the_resolved_om_sheet(
+        self, client, admin_headers, om_file, isolated_import_dir,
+    ):
+        resp = client.post(
+            "/api/admin/import/om", files=om_file, headers=admin_headers,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["published"] is True
+
+        stored = tracker_sources.upload_dir() / body["active_file"]
+        assert stored.is_file()
+        assert tracker_sources.om_path() == stored
+        assert tracker_sources.status()["om_source"] == "upload"
+
+    def test_rejected_om_upload_is_never_published(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        """A workbook the parser rejects must not become the live sheet."""
+        wb = openpyxl.Workbook()
+        wb.active.title = "Wrong Sheet"
+        buf = io.BytesIO()
+        wb.save(buf)
+        resp = client.post(
+            "/api/admin/import/om",
+            files={"file": ("om.xlsx", buf.getvalue(), _XLSX_MIME)},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 400
+        assert tracker_sources.om_path() is None
+        assert not list(tracker_sources.upload_dir().glob("*.xlsx"))
+
+    def test_reuploading_the_same_version_replaces_it(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        first = self._upload_planner(client, admin_headers)
+        second = self._upload_planner(client, admin_headers)
+        assert first.json()["active_file"] == second.json()["active_file"]
+        assert len(list(tracker_sources.upload_dir().glob("*.xlsx"))) == 1
+
+    def test_sources_endpoint_reports_the_live_version(
+        self, client, admin_headers, isolated_import_dir,
+    ):
+        self._upload_planner(client, admin_headers)
+        resp = client.get("/api/admin/import/sources", headers=admin_headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["planner_source"] == "upload"
+        assert body["upload_dir"] == str(tracker_sources.upload_dir())
+        assert body["configured_dir"] == str(isolated_import_dir / "drop")
 
 
 # ---------------------------------------------------------------------------

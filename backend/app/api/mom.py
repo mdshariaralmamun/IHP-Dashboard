@@ -226,8 +226,7 @@ def mom_defaults(
     """
     from datetime import date as _date
 
-    from ..core.config import get_settings
-    from ..services.tracker_files import latest_dated
+    from ..services import tracker_sources
     from ..services.tracker_import import parse_om
 
     project = get_project_or_404(db, project_id)
@@ -235,8 +234,7 @@ def mom_defaults(
     # Location: register + O&M "Project Location Details".
     location = project.location or ""
     try:
-        s = get_settings()
-        om_path = latest_dated(s.TRACKERS_DIR, "O&M Project Progress Tracking")
+        om_path = tracker_sources.om_path()
         if om_path:
             for row in parse_om(om_path):
                 if row.pr_key == project.pr_number:

@@ -314,19 +314,13 @@ def consistency_report(
     """
     import time as _time
 
-    from ..core.config import get_settings
-    from ..services import runtime_settings, tracker_files
+    from ..services import tracker_sources
     from ..services.consistency import check
     from ..services.tracker_import import (
         parse_om, parse_om_active_prs, parse_planner,
     )
 
-    s = get_settings()
-    overrides = runtime_settings.read_overrides()
-    status = tracker_files.tracker_status(
-        overrides.get("TRACKERS_DIR") or s.TRACKERS_DIR,
-        overrides.get("PR_REQUEST_DIR") or s.PR_REQUEST_DIR,
-    )
+    status = tracker_sources.status()
     planner_path = status.get("planner_path")
     om_path = status.get("om_path")
     if not planner_path or not om_path:
@@ -377,17 +371,10 @@ def om_active_prs(
     stream that adds no construction modification or utility tie-in, so it
     is reported separately and never merged into the IHP counts.
     """
-    from ..core.config import get_settings
-    from ..services import runtime_settings, tracker_files
+    from ..services import tracker_sources
     from ..services.tracker_import import parse_om_active_prs, summarise_active_prs
 
-    s = get_settings()
-    overrides = runtime_settings.read_overrides()
-    status = tracker_files.tracker_status(
-        overrides.get("TRACKERS_DIR") or s.TRACKERS_DIR,
-        overrides.get("PR_REQUEST_DIR") or s.PR_REQUEST_DIR,
-    )
-    om_path = status.get("om_path")
+    om_path = tracker_sources.om_path()
     if not om_path:
         return {
             "ok": False,
@@ -626,11 +613,10 @@ def project_summary_data(
     d = _derive_tracker_fields(project)
 
     om_row = None
-    s = get_settings()
     # location details merge (same logic as document-context)
-    from ..services.tracker_files import latest_dated as _ld
+    from ..services import tracker_sources
     from ..services.tracker_import import parse_om as _pom
-    p_om = _ld(s.TRACKERS_DIR, "O&M Project Progress Tracking")
+    p_om = tracker_sources.om_path()
     if p_om:
         try:
             for row in _pom(p_om):
@@ -714,12 +700,11 @@ def generate_project_summary(
     project = get_project_or_404(db, project_id)
 
     # Reuse the document-context assembler for PI / location / details.
-    from ..services.tracker_files import latest_dated
+    from ..services import tracker_sources
     from ..services.tracker_import import parse_om
 
-    s = get_settings()
     om_row = None
-    om_path = latest_dated(s.TRACKERS_DIR, "O&M Project Progress Tracking")
+    om_path = tracker_sources.om_path()
     if om_path:
         try:
             for row in parse_om(om_path):
@@ -801,7 +786,7 @@ def document_context(
     from ..core.config import get_settings
     from ..services import archive_index as ai_idx
     from ..services import schedule as sched
-    from ..services.tracker_files import latest_dated
+    from ..services import tracker_sources
     from ..services.tracker_import import parse_om
 
     project = get_project_or_404(db, project_id)
@@ -809,8 +794,7 @@ def document_context(
 
     # ---- O&M register row: location details + requestor -------------------
     om_row = None
-    s = get_settings()
-    om_path = latest_dated(s.TRACKERS_DIR, "O&M Project Progress Tracking")
+    om_path = tracker_sources.om_path()
     if om_path:
         try:
             for row in parse_om(om_path):

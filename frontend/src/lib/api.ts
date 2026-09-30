@@ -224,13 +224,24 @@ export function setProjectStage(
 
 /** Tracker files the backend currently resolves to (newest _DDMMYYYY). */
 export interface TrackerSources {
+  /** First searched folder; `trackers_dirs` lists all of them. */
   trackers_dir: string;
+  trackers_dirs?: string[];
+  /** Where admin uploads are published (on the persisted data volume). */
+  upload_dir?: string;
+  /** The Planner's own drop folder. */
+  configured_dir?: string;
   planner_latest: string | null;
   planner_path?: string | null;
   planner_date?: string | null;
+  planner_dir?: string | null;
+  /** "upload" when the live version came from an upload, else "folder". */
+  planner_source?: 'upload' | 'folder' | null;
   om_latest: string | null;
   om_path?: string | null;
   om_date?: string | null;
+  om_dir?: string | null;
+  om_source?: 'upload' | 'folder' | null;
   pr_request_count: number;
 }
 

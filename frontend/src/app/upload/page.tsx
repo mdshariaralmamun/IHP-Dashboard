@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import ErrorBox from '@/components/ErrorBox';
 import Header from '@/components/Header';
+import type { TrackerSources } from '@/lib/api';
 import { useUser } from '@/lib/useUser';
 
 interface MismatchField {
@@ -73,6 +74,14 @@ async function fetchMismatches(token: string, onlyConflicts: boolean): Promise<M
   return r.json();
 }
 
+async function fetchSources(token: string): Promise<TrackerSources> {
+  const r = await fetch('/api/admin/import/sources', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!r.ok) throw new Error(`Failed: ${r.status}`);
+  return r.json();
+}
+
 async function resolveMismatch(prKey: string, field: string, source: 'planner' | 'om', token: string) {
   const fd = new FormData();
   fd.append('pr_key', prKey);
@@ -105,6 +114,7 @@ function UploadView() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [mismatches, setMismatches] = useState<MismatchResponse | null>(null);
+  const [sources, setSources] = useState<TrackerSources | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [onlyConflicts, setOnlyConflicts] = useState(true);
@@ -120,6 +130,7 @@ function UploadView() {
     setError(null);
     try {
       setMismatches(await fetchMismatches(token, onlyConflicts));
+      setSources(await fetchSources(token));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load mismatches');
     } finally {
@@ -141,11 +152,16 @@ function UploadView() {
     try {
       if (plannerFile) {
         const res = await uploadTracker('/api/admin/import/planner', plannerFile, token, { dry_run: 'false' });
-        setUploadStatus(`Planner: ${res.rows_processed} rows processed.`);
+        setUploadStatus(
+          `Planner: ${res.rows_processed} rows processed — now reading ${res.active_file ?? 'no file'}.`,
+        );
       }
       if (omFile) {
         const res = await uploadTracker('/api/admin/import/om', omFile, token, { sheet: ' In House Projects' });
-        setUploadStatus((s) => (s ? s + ' ' : '') + `O&M: ${res.rows_parsed} rows parsed.`);
+        setUploadStatus(
+          (s) => (s ? s + ' ' : '') +
+            `O&M: ${res.rows_parsed} rows parsed — now reading ${res.active_file ?? 'no file'}.`,
+        );
       }
       setPlannerFile(null);
       setOmFile(null);
@@ -199,6 +215,9 @@ function UploadView() {
           </button>
         </div>
 
+        {/* Which version of each tracker the app is reading right now */}
+        <ActiveVersions sources={sources} />
+
         {/* Upload cards */}
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
           <UploadCard
@@ -210,7 +229,7 @@ function UploadView() {
           />
           <UploadCard
             title="O&M tracking sheet"
-            description="The historic record. Used for cross-checking location, PI, and division. No DB writes."
+            description="The historic record: location, division and requestor. Publishing it makes it the live O&M sheet the summary, SOW and MOM read. No project rows are written."
             file={omFile}
             onFile={setOmFile}
             color="emerald"
@@ -440,6 +459,67 @@ function ResolveButton({ children, onClick, colour }: {
     >
       {children}
     </button>
+  );
+}
+
+function ActiveVersions({ sources }: { sources: TrackerSources | null }) {
+  const rows = [
+    {
+      label: 'Planner tracker',
+      file: sources?.planner_latest,
+      date: sources?.planner_date,
+      source: sources?.planner_source,
+    },
+    {
+      label: 'O&M tracker',
+      file: sources?.om_latest,
+      date: sources?.om_date,
+      source: sources?.om_source,
+    },
+  ];
+  return (
+    <div className="mb-6 rounded-lg border border-apple-border bg-apple-surface p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-apple-text">Live tracker versions</h2>
+        <span className="text-[11px] text-apple-muted">
+          the newest _DDMMYYYY version wins, uploaded or dropped in
+        </span>
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+        {rows.map((r) => (
+          <div key={r.label} className="rounded-md border border-apple-border bg-apple-surface/50 px-3 py-2">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-apple-muted">{r.label}</div>
+            <div className="mt-1 break-all font-mono text-xs text-apple-text">
+              {r.file ?? '— not resolved —'}
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px]">
+              {r.date && (
+                <span className="rounded bg-blue-50 px-1.5 py-0.5 font-medium text-blue-700">{r.date}</span>
+              )}
+              {r.source && (
+                <span
+                  className={
+                    r.source === 'upload'
+                      ? 'rounded bg-emerald-50 px-1.5 py-0.5 font-medium text-emerald-700'
+                      : 'rounded border border-apple-border px-1.5 py-0.5 font-medium text-apple-muted'
+                  }
+                >
+                  {r.source === 'upload' ? 'from your upload' : 'from the Planner folder'}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {sources?.upload_dir && (
+        <p className="mt-3 text-[11px] text-apple-muted">
+          Uploads are published to <span className="font-mono">{sources.upload_dir}</span> and persist across
+          redeploys; the Planner&apos;s own folder{' '}
+          <span className="font-mono">{sources.configured_dir}</span> keeps being searched, so a newer export dropped
+          there still wins.
+        </p>
+      )}
+    </div>
   );
 }
 

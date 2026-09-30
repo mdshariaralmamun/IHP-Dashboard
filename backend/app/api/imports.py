@@ -12,10 +12,22 @@ These endpoints are the HTTP surface for the import workflow:
 * POST /api/admin/import/mismatches/recompute — explicitly rebuild the
   report from the latest cached uploads.
 
+An upload is PUBLISHED: the file is saved into the app's tracker store
+(`<DATA_DIR>/trackers`, on the persisted data volume) under its own dated
+name, so the resolver in `services/tracker_sources` immediately treats it
+as the newest version of that tracker and every consumer — the register,
+the consistency check, the O&M active-PR list, the Project Summary / SOW /
+MOM context, the dashboard banner — reads the file that was just uploaded.
+Re-uploading the same dated export replaces the earlier copy, so the store
+holds exactly one file per version and never grows without bound.
+
+A dry run (`?dry_run=true`) is staged in the scratch folder instead: it is
+parsed for the mismatch report but never becomes the version the app reads.
+
 Uploads are accepted as multipart/form-data with a single `file` field.
-The server stores the uploaded xlsx in backend/data/imports/ and caches
-the parsed result in process memory. (For a single-tenant dev tool this
-is fine; multi-tenant needs a proper per-user file store.)
+The parsed rows are additionally cached in process memory for the mismatch
+report. (For a single-tenant dev tool this is fine; multi-tenant needs a
+proper per-user file store.)
 """
 
 from __future__ import annotations
@@ -24,6 +36,7 @@ import os
 import shutil
 import tempfile
 import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,10 +44,11 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from ..core.config import get_settings
 from ..core.rbac import CAP_USERS_MANAGE, require_capability
 from ..db import get_db
 from ..models import Project, User
-from ..services import tracker_import
+from ..services import tracker_files, tracker_import, tracker_sources
 from ..services.tracker_import import (
     PlannerRow, OmRow, PrMismatch, compare, parse_om, parse_planner, summarise,
 )
@@ -73,20 +87,19 @@ def _require_importer() -> None:
         )
 
 
-def _trackers_status():
-    """What the trackers folder currently resolves to (newest dated file)."""
-    from ..core.config import get_settings
-    from ..services import runtime_settings, tracker_files
+def _trackers_status() -> dict[str, Any]:
+    """What the app resolves to right now (newest dated file per tracker).
 
-    s = get_settings()
-    overrides = runtime_settings.read_overrides()
-    return tracker_files.tracker_status(
-        overrides.get("TRACKERS_DIR") or s.TRACKERS_DIR,
-        overrides.get("PR_REQUEST_DIR") or s.PR_REQUEST_DIR,
-    )
+    Spans the upload store and the Planner's drop folder; see
+    `services.tracker_sources`.
+    """
+    return tracker_sources.status()
 
-#: Where uploaded tracker files live on disk. Cleared by --recompute.
-IMPORT_DIR = Path(__file__).resolve().parents[2] / "data" / "imports"
+
+#: Scratch folder for in-flight and dry-run uploads. Deliberately NOT one of
+#: the folders `tracker_sources` searches: a file only becomes the version
+#: the app reads once it has been parsed successfully and published.
+IMPORT_DIR = Path(get_settings().DATA_DIR) / "imports"
 IMPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 #: In-process cache of the latest parsed tracker state.
@@ -102,16 +115,77 @@ _cache: dict[str, Any] = {
 }
 
 
-def _save_upload(upload: UploadFile, dest_dir: Path) -> Path:
-    """Stream an UploadFile to disk and return the saved path."""
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    # Use the original filename, sanitized
-    safe = Path(upload.filename or "upload.xlsx").name
-    # Stamp with epoch to avoid clobbering on repeat uploads
-    target = dest_dir / f"{int(time.time())}_{safe}"
-    with target.open("wb") as f:
+def _canonical_name(filename: str, prefix: str) -> str:
+    """A store name the resolver can actually match for `prefix`.
+
+    A correctly named export — `IHP- Construction Projects_30092026.xlsx`,
+    `O&M Project Progress Tracking Sheet Sep 2025_30092026.xlsx` — is kept
+    as it is. Anything else (`planner.xlsx`, a "Copy of ..." download, a
+    renamed file) is stored as `<prefix>_<DDMMYYYY>`, keeping the date the
+    original name carried and using today's when it carried none.
+
+    Without this, an upload could sit in the store forever and still never
+    be resolved: resolution matches on the tracker's filename prefix.
+    """
+    path = Path(Path(filename or "").name)
+    if path.stem.lower().startswith(prefix.lower()):
+        return path.name
+    suffix = path.suffix.lower() or ".xlsx"
+    date = tracker_files.suffix_date(path.stem) or datetime.now()
+    return f"{prefix}_{date.strftime('%d%m%Y')}{suffix}"
+
+
+def _save_upload(upload: UploadFile, prefix: str) -> Path:
+    """Stream an uploaded tracker into the scratch folder; return its path.
+
+    The stored name is the canonical, dated one the resolver matches on, so
+    publishing it later keeps the date that decides which version wins.
+    Written to `<name>.part` and renamed, so a reader never sees a
+    half-written workbook.
+    """
+    IMPORT_DIR.mkdir(parents=True, exist_ok=True)
+    name = tracker_files.ensure_dated(
+        _canonical_name(upload.filename or "", prefix)
+    )
+    target = IMPORT_DIR / name
+    staging = target.with_name(target.name + ".part")
+    with staging.open("wb") as f:
         shutil.copyfileobj(upload.file, f)
+    staging.replace(target)
     return target
+
+
+def _publish(staged: Path) -> Path:
+    """Promote a staged upload into the tracker store the app resolves.
+
+    This is what "the upload synchronised" actually means: the file joins
+    `<DATA_DIR>/trackers` under its dated name, so the newest-date resolver
+    picks it for every consumer from this request onwards. A store copy is
+    replaced in place when the same version is uploaded again.
+    """
+    dest_dir = tracker_sources.upload_dir()
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    target = dest_dir / staged.name
+    staging = target.with_name(target.name + ".part")
+    shutil.copyfile(staged, staging)
+    staging.replace(target)
+    # The published copy is the one that matters; don't leave the scratch
+    # file behind (a dry run stops here, so it keeps its staged copy).
+    staged.unlink(missing_ok=True)
+    return target
+
+
+def _active(prefix: str) -> dict[str, Any]:
+    """The live version of one tracker (`planner_latest` / `om_latest`)."""
+    status = tracker_sources.status()
+    key = "planner" if prefix == tracker_sources.PLANNER_PREFIX else "om"
+    return {
+        "active_file": status.get(f"{key}_latest"),
+        "active_date": status.get(f"{key}_date"),
+        "active_source": status.get(f"{key}_source"),
+        "active_path": status.get(f"{key}_path"),
+        "sources": status,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -134,17 +208,21 @@ def upload_planner(
     if not file.filename or not file.filename.lower().endswith((".xlsx", ".md")):
         raise HTTPException(status_code=400, detail="File must be .xlsx or .md")
 
-    saved = _save_upload(file, IMPORT_DIR)
-    _cache["planner_path"] = saved
+    staged = _save_upload(file, tracker_sources.PLANNER_PREFIX)
 
     # Run the importer (creates / updates projects, writes audit logs)
     _require_importer()
-    processed = _run_planner_import(saved, dry_run=dry_run)
+    processed = _run_planner_import(staged, dry_run=dry_run)
 
     # Reparse for the cache (cheap; the importer just did the work)
-    rows = parse_planner(saved)
+    rows = parse_planner(staged)
     _cache["planner_parsed_at"] = time.time()
     _cache["planner_rows"] = rows
+
+    # A real import also becomes the newest planner version the app reads;
+    # a dry run stays in the scratch folder so it changes nothing.
+    saved = staged if dry_run else _publish(staged)
+    _cache["planner_path"] = saved
 
     # Auto-recompute mismatches if the O&M is already cached
     if _cache.get("om_path"):
@@ -152,8 +230,10 @@ def upload_planner(
 
     return {
         "saved_to": str(saved),
+        "published": not dry_run,
         "rows_processed": processed,
         "dry_run": dry_run,
+        **_active(tracker_sources.PLANNER_PREFIX),
     }
 
 
@@ -176,25 +256,53 @@ def upload_om(
     """
     if not file.filename or not file.filename.lower().endswith((".xlsx", ".md")):
         raise HTTPException(status_code=400, detail="File must be .xlsx or .md")
-    saved = _save_upload(file, IMPORT_DIR)
-    _cache["om_path"] = saved
+    staged = _save_upload(file, tracker_sources.OM_PREFIX)
     try:
-        rows = parse_om(saved, sheet=sheet)
+        rows = parse_om(staged, sheet=sheet)
     except ValueError as e:
+        # Never publish a workbook the parser rejects: that would make a
+        # broken file the newest version the whole app reads.
+        staged.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail=str(e)) from e
+
+    # Parses cleanly -> it becomes the newest O&M version the app reads.
+    saved = _publish(staged)
+    _cache["om_path"] = saved
     _cache["om_parsed_at"] = time.time()
     _cache["om_rows"] = rows
     _recompute(db)
     return {
         "saved_to": str(saved),
+        "published": True,
         "rows_parsed": len(rows),
         "sheet": sheet,
+        **_active(tracker_sources.OM_PREFIX),
     }
 
 
 # ---------------------------------------------------------------------------
 # Mismatches
 # ---------------------------------------------------------------------------
+
+def _load_cached_trackers() -> None:
+    """Parse the trackers the app currently resolves into the report cache.
+
+    Runs whenever the cache is cold — a fresh worker, or the first request
+    after a restart — so the mismatch report describes the live tracker
+    versions instead of coming back empty. An explicit dry-run staging path
+    already in the cache is left alone.
+    """
+    planner_path = _cache.get("planner_path") or tracker_sources.planner_path()
+    om_path = _cache.get("om_path") or tracker_sources.om_path()
+    if planner_path and Path(planner_path).exists():
+        _cache["planner_path"] = Path(planner_path)
+        _cache["planner_rows"] = parse_planner(Path(planner_path))
+        _cache["planner_parsed_at"] = time.time()
+    if om_path and Path(om_path).exists():
+        _cache["om_path"] = Path(om_path)
+        _cache["om_rows"] = parse_om(Path(om_path))
+        _cache["om_parsed_at"] = time.time()
+
 
 def _recompute(db: Session) -> None:
     """Rebuild the cached mismatch report from current cache state."""
@@ -222,13 +330,7 @@ def get_mismatches(
     files. If nothing has been uploaded, return an empty report.
     """
     if _cache.get("mismatches") is None:
-        # Try to rebuild from any uploaded files
-        planner_path = _cache.get("planner_path")
-        om_path = _cache.get("om_path")
-        if planner_path and Path(planner_path).exists():
-            _cache["planner_rows"] = parse_planner(Path(planner_path))
-        if om_path and Path(om_path).exists():
-            _cache["om_rows"] = parse_om(Path(om_path))
+        _load_cached_trackers()
         _recompute(db)
     items = _cache.get("mismatches") or []
     if only_conflicts:
@@ -248,12 +350,7 @@ def recompute_mismatches(
     db: Session = Depends(get_db),
     _admin: User = Depends(require_capability(CAP_USERS_MANAGE)),
 ):
-    planner_path = _cache.get("planner_path")
-    om_path = _cache.get("om_path")
-    if planner_path and Path(planner_path).exists():
-        _cache["planner_rows"] = parse_planner(Path(planner_path))
-    if om_path and Path(om_path).exists():
-        _cache["om_rows"] = parse_om(Path(om_path))
+    _load_cached_trackers()
     _recompute(db)
     return {"ok": True, "summary": _cache.get("mismatch_summary") or {}}
 
@@ -353,7 +450,7 @@ def _db_column_for(field: str) -> str | None:
 # ---------------------------------------------------------------------------
 
 @router.get("/sources")
-def tracker_sources(
+def tracker_sources_status(
     _admin: User = Depends(require_capability(CAP_USERS_MANAGE)),
 ):
     """Which tracker files the system resolves to RIGHT NOW.

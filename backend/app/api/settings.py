@@ -302,14 +302,9 @@ def tracker_files_status(
     """Which tracker files the system points at RIGHT NOW — always the
     newest _DDMMYYYY-dated version — plus the PR-request PDF drop folder
     (the Planner drops copies there for bulk loading)."""
-    from ..services import tracker_files
+    from ..services import tracker_sources
 
-    s = get_settings()
-    overrides = runtime_settings.read_overrides()
-    return tracker_files.tracker_status(
-        overrides.get("TRACKERS_DIR") or s.TRACKERS_DIR,
-        overrides.get("PR_REQUEST_DIR") or s.PR_REQUEST_DIR,
-    )
+    return tracker_sources.status()
 
 
 @router.post("/ai/test")
