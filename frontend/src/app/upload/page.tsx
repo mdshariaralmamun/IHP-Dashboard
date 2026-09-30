@@ -128,14 +128,23 @@ function UploadView() {
     if (!token) return;
     setLoading(true);
     setError(null);
-    try {
-      setMismatches(await fetchMismatches(token, onlyConflicts));
-      setSources(await fetchSources(token));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load mismatches');
-    } finally {
-      setLoading(false);
+    // Settled, not sequential: a failure in one panel must never hide the
+    // other. The live-version panel is what tells the user whether their
+    // upload actually took over, so it always gets its own attempt.
+    const [mismatchResult, sourceResult] = await Promise.allSettled([
+      fetchMismatches(token, onlyConflicts),
+      fetchSources(token),
+    ]);
+    if (mismatchResult.status === 'fulfilled') {
+      setMismatches(mismatchResult.value);
+    } else {
+      const reason = mismatchResult.reason;
+      setError(reason instanceof Error ? reason.message : 'Failed to load mismatches');
     }
+    if (sourceResult.status === 'fulfilled') {
+      setSources(sourceResult.value);
+    }
+    setLoading(false);
   }, [token, onlyConflicts]);
 
   useEffect(() => { void refresh(); }, [refresh]);

@@ -175,6 +175,24 @@ def _publish(staged: Path) -> Path:
     return target
 
 
+def _om_sheet_present(path: Path, sheet: str) -> bool:
+    """Does the workbook carry the O&M sheet?
+
+    Reads sheet NAMES only (read-only mode), so it costs milliseconds even
+    for the 2 MB / 277-row O&M workbook — cheap enough to run before
+    publishing, unlike the full row parse.
+    """
+    if path.suffix.lower() == ".md":
+        return True
+    import openpyxl
+
+    wb = openpyxl.load_workbook(path, read_only=True)
+    try:
+        return sheet in wb.sheetnames
+    finally:
+        wb.close()
+
+
 def _active(prefix: str) -> dict[str, Any]:
     """The live version of one tracker (`planner_latest` / `om_latest`)."""
     status = tracker_sources.status()
@@ -210,19 +228,29 @@ def upload_planner(
 
     staged = _save_upload(file, tracker_sources.PLANNER_PREFIX)
 
-    # Run the importer (creates / updates projects, writes audit logs)
-    _require_importer()
-    processed = _run_planner_import(staged, dry_run=dry_run)
-
-    # Reparse for the cache (cheap; the importer just did the work)
-    rows = parse_planner(staged)
+    # Validate first: a workbook the parser cannot read must never reach the
+    # store, or a broken file would become the version every consumer reads.
+    try:
+        rows = parse_planner(staged)
+    except Exception as e:  # noqa: BLE001 - report a 400, not a 500
+        staged.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=400, detail=f"Could not read the planner export: {e}"
+        ) from e
     _cache["planner_parsed_at"] = time.time()
     _cache["planner_rows"] = rows
 
-    # A real import also becomes the newest planner version the app reads;
-    # a dry run stays in the scratch folder so it changes nothing.
+    # Publish BEFORE importing. Publishing is a file copy; the import walks
+    # every row and writes the register, which can outlive Cloudflare's
+    # ~100 s proxy limit. The upload has to become the live version even if
+    # the browser never receives this response — worst case the user presses
+    # "Sync latest tracker" afterwards to apply the DB writes.
     saved = staged if dry_run else _publish(staged)
     _cache["planner_path"] = saved
+
+    # Run the importer (creates / updates projects, writes audit logs)
+    _require_importer()
+    processed = _run_planner_import(saved, dry_run=dry_run)
 
     # Auto-recompute mismatches if the O&M is already cached
     if _cache.get("om_path"):
@@ -257,17 +285,31 @@ def upload_om(
     if not file.filename or not file.filename.lower().endswith((".xlsx", ".md")):
         raise HTTPException(status_code=400, detail="File must be .xlsx or .md")
     staged = _save_upload(file, tracker_sources.OM_PREFIX)
-    try:
-        rows = parse_om(staged, sheet=sheet)
-    except ValueError as e:
-        # Never publish a workbook the parser rejects: that would make a
-        # broken file the newest version the whole app reads.
-        staged.unlink(missing_ok=True)
-        raise HTTPException(status_code=400, detail=str(e)) from e
 
-    # Parses cleanly -> it becomes the newest O&M version the app reads.
+    # Never publish a workbook the parser rejects: that would make a broken
+    # file the newest version the whole app reads. The sheet check is cheap
+    # (sheet names only) so the publish below stays instant; reading all 277
+    # rows is the slow part and happens after the file is already live.
+    try:
+        sheet_present = _om_sheet_present(staged, sheet)
+    except Exception as e:  # noqa: BLE001 - unreadable/corrupt workbook
+        staged.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=400, detail=f"Could not read the O&M workbook: {e}"
+        ) from e
+    if not sheet_present:
+        staged.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=400,
+            detail=f"O&M sheet {sheet!r} not found in the workbook.",
+        )
+
     saved = _publish(staged)
     _cache["om_path"] = saved
+    try:
+        rows = parse_om(saved, sheet=sheet)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     _cache["om_parsed_at"] = time.time()
     _cache["om_rows"] = rows
     _recompute(db)

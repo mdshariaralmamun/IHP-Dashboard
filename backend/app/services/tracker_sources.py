@@ -88,6 +88,24 @@ def source_of(path: Path | str | None) -> str | None:
     return "upload" if parent == upload_dir() else "folder"
 
 
+def describe(path: Path | str | None) -> dict[str, Any]:
+    """`{"file", "date", "source", "path"}` for one resolved tracker file.
+
+    Derived from the file itself rather than from a second lookup, so a
+    caller that parsed `path` reports exactly the file it parsed.
+    """
+    if not path:
+        return {"file": None, "date": None, "source": None, "path": None}
+    resolved = Path(path)
+    date = tracker_files.suffix_date(resolved.stem)
+    return {
+        "file": resolved.name,
+        "date": date.strftime("%Y-%m-%d") if date else None,
+        "source": source_of(resolved),
+        "path": str(resolved),
+    }
+
+
 def status() -> dict[str, Any]:
     """`tracker_files.tracker_status` over every searched folder.
 

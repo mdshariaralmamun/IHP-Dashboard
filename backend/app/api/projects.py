@@ -414,10 +414,13 @@ def om_active_prs(
         items.append(d)
 
     summary["upcoming_ear_count"] = upcoming_ear
+    # Derived from the file we actually parsed — never from a second
+    # lookup, and never from `status` (the starlette module in this file).
+    info = tracker_sources.describe(om_path)
     return {
         "ok": True,
-        "source": status.get("om_latest"),
-        "source_date": status.get("om_date"),
+        "source": info["file"],
+        "source_date": info["date"],
         "summary": summary,
         "items": items,
     }
