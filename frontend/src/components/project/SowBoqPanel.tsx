@@ -258,7 +258,7 @@ export default function SowBoqPanel({
               type="button"
               onClick={handleCreateSow}
               disabled={busy !== null}
-              className="rounded-sm bg-primary px-2 py-1 text-sm font-medium text-white hover:bg-apple-surface/90 disabled:opacity-50"
+              className="rounded-sm bg-primary px-2 py-1 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               {busy === 'sow-create' ? 'Creating…' : 'Create revision'}
             </button>
@@ -517,7 +517,7 @@ export default function SowBoqPanel({
               type="button"
               onClick={handleAddBoq}
               disabled={busy !== null}
-              className="rounded-sm bg-primary px-2 py-1 text-sm font-medium text-white hover:bg-apple-surface/90 disabled:opacity-50"
+              className="rounded-sm bg-primary px-2 py-1 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               {busy === 'boq-add' ? 'Adding…' : 'Add'}
             </button>

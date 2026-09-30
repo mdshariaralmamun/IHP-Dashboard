@@ -262,9 +262,9 @@ function UploadView() {
             type="button"
             onClick={doUpload}
             disabled={uploading || (!plannerFile && !omFile)}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-apple-surface disabled:opacity-50"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
-            {uploading ? 'Uploading…' : 'Upload &amp; compare'}
+            {uploading ? 'Uploading…' : 'Upload & compare'}
           </button>
         </div>
 

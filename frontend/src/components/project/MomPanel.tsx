@@ -14,7 +14,7 @@ const inputClass =
   'mt-1 block w-full rounded-md border border-apple-border px-2.5 py-1.5 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary';
 
 const secondaryButton =
-  'rounded-md border border-apple-border bg-apple-surface px-3 py-1.5 text-sm font-medium text-apple-text hover:bg-apple-surface disabled:cursor-not-allowed disabled:opacity-50';
+  'rounded-md border border-apple-border bg-apple-surface px-3 py-1.5 text-sm font-medium text-apple-text hover:bg-apple-surface/70 disabled:cursor-not-allowed disabled:opacity-50';
 
 interface MeetingFields {
   meeting_title: string;
@@ -452,7 +452,7 @@ export default function MomPanel({
             type="button"
             onClick={handleGenerate}
             disabled={busy !== null}
-            className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-apple-surface disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {busy === 'generate'
               ? 'Generating…'
@@ -737,7 +737,7 @@ export default function MomPanel({
               type="button"
               onClick={handleAddAgendaItem}
               disabled={busy !== null}
-              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-apple-surface disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {busy === 'agenda-add' ? 'Adding…' : 'Add'}
             </button>
@@ -774,7 +774,7 @@ export default function MomPanel({
                         type="button"
                         onClick={() => handleSaveEdit(i)}
                         disabled={busy !== null}
-                        className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-white hover:bg-apple-surface disabled:opacity-50"
+                        className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
                       >
                         Save
                       </button>

@@ -279,7 +279,7 @@ export default function EarPanel({
                 type="button"
                 onClick={handleSubmitTrade}
                 disabled={busy !== null}
-                className="rounded-sm bg-primary px-2 py-1 text-sm font-medium text-white hover:bg-apple-surface/90 disabled:opacity-50"
+                className="rounded-sm bg-primary px-2 py-1 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
               >
                 {busy === 'trade-input' ? 'Submitting…' : 'Submit proposal'}
               </button>

@@ -115,7 +115,7 @@ export default function AttachmentsSection({
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="mt-2 rounded-md border border-apple-border bg-apple-surface px-3 py-1.5 text-sm font-medium text-apple-text hover:bg-apple-surface"
+              className="mt-2 rounded-md border border-apple-border bg-apple-surface px-3 py-1.5 text-sm font-medium text-apple-text hover:bg-apple-surface/70"
             >
               Browse files
             </button>

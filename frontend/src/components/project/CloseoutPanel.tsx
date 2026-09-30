@@ -271,7 +271,7 @@ export default function CloseoutPanel({
               type="button"
               onClick={handleSave}
               disabled={busy !== null}
-              className="rounded-sm bg-primary px-2 py-1 text-sm font-medium text-white hover:bg-apple-surface/90 disabled:opacity-50"
+              className="rounded-sm bg-primary px-2 py-1 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               {busy === 'save' ? 'Saving…' : 'Save closeout'}
             </button>

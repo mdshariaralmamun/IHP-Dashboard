@@ -304,7 +304,7 @@ function NewProjectForm() {
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-apple-surface disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? 'Creating…' : 'Create PR'}
             </button>

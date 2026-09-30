@@ -89,7 +89,7 @@ export default function OverrideField({
             <button
               onClick={() => handleConfirm(value)}
               disabled={!justification.trim()}
-              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-apple-surface disabled:opacity-50"
+              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
             >
               Confirm
             </button>
