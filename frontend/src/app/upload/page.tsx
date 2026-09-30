@@ -74,6 +74,21 @@ async function fetchMismatches(token: string, onlyConflicts: boolean): Promise<M
   return r.json();
 }
 
+/**
+ * What actually happened to the file that was just uploaded.
+ *
+ * `published` is the backend saying the file became the live version, and
+ * `active_source` says whether the app is now reading THIS upload or a
+ * newer file that was already there — the difference between "it worked"
+ * and "it worked but something newer still outranks it".
+ */
+function publishNote(res: any): string {
+  if (res?.published === false) return 'staged only (dry run) — nothing published';
+  if (res?.active_source === 'upload') return `published — now live: ${res.active_file}`;
+  if (res?.active_file) return `published, but a newer file still wins: ${res.active_file}`;
+  return 'published';
+}
+
 async function fetchSources(token: string): Promise<TrackerSources> {
   const r = await fetch('/api/admin/import/sources', {
     headers: { Authorization: `Bearer ${token}` },
@@ -161,15 +176,12 @@ function UploadView() {
     try {
       if (plannerFile) {
         const res = await uploadTracker('/api/admin/import/planner', plannerFile, token, { dry_run: 'false' });
-        setUploadStatus(
-          `Planner: ${res.rows_processed} rows processed — now reading ${res.active_file ?? 'no file'}.`,
-        );
+        setUploadStatus(`Planner: ${res.rows_processed} rows processed — ${publishNote(res)}`);
       }
       if (omFile) {
         const res = await uploadTracker('/api/admin/import/om', omFile, token, { sheet: ' In House Projects' });
         setUploadStatus(
-          (s) => (s ? s + ' ' : '') +
-            `O&M: ${res.rows_parsed} rows parsed — now reading ${res.active_file ?? 'no file'}.`,
+          (s) => (s ? s + ' · ' : '') + `O&M: ${res.rows_parsed} rows parsed — ${publishNote(res)}`,
         );
       }
       setPlannerFile(null);
@@ -254,10 +266,13 @@ function UploadView() {
           >
             {uploading ? 'Uploading…' : 'Upload &amp; compare'}
           </button>
-          {uploadStatus && (
-            <p className="text-sm text-apple-muted">{uploadStatus}</p>
-          )}
         </div>
+
+        {uploadStatus && (
+          <div className="mb-6 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            {uploadStatus}
+          </div>
+        )}
 
         {error && <ErrorBox message={error} onRetry={refresh} />}
 

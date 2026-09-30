@@ -254,14 +254,20 @@ function BucketDashboard() {
             </div>
           </div>
           {isAdmin && (
-            <button
-              type="button"
-              onClick={() => void handleSync()}
-              disabled={syncing}
-              className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {syncing ? 'Syncing…' : 'Sync latest tracker'}
-            </button>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                type="button"
+                onClick={() => void handleSync()}
+                disabled={syncing}
+                title="Re-imports the newest tracker already published (uploaded or dropped in the Planner's folder). To publish a NEW file, use Tracker Upload & Sync."
+                className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {syncing ? 'Re-importing…' : 'Re-import newest tracker'}
+              </button>
+              <Link href="/upload" className="text-[11px] text-apple-muted hover:text-apple-text">
+                Upload a new version →
+              </Link>
+            </div>
           )}
         </div>
 

@@ -59,7 +59,7 @@ const NAV_MENUS: NavMenu[] = [
     items: [
       { label: 'Project Register', href: '/projects', hint: 'All projects, search & filters' },
       { label: 'New Project', href: '/projects/new', hint: 'Create a project manually' },
-      { label: 'Upload Documents', href: '/upload', hint: 'Attach drawings, PR forms, files' },
+      { label: 'Tracker Upload & Sync', href: '/upload', hint: 'Publish the Planner / O&M tracker, review conflicts' },
     ],
   },
   {
@@ -75,6 +75,11 @@ const NAV_MENUS: NavMenu[] = [
 const ADMIN_MENU: NavMenu = {
   label: 'Admin',
   items: [
+    {
+      label: 'Tracker Upload & Sync',
+      href: '/upload',
+      hint: 'Upload the Planner / O&M tracker — it becomes the live version',
+    },
     {
       label: 'Access Requests',
       href: '/admin/access-requests',
