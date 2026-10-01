@@ -20,6 +20,7 @@ import SowBoqPanel from '@/components/project/SowBoqPanel';
 import PromoteToEarModal from '@/components/project/PromoteToEarModal';
 import TrackerStepper, { stageLabel } from '@/components/TrackerStepper';
 import TrackingShare from '@/components/TrackingShare';
+import StageChangePanel from '@/components/project/StageChangePanel';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
 import { canDo, useUser } from '@/lib/useUser';
 import type { AuditEntry, ProjectDetail } from '@/lib/types';
@@ -228,6 +229,18 @@ function ProjectDetailView() {
               </div>
             )}
             
+            {/* Phase changes live here, not inside a tab, so they are always
+                one click away whatever the project is doing. */}
+            {canEditProject && (
+              <div className="mb-6">
+                <StageChangePanel
+                  project={project}
+                  canForce={canDo(user, 'users.manage')}
+                  onChanged={load}
+                />
+              </div>
+            )}
+
             <div className="flex overflow-x-auto rounded-lg border border-apple-border bg-apple-surface p-1 shadow-2xs gap-1">
               {[
                 { key: 'all', label: 'Overview & All Stages' },

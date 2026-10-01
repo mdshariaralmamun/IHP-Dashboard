@@ -17,6 +17,7 @@ from ..core.rbac import (
     CAP_PROJECTS_EDIT,
     CAP_SOW_MANAGE,
     CAP_USERS_MANAGE,
+    effective_permissions,
     get_current_user,
     require_capability,
 )
@@ -965,10 +966,18 @@ class PromoteToEarInput(BaseModel):
 
 
 class StageUpdateInput(BaseModel):
-    """Set a project's workflow stage from the dashboard."""
+    """Set a project's workflow stage from the dashboard.
+
+    `justification` is required in practice (enforced by the endpoint): a
+    phase change is a decision someone owns, and the reason is what makes the
+    audit trail readable later. `force` asks for a direct jump when no
+    standard workflow path exists - admin only, and recorded as an override.
+    """
 
     stage: str
+    justification: str | None = None
     note: str | None = None
+    force: bool = False
 
 
 def _transition_path(from_stage: str, to_stage: str) -> list[str] | None:
@@ -1004,7 +1013,19 @@ def set_project_stage(
     db: Session = Depends(get_db),
     user: User = Depends(require_capability(CAP_PROJECTS_EDIT)),
 ):
-    """Set the workflow stage/status of a project (audited, guard-checked)."""
+    """Move a project to another workflow stage, with a recorded reason.
+
+    A justification is REQUIRED. Moving a live project between phases is a
+    decision someone has to own, and the reason is what makes the audit trail
+    readable months later: "cancelled - budget pulled, PI re-initiates under a
+    new PR" must not look the same as a routine status edit.
+
+    Normally the move walks the shortest LEGAL path through the state machine
+    (every hop audited). When no path exists an admin may `force` it: the
+    project jumps straight to the target and the entry is written as
+    `stage:override`, so a bypassed workflow is never mistaken for a normal
+    transition. Forcing is deliberately admin-only.
+    """
     project = get_project_or_404(db, project_id)
     target = (payload.stage or "").strip().upper()
     if target not in workflow.STAGES:
@@ -1013,15 +1034,51 @@ def set_project_stage(
             detail=f"Unknown stage {payload.stage!r}. "
                    f"Valid stages: {sorted(workflow.STAGES)}",
         )
+    justification = (payload.justification or "").strip()
+    if len(justification) < 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "A justification is required to change a project's stage — "
+                "say why it is moving."
+            ),
+        )
     if project.stage == target:
         return project
+
+    detail: dict = {"justification": justification}
+    if payload.note:
+        detail["note"] = payload.note
+
     path = _transition_path(project.stage, target)
     if path is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"No legal workflow path from {project.stage} to {target}.",
+        if not payload.force:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    f"No standard workflow path from {project.stage} to "
+                    f"{target}. Re-submit with force to move it anyway — the "
+                    "move is recorded as an override."
+                ),
+            )
+        if CAP_USERS_MANAGE not in effective_permissions(user):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=(
+                    "Forcing a stage the workflow does not connect requires "
+                    "the admin capability (users.manage)."
+                ),
+            )
+        from_stage = project.stage
+        project.stage = target
+        workflow.log_action(
+            db, user, "stage:override", project,
+            {"from": from_stage, "to": target, **detail},
         )
-    detail = {"note": payload.note} if payload.note else None
+        db.commit()
+        db.refresh(project)
+        return project
+
     for step in path:
         workflow.transition(project, step, user, db, detail=detail)
     db.commit()

@@ -5,18 +5,15 @@ import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 import ErrorBox from '@/components/ErrorBox';
 import Header from '@/components/Header';
-import { listProjects, setProjectStage, updateProject } from '@/lib/api';
+import { ApiError, listProjects, setProjectStage, updateProject } from '@/lib/api';
+import { stageName, STAGE_IDS } from '@/lib/stages';
 import { canDo, useUser } from '@/lib/useUser';
 import type { ProjectSummary } from '@/lib/types';
 
 /** Workflow statuses a project can be moved to from the dashboard. */
-const STATUS_OPTIONS = [
-  'INTAKE', 'MOM_SENT', 'MOM_CONFIRMED', 'DISPOSITION',
-  'EAR_DRAFT', 'EAR_REVIEW', 'EAR_APPROVED',
-  'SOW_DRAFT', 'SOW_REVIEW', 'SOW_APPROVED',
-  'MTO_DRAFT', 'MTO_APPROVED', 'PROCUREMENT', 'WORK_PERMIT',
-  'CONSTRUCTION', 'CLOSEOUT', 'PUNCH_LIST', 'ICR_DONE',
-];
+// The stage list comes from lib/stages so a new stage (CANCELLED) appears
+// here, in the register and in the badge without being added three times.
+const STATUS_OPTIONS = STAGE_IDS;
 
 const STATUS_COLORS: string[] = [
   'bg-slate-100 text-slate-700',
@@ -51,6 +48,10 @@ function BucketDetail({ bucket }: { bucket: string }) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
+  // A stage change needs a reason, so the select only picks the target and a
+  // small inline form collects the why before anything is written.
+  const [pending, setPending] = useState<{ project: ProjectSummary; stage: string } | null>(null);
+  const [why, setWhy] = useState('');
   const [search, setSearch] = useState('');
   const [stage, setStage] = useState('');
   const [trade, setTrade] = useState('');
@@ -99,16 +100,29 @@ function BucketDetail({ bucket }: { bucket: string }) {
     });
   }, [live, search, stage, trade]);
 
-  async function changeStatus(project: ProjectSummary, newStage: string) {
+  async function applyStageChange() {
+    if (!pending) return;
+    const { project, stage } = pending;
     setBusyId(project.id);
     setError(null);
     setNotice(null);
     try {
-      await setProjectStage(project.id, newStage);
-      setNotice(`${project.pr_number} → ${newStage.replace(/_/g, ' ')}`);
+      await setProjectStage(project.id, stage, { justification: why });
+      setNotice(`${project.pr_number} → ${stageName(stage)}`);
+      setPending(null);
+      setWhy('');
       load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not change status');
+      if (e instanceof ApiError && e.status === 409) {
+        setError(
+          `${project.pr_number}: the workflow has no path from ${stageName(project.stage)} ` +
+          `to ${stageName(stage)}. Open the project and use the phase panel to override it ` +
+          `with the reason.`,
+        );
+        setPending(null);
+      } else {
+        setError(e instanceof Error ? e.message : 'Could not change status');
+      }
     } finally {
       setBusyId(null);
     }
@@ -262,11 +276,15 @@ function BucketDetail({ bucket }: { bucket: string }) {
                   <select
                     value={p.stage}
                     disabled={!canEdit || busyId === p.id}
-                    onChange={(e) => void changeStatus(p, e.target.value)}
+                    onChange={(e) => {
+                      setPending({ project: p, stage: e.target.value });
+                      setWhy('');
+                      setError(null);
+                    }}
                     className="rounded-md border border-apple-border bg-white px-2 py-1 text-xs font-medium text-apple-text disabled:opacity-60"
                   >
                     {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                      <option key={s} value={s}>{stageName(s)}</option>
                     ))}
                     {!STATUS_OPTIONS.includes(p.stage) && (
                       <option value={p.stage}>{p.stage}</option>
@@ -296,6 +314,35 @@ function BucketDetail({ bucket }: { bucket: string }) {
                     <span className="text-[11px] italic text-apple-muted">
                       read-only (needs projects.edit)
                     </span>
+                  )}
+
+                  {pending?.project.id === p.id && (
+                    <div className="mt-1 flex w-full flex-wrap items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5">
+                      <span className="text-[11px] font-semibold text-amber-900">
+                        {p.pr_number} → {stageName(pending.stage)} — why?
+                      </span>
+                      <input
+                        value={why}
+                        onChange={(e) => setWhy(e.target.value)}
+                        placeholder="Reason (saved to the audit trail)"
+                        className="min-w-[220px] flex-1 rounded border border-amber-200 bg-white px-2 py-1 text-xs text-apple-text"
+                      />
+                      <button
+                        type="button"
+                        disabled={why.trim().length < 3 || busyId === p.id}
+                        onClick={() => void applyStageChange()}
+                        className="rounded bg-primary px-3 py-1 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                      >
+                        Move
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setPending(null); setWhy(''); }}
+                        className="rounded border border-apple-border px-2 py-1 text-xs text-apple-text hover:bg-apple-surface"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   )}
                 </div>
               </li>

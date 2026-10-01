@@ -214,12 +214,24 @@ export function updateProject(
   return request<ProjectDetail>(`/api/projects/${id}`, { method: 'PUT' }, patch);
 }
 
+/**
+ * Move a project to another stage.
+ *
+ * `justification` is required by the backend — a phase change is a decision
+ * someone owns and it is recorded on every audit entry. `force` asks for a
+ * direct jump when the workflow has no path (admin only; logged as
+ * `stage:override`).
+ */
 export function setProjectStage(
   id: number,
   stage: string,
-  note?: string,
+  opts: { justification: string; force?: boolean; note?: string },
 ): Promise<ProjectDetail> {
-  return request<ProjectDetail>(`/api/projects/${id}/stage`, { method: 'POST' }, { stage, note });
+  return request<ProjectDetail>(
+    `/api/projects/${id}/stage`,
+    { method: 'POST' },
+    { stage, ...opts },
+  );
 }
 
 /** Tracker files the backend currently resolves to (newest _DDMMYYYY). */

@@ -46,6 +46,11 @@ PUNCH_LIST = "PUNCH_LIST"
 # closeout with as-builts, punch list, etc.). ICR_DONE means the MTO was
 # handed to Project Control and the EAT install/follow-up is recorded.
 ICR_DONE = "ICR_DONE"
+# Terminal "not going ahead" stage: the budget was pulled, the request was
+# withdrawn after assessment, or it duplicates another PR. Terminal on
+# purpose - the PI re-initiates under a NEW PR number rather than reopening
+# this one, so nothing flows out of it.
+CANCELLED = "CANCELLED"
 
 STAGES = [
     INTAKE,
@@ -66,6 +71,7 @@ STAGES = [
     CLOSEOUT,
     PUNCH_LIST,
     ICR_DONE,
+    CANCELLED,
 ]
 
 #: Stages that only the PROJECT branch can ever reach.
@@ -94,7 +100,16 @@ ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     CLOSEOUT: {PUNCH_LIST},
     PUNCH_LIST: set(),
     ICR_DONE: set(),
+    CANCELLED: set(),
 }
+
+#: Cancelling is possible from any LIVE stage - a request can be pulled for
+#: budget, duplication or a withdrawn scope at any point, and refusing the
+#: move would just push people into leaving the stage stale. The two terminal
+#: stages are exempt: they are already finished.
+for _live_stage, _next_stages in ALLOWED_TRANSITIONS.items():
+    if _live_stage not in {PUNCH_LIST, ICR_DONE, CANCELLED}:
+        _next_stages.add(CANCELLED)
 
 
 class WorkflowError(Exception):
