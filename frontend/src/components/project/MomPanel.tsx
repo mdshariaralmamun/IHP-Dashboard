@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import ErrorBox from '@/components/ErrorBox';
 import MomStatusBadge from '@/components/MomStatusBadge';
-import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailDirectory, getMomEmailLink, openMomWebView, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
+import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailDirectory, getMomEmailLink, getMomWebViewHtml, openMomWebView, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
 import type { MomDirectoryEntry } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { canDo } from '@/lib/useUser';
@@ -172,7 +172,7 @@ export default function MomPanel({
     setBusy('send');
     setError(null);
     try {
-      await downloadMomEmail(projectId, sendTo, sendCc, attachMom);
+      await downloadMomEmail(projectId, sendTo, sendCc, attachMom, richOnly);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not prepare the email');
     } finally {
@@ -219,6 +219,13 @@ export default function MomPanel({
   const [meeting, setMeeting] = useState<MeetingFields>(EMPTY_MEETING);
   // Known addresses, so the same colleague is picked rather than retyped.
   const [directory, setDirectory] = useState<MomDirectoryEntry[]>([]);
+  // The email draft is previewed as the WEB VIEW it is sent as, not as the
+  // plain-text alternative a mail client may pick instead.
+  const [emailView, setEmailView] = useState<'rich' | 'plain'>('rich');
+  const [emailHtml, setEmailHtml] = useState<string | null>(null);
+  const [emailHtmlError, setEmailHtmlError] = useState<string | null>(null);
+  // Send the styled view only (no plain-text copy for the client to prefer).
+  const [richOnly, setRichOnly] = useState(true);
   const [attendees, setAttendees] = useState<MomAttendee[]>([]);
   const [agenda, setAgenda] = useState<MomAgendaItem[]>([]);
   const [detailsLoaded, setDetailsLoaded] = useState(false);
@@ -300,6 +307,26 @@ export default function MomPanel({
   // fields from the project itself (PR + name, location incl. O&M details,
   // meeting number, today's date). Values stay editable.
   const [autoFilled, setAutoFilled] = useState(false);
+  // The rendered minute, for the email preview. Same artifact as the web view.
+  useEffect(() => {
+    if (emailView !== 'rich' || emailHtml !== null || !mom) return;
+    let cancelled = false;
+    getMomWebViewHtml(projectId)
+      .then((html) => {
+        if (!cancelled) setEmailHtml(html);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setEmailHtmlError(
+            err instanceof Error ? err.message : 'Could not render the minute.',
+          );
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [emailView, emailHtml, mom, projectId]);
+
   // Known addresses for the suggestions. Best effort: an empty directory just
   // means no suggestions, never an error on screen.
   useEffect(() => {
@@ -996,6 +1023,20 @@ export default function MomPanel({
                 {mom.pdf_filename ? ' (Word + PDF)' : ' (Word)'}
               </label>
 
+              <label className="flex items-start gap-2 text-xs text-apple-text">
+                <input
+                  type="checkbox"
+                  checked={richOnly}
+                  onChange={(e) => setRichOnly(e.target.checked)}
+                  className="mt-0.5 h-3.5 w-3.5"
+                />
+                <span>
+                  <span className="font-medium">Send the web view only</span> — no plain-text
+                  copy. A mail client that prefers text will otherwise show the text dump
+                  instead of the minute above.
+                </span>
+              </label>
+
               <p className="text-[11px] text-apple-muted">
                 &ldquo;Open in Outlook&rdquo; starts a new message with everyone in To and the
                 minute in the body — no attachment, so add your own images or files before
@@ -1011,14 +1052,46 @@ export default function MomPanel({
           </div>
 
           <div className="rounded-md border border-apple-border bg-apple-surface/50">
-            <div className="border-b border-apple-border px-4 py-2 text-xs font-semibold uppercase tracking-wide text-apple-muted">
-              Email draft
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-apple-border px-4 py-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-apple-muted">
+                Email draft
+              </span>
+              <div className="flex overflow-hidden rounded border border-apple-border">
+                <button
+                  type="button"
+                  onClick={() => setEmailView('rich')}
+                  className={`px-2.5 py-1 text-[11px] font-semibold ${emailView === 'rich' ? 'bg-primary text-white' : 'text-apple-muted hover:bg-apple-surface'}`}
+                >
+                  Web view
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmailView('plain')}
+                  className={`px-2.5 py-1 text-[11px] font-semibold ${emailView === 'plain' ? 'bg-primary text-white' : 'text-apple-muted hover:bg-apple-surface'}`}
+                >
+                  Plain text
+                </button>
+              </div>
             </div>
             <div className="px-4 py-3">
               <p className="text-sm font-semibold text-apple-text">{mom.email_subject}</p>
-              <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-apple-text">
-                {mom.email_body}
-              </pre>
+              {emailView === 'rich' ? (
+                emailHtml ? (
+                  <iframe
+                    title="MOM email — web view"
+                    srcDoc={emailHtml}
+                    className="mt-2 h-[560px] w-full rounded-md border border-apple-border bg-white"
+                  />
+                ) : (
+                  <p className="mt-2 text-xs text-apple-muted">
+                    {emailHtmlError ?? 'Rendering the minute…'}
+                  </p>
+                )
+              ) : (
+                <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-apple-text">
+                  {mom.email_body}
+                </pre>
+              )}
             </div>
           </div>
 

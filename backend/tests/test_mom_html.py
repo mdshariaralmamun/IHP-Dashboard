@@ -248,3 +248,74 @@ class TestEmailDirectory:
             == 1
         )
 
+class TestTheEmailIsTheWebView:
+    """The email body must be the styled minute, not the text dump."""
+
+    def _mom(self, client, admin_headers, pr):
+        resp = client.post(
+            "/api/projects",
+            headers=admin_headers,
+            json={"pr_number": pr, "title": "Email format", "pi_email": "pi@example.com"},
+        )
+        assert resp.status_code in (200, 201), resp.text
+        pid = resp.json()["id"]
+        resp = client.post(
+            f"/api/projects/{pid}/mom/generate",
+            headers=admin_headers,
+            json={
+                "attendees": [
+                    {
+                        "name": "Adrian Ichim",
+                        "title": "Laboratory Supervisor",
+                        "email": "adrian.ichim@kaust.edu.sa",
+                    }
+                ]
+            },
+        )
+        assert resp.status_code == 200, resp.text
+        return pid
+
+    def test_rich_only_carries_no_plain_alternative(self, client, admin_headers):
+        """A client that prefers text/plain then has nothing to fall back to
+        but the web view — which is the whole point of the flag."""
+        from email import message_from_bytes
+
+        pid = self._mom(client, admin_headers, "PR-71601")
+        resp = client.get(
+            f"/api/projects/{pid}/mom/email.eml?attach=false&html_only=true",
+            headers=admin_headers,
+        )
+        assert resp.status_code == 200, resp.text
+        message = message_from_bytes(resp.content)
+        assert [p.get_content_type() for p in message.walk()] == ["text/html"]
+        html = message.get_payload(decode=True).decode()
+        assert "Minutes of Meeting" in html
+        assert message["X-Unsent"] == "1"
+
+    def test_the_plain_copy_is_still_available(self, client, admin_headers):
+        from email import message_from_bytes
+
+        pid = self._mom(client, admin_headers, "PR-71602")
+        resp = client.get(
+            f"/api/projects/{pid}/mom/email.eml?attach=false&html_only=false",
+            headers=admin_headers,
+        )
+        assert resp.status_code == 200, resp.text
+        message = message_from_bytes(resp.content)
+        assert [p.get_content_type() for p in message.walk()] == [
+            "multipart/alternative",
+            "text/plain",
+            "text/html",
+        ]
+
+    def test_the_web_view_document_is_served_for_preview(
+        self, client, admin_headers,
+    ):
+        """The in-app email preview renders this same artifact."""
+        pid = self._mom(client, admin_headers, "PR-71603")
+        resp = client.get(f"/api/projects/{pid}/mom/view", headers=admin_headers)
+        assert resp.status_code == 200, resp.text
+        assert resp.headers["content-type"].startswith("text/html")
+        assert "Minutes of Meeting" in resp.text
+
+

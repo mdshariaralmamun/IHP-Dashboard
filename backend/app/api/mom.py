@@ -534,12 +534,41 @@ def mom_email_link(
     }
 
 
+def _set_email_bodies(
+    message: EmailMessage, plain: str, html: str | None, *, html_only: bool,
+) -> None:
+    """Put the minute into the message.
+
+    The HTML is the same document the web view shows, so a recipient who can
+    render it reads the styled minute instead of a text dump.
+
+    `html_only` drops the plain alternative on purpose. A mail client that
+    prefers text/plain (or is configured to read in plain text) renders THE
+    PLAIN PART and the styled minute is never seen - which is exactly what
+    happened when this was sent from the desktop. With no alternative, the
+    client has nothing to fall back to but the web view.
+    """
+    if html and html_only:
+        message.set_content(html, subtype="html")
+        return
+    message.set_content(plain)
+    if html:
+        message.add_alternative(html, subtype="html")
+
+
 @router.get("/email.eml")
 def mom_email_draft(
     project_id: int,
     to: str | None = Query(default=None, description="Comma separated recipients"),
     cc: str | None = Query(default=None),
     attach: bool = Query(default=True, description="Attach the MOM DOCX/PDF"),
+    html_only: bool = Query(
+        default=True,
+        description=(
+            "Send the minute as the styled web view only, with no plain-text "
+            "alternative to be picked instead of it"
+        ),
+    ),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
@@ -576,26 +605,21 @@ def mom_email_draft(
     if copied:
         message["Cc"] = ", ".join(copied)
     message["X-Unsent"] = "1"
+    html_body = _mom_html_body(project, mom, details)
     if attach:
-        message.set_content(mom.email_body or "")
-        html_body = _mom_html_body(project, mom, details)
-        if html_body:
-            message.add_alternative(html_body, subtype="html")
+        plain = mom.email_body or ""
     else:
         # No document attached: the minute travels inside the email body instead,
         # so the sender can attach their own images/files in Outlook.
         fresh = build_mom_context(project, details, mom.version)
-        _, body = emailer.build_mom_draft(
+        _, plain = emailer.build_mom_draft(
             project,
             fresh["items"],
             details=details,
             context=fresh,
             include_attachments=False,
         )
-        message.set_content(body)
-        html_body = _mom_html_body(project, mom, details)
-        if html_body:
-            message.add_alternative(html_body, subtype="html")
+    _set_email_bodies(message, plain, html_body, html_only=html_only)
 
     mom_dir = storage.project_dir(project.pr_number, "mom")
     # The PDF needs LibreOffice, so it may be absent; the DOCX always exists.

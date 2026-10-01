@@ -395,7 +395,13 @@ def _parse_eml(raw: bytes):
 def test_mom_email_draft_carries_recipients_and_attachments(client, admin_headers):
     pid, project, details = _mom_with_participants(client, admin_headers)
 
-    resp = client.get(f"/api/projects/{pid}/mom/email.eml", headers=admin_headers)
+    # html_only=false: this test is about the PLAIN copy. The default is the
+    # web view on its own (no plain alternative for a client to prefer).
+    resp = client.get(
+        f"/api/projects/{pid}/mom/email.eml",
+        params={"html_only": "false"},
+        headers=admin_headers,
+    )
     assert resp.status_code == 200, resp.text
     assert resp.headers["content-type"].startswith("message/rfc822")
     assert ".eml" in resp.headers["content-disposition"]
@@ -533,7 +539,9 @@ def test_email_link_and_eml_can_omit_the_attachments(client, admin_headers):
     pid, _project, _details = _mom_with_participants(client, admin_headers)
 
     plain = client.get(
-        f"/api/projects/{pid}/mom/email.eml", params={"attach": "false"}, headers=admin_headers
+        f"/api/projects/{pid}/mom/email.eml",
+        params={"attach": "false", "html_only": "false"},
+        headers=admin_headers,
     )
     assert plain.status_code == 200, plain.text
     message = _parse_eml(plain.content)

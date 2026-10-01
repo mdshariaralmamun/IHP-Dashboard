@@ -1017,11 +1017,15 @@ export function downloadMomEmail(
   to?: string,
   cc?: string,
   attach = true,
+  /** Send the styled web view only, with no plain-text part for the client to
+   *  prefer instead (which is how a mail client ends up showing a text dump). */
+  htmlOnly = true,
 ): Promise<void> {
   const params = new URLSearchParams();
   if (to?.trim()) params.set('to', to.trim());
   if (cc?.trim()) params.set('cc', cc.trim());
   params.set('attach', attach ? 'true' : 'false');
+  params.set('html_only', htmlOnly ? 'true' : 'false');
   return downloadFile(
     `/api/projects/${projectId}/mom/email.eml?${params.toString()}`,
     'MOM.eml',
@@ -1065,7 +1069,7 @@ export function getMomEmailLink(
  * blob, so the app view, the print view and the email body are the same
  * artifact.
  */
-export async function openMomWebView(projectId: number): Promise<void> {
+export async function getMomWebViewHtml(projectId: number): Promise<string> {
   const headers = new Headers();
   const token = getToken();
   if (token) headers.set('Authorization', `Bearer ${token}`);
@@ -1075,7 +1079,11 @@ export async function openMomWebView(projectId: number): Promise<void> {
     { headers },
   );
   if (!res.ok) throw new ApiError(res.status, await parseErrorMessage(res));
-  const html = await res.text();
+  return res.text();
+}
+
+export async function openMomWebView(projectId: number): Promise<void> {
+  const html = await getMomWebViewHtml(projectId);
   const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
   window.open(url, '_blank', 'noopener');
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
