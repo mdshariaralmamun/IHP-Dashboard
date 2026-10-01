@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import ErrorBox from '@/components/ErrorBox';
 import Header from '@/components/Header';
+import { getToken } from '@/lib/api';
 import type { TrackerSources } from '@/lib/api';
 import { useUser } from '@/lib/useUser';
 
@@ -136,7 +137,12 @@ function UploadView() {
   const [filter, setFilter] = useState('');
 
   useEffect(() => {
-    setToken(localStorage.getItem('ihp_token'));
+    // MUST go through the shared helper: the JWT is stored under
+    // 'ihp_access_token'. Reading a hard-coded key here ('ihp_token') made
+    // every request on this page a silent no-op — the click did nothing at
+    // all, with no error, because both refresh() and doUpload() bail out
+    // when the token is null.
+    setToken(getToken());
   }, []);
 
   const refresh = useCallback(async () => {
@@ -165,7 +171,17 @@ function UploadView() {
   useEffect(() => { void refresh(); }, [refresh]);
 
   async function doUpload() {
-    if (!token) return;
+    if (!token) {
+      // Never fail silently: that is what made "Upload & compare" look
+      // broken. Re-read the token in case the page mounted before login.
+      const fresh = getToken();
+      if (!fresh) {
+        setError('Your session has expired. Reload the page and sign in again, then retry.');
+        return;
+      }
+      setToken(fresh);
+      return;
+    }
     if (!plannerFile && !omFile) {
       setError('Choose at least one file to upload.');
       return;
