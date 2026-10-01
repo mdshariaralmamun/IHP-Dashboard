@@ -253,12 +253,24 @@ def mom_defaults(
     existing = db.query(MomRecord).filter(MomRecord.project_id == project.id).count()
     number = f"{existing + 1:02d}"
 
+    # Organizer: what was saved before, else whoever the pasted invitation came
+    # from. The editor opens with the field filled instead of N/A.
+    from ..services import mom_html
+
+    saved = (project.mom.details if project.mom and project.mom.details else {}) or {}
+    organizer = (
+        str(saved.get("organizer") or "").strip()
+        or (mom_html.organizer_from_invitation(saved.get("invitation")) or "")
+        or (project.pi_name or "")
+    )
+
     return {
         "meeting_title": f"{project.pr_number} {project.title}".strip(),
         "meeting_location": location,
         "meeting_number": number,
         "meeting_date": _date.today().isoformat(),
         "meeting_time": "10:00",
+        "organizer": organizer,
         "project_pr": project.pr_number,
         "project_title": project.title,
         "pi_name": project.pi_name,
@@ -376,6 +388,59 @@ def _mom_html_body(project: Project, mom: MomRecord, details: dict) -> str | Non
     except Exception as exc:  # noqa: BLE001 - never block the email on formatting
         print(f"MOM html body failed: {exc}")
         return None
+
+
+@router.get("/email-directory")
+def mom_email_directory(
+    project_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """People to suggest when filling in a MOM.
+
+    Built from this project's earlier meetings, its PI, every attendee of any
+    other meeting, and the platform's own users — so a colleague who has been
+    in a minute before does not have to be retyped, and the address is spelled
+    the way it was written last time. Ordered by name; deduplicated by address.
+    """
+    project = get_project_or_404(db, project_id)
+    seen: dict[str, dict] = {}
+
+    def add(name: str | None, email: str | None, source: str) -> None:
+        address = (email or "").strip()
+        if "@" not in address:
+            return
+        key = address.lower()
+        if key in seen:
+            # Keep the first (closest) source but fill in a name if we now
+            # know one and the earlier entry had none.
+            if not seen[key]["name"] and (name or "").strip():
+                seen[key]["name"] = name.strip()
+            return
+        seen[key] = {
+            "name": (name or "").strip(),
+            "email": address,
+            "source": source,
+        }
+
+    for mom in db.query(MomRecord).filter(MomRecord.project_id == project_id).all():
+        for person in (mom.details or {}).get("attendees") or []:
+            if isinstance(person, dict):
+                add(person.get("name"), person.get("email"), "this project")
+    add(project.pi_name, project.pi_email, "PI")
+    for mom in db.query(MomRecord).all():
+        if mom.project_id == project_id:
+            continue
+        for person in (mom.details or {}).get("attendees") or []:
+            if isinstance(person, dict):
+                add(person.get("name"), person.get("email"), "past attendee")
+    for user in db.query(User).all():
+        add(user.full_name, user.email, "platform user")
+
+    entries = sorted(
+        seen.values(), key=lambda e: ((e["name"] or "~").lower(), e["email"])
+    )
+    return {"entries": entries, "count": len(entries)}
 
 
 @router.get("/view", response_class=HTMLResponse)

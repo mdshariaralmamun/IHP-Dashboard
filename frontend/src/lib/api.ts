@@ -299,6 +299,8 @@ export interface MomDefaults {
   meeting_number: string;
   meeting_date: string;
   meeting_time: string;
+  /** Saved organizer, else parsed from the invitation, else the PI. */
+  organizer: string;
   project_pr: string;
   project_title: string;
   pi_name: string | null;
@@ -308,6 +310,27 @@ export interface MomDefaults {
 
 export function getMomDefaults(projectId: number): Promise<MomDefaults> {
   return request<MomDefaults>(`/api/projects/${projectId}/mom/defaults`);
+}
+
+/** One known person, suggested when filling in a MOM. */
+export interface MomDirectoryEntry {
+  name: string;
+  email: string;
+  /** Where the suggestion came from (this project / PI / past attendee / user). */
+  source: string;
+}
+
+export interface MomEmailDirectory {
+  entries: MomDirectoryEntry[];
+  count: number;
+}
+
+/**
+ * Known addresses to suggest for attendees and recipients — this project's
+ * earlier meetings, its PI, other meetings' attendees, and platform users.
+ */
+export function getMomEmailDirectory(projectId: number): Promise<MomEmailDirectory> {
+  return request<MomEmailDirectory>(`/api/projects/${projectId}/mom/email-directory`);
 }
 
 /** Project Summary (house format) as structured data for the web view. */

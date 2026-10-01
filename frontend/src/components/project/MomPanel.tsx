@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import ErrorBox from '@/components/ErrorBox';
 import MomStatusBadge from '@/components/MomStatusBadge';
-import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailLink, openMomWebView, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
+import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailDirectory, getMomEmailLink, openMomWebView, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
+import type { MomDirectoryEntry } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { canDo } from '@/lib/useUser';
 import { TRADE_OPTIONS as USER_TRADE_OPTIONS } from '@/lib/types';
@@ -22,6 +23,9 @@ interface MeetingFields {
   meeting_number: string;
   meeting_date: string;
   meeting_time: string;
+  /** Optional override; left empty the minute derives it (attendees, then the
+   *  invitation's Organizer/From line). */
+  organizer: string;
 }
 
 const EMPTY_MEETING: MeetingFields = {
@@ -30,6 +34,7 @@ const EMPTY_MEETING: MeetingFields = {
   meeting_number: '',
   meeting_date: '',
   meeting_time: '',
+  organizer: '',
 };
 
 const TRADE_OPTIONS = ['Civil/Architectural', 'Electrical', 'Plumbing', 'HVAC'];
@@ -212,6 +217,8 @@ export default function MomPanel({
   }
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [meeting, setMeeting] = useState<MeetingFields>(EMPTY_MEETING);
+  // Known addresses, so the same colleague is picked rather than retyped.
+  const [directory, setDirectory] = useState<MomDirectoryEntry[]>([]);
   const [attendees, setAttendees] = useState<MomAttendee[]>([]);
   const [agenda, setAgenda] = useState<MomAgendaItem[]>([]);
   const [detailsLoaded, setDetailsLoaded] = useState(false);
@@ -293,6 +300,20 @@ export default function MomPanel({
   // fields from the project itself (PR + name, location incl. O&M details,
   // meeting number, today's date). Values stay editable.
   const [autoFilled, setAutoFilled] = useState(false);
+  // Known addresses for the suggestions. Best effort: an empty directory just
+  // means no suggestions, never an error on screen.
+  useEffect(() => {
+    let cancelled = false;
+    getMomEmailDirectory(projectId)
+      .then((data) => {
+        if (!cancelled) setDirectory(data.entries ?? []);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
+
   useEffect(() => {
     if (detailsLoaded || mom?.details) return;
     let cancelled = false;
@@ -306,6 +327,7 @@ export default function MomPanel({
           meeting_number: prev.meeting_number || d.meeting_number,
           meeting_date: prev.meeting_date || d.meeting_date,
           meeting_time: prev.meeting_time || d.meeting_time,
+          organizer: prev.organizer || d.organizer || '',
         }));
         setAutoFilled(true);
         setDetailsLoaded(true);
@@ -328,6 +350,7 @@ export default function MomPanel({
         meeting_number: d.meeting_number,
         meeting_date: d.meeting_date,
         meeting_time: d.meeting_time,
+        organizer: d.organizer || '',
       });
       setAutoFilled(true);
     } catch (err) {
@@ -345,6 +368,7 @@ export default function MomPanel({
       meeting_number: d.meeting_number ?? '',
       meeting_date: d.meeting_date ?? '',
       meeting_time: d.meeting_time ?? '',
+      organizer: d.organizer ?? '',
     });
     setAttendees(d.attendees ?? []);
     setAgenda(d.agenda ?? []);
@@ -373,6 +397,7 @@ export default function MomPanel({
       meeting_number: meeting.meeting_number.trim() || null,
       meeting_date: meeting.meeting_date.trim() || null,
       meeting_time: meeting.meeting_time.trim() || null,
+      organizer: meeting.organizer.trim() || null,
       invitation: invitation.trim() || null,
       attendees: attendees.filter((a) => a.name.trim() || a.title.trim() || a.email.trim()),
       agenda: agenda
@@ -423,6 +448,25 @@ export default function MomPanel({
       setMeeting((prev) => ({ ...prev, [field]: e.target.value }));
   }
 
+  /**
+   * Fill an attendee's address from the directory when we recognise the name.
+   *
+   * Runs on blur and only when the email is still empty, so it proposes
+   * without ever overwriting something the user typed.
+   */
+  function proposeEmail(index: number) {
+    const row = attendees[index];
+    if (!row || row.email.trim() || !row.name.trim()) return;
+    const needle = row.name.trim().toLowerCase();
+    const match =
+      directory.find((e) => e.name.toLowerCase() === needle) ??
+      directory.find((e) => e.name.toLowerCase().startsWith(needle)) ??
+      directory.find(
+        (e) => e.name.length > 3 && needle.startsWith(e.name.toLowerCase()),
+      );
+    if (match) updateAttendee(index, 'email', match.email);
+  }
+
   function updateAttendee(index: number, field: keyof MomAttendee, value: string) {
     setAttendees((prev) =>
       prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
@@ -433,12 +477,13 @@ export default function MomPanel({
     setAgenda((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
   }
 
-  const meetingInputs: { field: keyof MeetingFields; label: string; placeholder: string }[] = [
+  const meetingInputs: { field: keyof MeetingFields; label: string; placeholder: string; list?: string }[] = [
     { field: 'meeting_title', label: 'Meeting Title', placeholder: 'e.g. PR-12623 kickoff' },
     { field: 'meeting_location', label: 'Meeting Location', placeholder: 'e.g. Bldg 5, Level 3' },
     { field: 'meeting_number', label: 'Meeting Number', placeholder: 'e.g. 01' },
     { field: 'meeting_date', label: 'Date', placeholder: 'e.g. 2026-09-10' },
     { field: 'meeting_time', label: 'Time', placeholder: 'e.g. 10:00' },
+    { field: 'organizer', label: 'Organizer', placeholder: 'Auto from the invitation — type to override', list: 'mom-directory' },
   ];
 
   return (
@@ -505,7 +550,7 @@ export default function MomPanel({
                 </div>
               )}
               <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
-                {meetingInputs.map(({ field, label, placeholder }) => (
+                {meetingInputs.map(({ field, label, placeholder, list }) => (
                   <div key={field}>
                     <label className="block text-xs font-medium text-apple-muted">{label}</label>
                     <input
@@ -513,11 +558,20 @@ export default function MomPanel({
                       value={meeting[field]}
                       onChange={updateMeeting(field)}
                       placeholder={placeholder}
+                      list={list}
                       className={inputClass}
                     />
                   </div>
                 ))}
               </div>
+
+              <datalist id="mom-directory">
+                {directory.map((entry) => (
+                  <option key={entry.email} value={entry.email}>
+                    {entry.name ? `${entry.name} — ${entry.source}` : entry.source}
+                  </option>
+                ))}
+              </datalist>
 
               <div>
                 <label className="block text-xs font-medium text-apple-muted">
@@ -560,7 +614,11 @@ export default function MomPanel({
                           type="text"
                           value={row.name}
                           onChange={(e) => updateAttendee(i, 'name', e.target.value)}
+                          // Propose the address we know for this person rather
+                          // than making them retype it.
+                          onBlur={() => proposeEmail(i)}
                           placeholder="Name"
+                          list="mom-directory"
                           className={inputClass}
                         />
                         <input
@@ -575,6 +633,7 @@ export default function MomPanel({
                           value={row.email}
                           onChange={(e) => updateAttendee(i, 'email', e.target.value)}
                           placeholder="Email"
+                          list="mom-directory"
                           className={inputClass}
                         />
                         <button

@@ -349,6 +349,9 @@ class MomDetails(BaseModel):
     #: The Outlook meeting invitation, pasted as-is (when, where, who, body).
     #: Rendered as its own section in the minute and in the email.
     invitation: str | None = None
+    #: Who called the meeting. Left empty the minute derives it from the
+    #: attendees, then from the invitation's Organizer/From line.
+    organizer: str | None = None
 
 
 # ---------- audit ----------

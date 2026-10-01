@@ -383,6 +383,11 @@ export interface MomDetails {
   agenda?: MomAgendaItem[];
   /** Outlook meeting invitation pasted as-is; its own section in the minute. */
   invitation?: string | null;
+  /**
+   * Who called the meeting. Left empty, the minute derives it from the
+   * attendees, then from the invitation's Organizer/From line.
+   */
+  organizer?: string | null;
 }
 
 export interface MomRecord {

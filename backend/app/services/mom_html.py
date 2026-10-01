@@ -13,15 +13,25 @@ the context renders any project.
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from markupsafe import Markup, escape
 
 from ..core.config import get_settings
 
 _TEMPLATE_NAME = "mom_template.html"
+
+#: Enough of an address to split it for the browser (see defuse_emails).
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
+
+#: Invitation header keys naming who called the meeting. Checked before the
+#: sender, because a forwarded invitation still carries the real organizer.
+_ORGANIZER_KEYS = ("organizer", "organiser", "chair", "meeting owner")
+_SENDER_KEYS = ("from",)
 
 #: Values that mean "still waiting" / "done" / "attention" - used to colour the
 #: status badges in the document.
@@ -68,6 +78,85 @@ def _brief(value: Any, limit: int = 160) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "\u2026"
 
 
+def defuse_emails(text: str | None, *, for_email: bool) -> str | Markup:
+    """The address as the template should print it.
+
+    Cloudflare's Scrape Shield rewrites every plain address in the HTML it
+    proxies into "[email protected]" plus a decode script — the server-side
+    render has the address intact, which is why the attendee table looked
+    blank in the browser but the email was fine. Splitting the local part from
+    the domain with a tag leaves the scanner nothing contiguous to match,
+    while the browser still shows — and copies — one normal address.
+
+    The email body keeps the plain form: mail clients need it.
+    """
+    if not text:
+        return ""
+    if for_email:
+        return text
+    return Markup(
+        _EMAIL_RE.sub(
+            lambda match: str(_split_address(match.group(0))), escape(text)
+        )
+    )
+
+
+def _split_address(address: str) -> Markup:
+    """`local@domain` as `local<span>&#64;</span>domain`."""
+    local, _, domain = address.partition("@")
+    return Markup("{local}<span>&#64;</span>{domain}").format(
+        local=escape(local), domain=escape(domain)
+    )
+
+
+def organizer_from_invitation(invitation: str | None) -> str | None:
+    """Who called the meeting, as the pasted invitation names them.
+
+    Outlook's header opens with the sender ("From: Adrian Ichim
+    <adrian.ichim@kaust.edu.sa>") and a calendar invitation carries an
+    explicit "Organizer:" line. Either beats printing N/A, which is what
+    happened whenever no attendee's title happened to contain "Organizer".
+    """
+    lines = [line.strip() for line in (invitation or "").splitlines()]
+
+    def value_for(keys: tuple[str, ...]) -> str | None:
+        for line in lines:
+            if ":" not in line:
+                continue
+            key, _, value = line.partition(":")
+            if key.strip().lower() not in keys:
+                continue
+            value = value.strip()
+            if not value:
+                continue
+            # "Adrian Ichim <a@b.c>" -> "Adrian Ichim"
+            name = re.sub(r"<[^>]*>", "", value).strip().strip('"').strip()
+            if name:
+                return name
+            found = _EMAIL_RE.search(value)
+            if found:
+                return found.group(0)
+        return None
+
+    return value_for(_ORGANIZER_KEYS) or value_for(_SENDER_KEYS)
+
+
+def _drop_repeated_trade(lines: list[str], trade: str) -> list[str]:
+    """Drop a leading line that only repeats the trade heading.
+
+    The scope text is built for the WORD cell, where the trade has to be the
+    first line of the same cell ("Plumbing:" then the bullets). The HTML prints
+    the trade as its own heading row, so that first line came out twice — once
+    as the heading and again as an empty-looking bullet.
+    """
+    if not lines or not trade:
+        return lines
+    head = lines[0].strip().rstrip(":.—- ").strip()
+    if head.lower() == trade.strip().lower():
+        return lines[1:]
+    return lines
+
+
 def build_html_context(
     *,
     project: Any,
@@ -90,13 +179,21 @@ def build_html_context(
     meeting_when = " ".join(
         part for part in (details.get("meeting_date"), details.get("meeting_time")) if part
     )
-    organizer = next(
-        (
-            person.get("name")
-            for person in (details.get("attendees") or [])
-            if isinstance(person, dict) and "organi" in str(person.get("title", "")).lower()
-        ),
-        None,
+    # Organizer: what the user typed, else the attendee marked as one, else the
+    # person the invitation was sent by — so the row is filled without anyone
+    # having to hunt for the field.
+    organizer = (
+        str(details.get("organizer") or "").strip()
+        or next(
+            (
+                person.get("name")
+                for person in (details.get("attendees") or [])
+                if isinstance(person, dict)
+                and "organi" in str(person.get("title", "")).lower()
+            ),
+            None,
+        )
+        or organizer_from_invitation(details.get("invitation"))
     )
 
     attendees = []
@@ -107,7 +204,9 @@ def build_html_context(
             {
                 "name": person.get("name") or "",
                 "title": person.get("title") or "",
-                "email": person.get("email") or "",
+                "email": defuse_emails(
+                    person.get("email") or "", for_email=for_email
+                ),
                 "organizer": "organi" in str(person.get("title", "")).lower(),
             }
         )
@@ -118,6 +217,12 @@ def build_html_context(
         ("Venue", _value(details.get("meeting_location") or project.location)),
         ("Organizer", _value(organizer)),
         ("Invitation Subject", _value(details.get("meeting_title") or project.title)),
+    ]
+    # The value may hold an address (an invitation organiser is often a bare
+    # one); defuse it for the browser the same way as the attendee table.
+    meeting_rows = [
+        (label, defuse_emails(value, for_email=for_email))
+        for label, value in meeting_rows
     ]
 
     project_rows = [
@@ -196,6 +301,7 @@ def build_html_context(
             line = raw_line.strip().lstrip("\u00d8\u2022-* ").strip()
             if line:
                 lines.append(line)
+        lines = _drop_repeated_trade(lines, trade)
         if not lines and trade:
             lines = [trade]
             trade = ""
@@ -214,7 +320,9 @@ def build_html_context(
         responsible = item["action"] or "IHP"
         status = "Completed" if item["etc"] and item["etc"].strip().lower() in ("done", "completed") else "Pending"
         text = (" ".join(item["lines"]))[:300]
-        if item["trade"]:
+        # Only name the trade when the work does not already open with it —
+        # otherwise the cell read "Plumbing: Plumbing: ...".
+        if item["trade"] and not text.lower().startswith(item["trade"].lower()):
             text = f"{item['trade']}: {text}"
         action_items.append(
             {
@@ -246,7 +354,7 @@ def build_html_context(
         "meeting_rows": meeting_rows,
         "attendees": attendees,
         "invitation_lines": [
-            line.strip()
+            defuse_emails(line.strip(), for_email=for_email)
             for line in str(details.get("invitation") or "").splitlines()
             if line.strip()
         ],
