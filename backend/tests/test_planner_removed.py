@@ -1,17 +1,29 @@
 """A PR that drops out of the newest Planner must leave the live views.
 
-Regression: PR-12725 ("High Pressure Permeation Equipment (ASEPC)") was in the
-2026-09-26 Planner export, is absent from the newest one, and its only O&M
-record sits in the "Closed Eqpt & Project Asmnt PRs" tab. It still appeared as
-a live project because the register listed every row and the dashboard's
+Regression: PR-12725 ("High Pressure Permeation Equipment (ASEPC)") was in an
+older Planner export, is absent from the newest one, and its only O&M record
+sits in the "Closed Eqpt & Project Asmnt PRs" tab. It still appeared as a live
+project because the register listed every row and the dashboard's
 "All / Unbucketed" card counted exactly those dropped rows.
+
+The dates here are RELATIVE on purpose. "Newest snapshot" is global across
+every project in the database, and another test publishing a tracker upload
+stamps it with today's date - so a hard-coded date silently stopped being the
+newest one the moment the calendar moved on.
 """
 
 from __future__ import annotations
 
+from datetime import date, timedelta
+
 import pytest
 
 _SEQ = iter(range(9700, 9800))
+
+#: What a tracker import run today would stamp.
+TODAY = date.today().isoformat()
+#: An older export: anything not equal to the newest snapshot is "removed".
+OLDER = (date.today() - timedelta(days=7)).isoformat()
 
 
 @pytest.fixture()
@@ -41,8 +53,8 @@ class TestPlannerRemoved:
     def test_the_newest_snapshot_decides_who_is_removed(
         self, client, admin_headers, make_project,
     ):
-        keep = make_project(sync="2026-10-01")
-        dropped = make_project(sync="2026-09-26")
+        keep = make_project(sync=TODAY)
+        dropped = make_project(sync=OLDER)
 
         rows = _by_pr(client, admin_headers)
         assert rows[keep["pr_number"]]["in_latest_planner"] is True
@@ -58,20 +70,19 @@ class TestPlannerRemoved:
         self, client, admin_headers, make_project,
     ):
         """Intake/manual projects have no sync date and must never be treated
-        as cancelled — they are simply not tracker rows."""
+        as cancelled - they are simply not tracker rows."""
         manual = make_project(sync=None)
-        make_project(sync="2026-10-01")
+        make_project(sync=TODAY)
 
         row = _by_pr(client, admin_headers)[manual["pr_number"]]
         assert row["in_latest_planner"] is False
         assert row["planner_removed"] is False
 
-    def test_an_empty_snapshot_removes_nobody(
+    def test_the_newest_row_is_not_a_removal(
         self, client, admin_headers, make_project,
     ):
-        """Every row has a sync date equal to the newest one, so none of them
-        is a removal — the flag must not simply mirror in_latest_planner."""
-        a = make_project(sync="2026-10-01")
+        """The flag must not simply mirror in_latest_planner."""
+        a = make_project(sync=TODAY)
         rows = _by_pr(client, admin_headers)
         assert rows[a["pr_number"]]["planner_removed"] is False
 
@@ -80,6 +91,6 @@ class TestPlannerRemoved:
     ):
         """The API keeps them (the register shows them behind a toggle); it is
         the UI that hides them from the live views."""
-        dropped = make_project(sync="2026-09-26")
-        make_project(sync="2026-10-01")
+        dropped = make_project(sync=OLDER)
+        make_project(sync=TODAY)
         assert dropped["pr_number"] in _by_pr(client, admin_headers)
