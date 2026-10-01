@@ -1,10 +1,11 @@
 """MOM (Minutes of Meeting) endpoints: generate, download, agenda, status."""
 
 import copy
+from pathlib import Path
 from datetime import datetime
 from email.message import EmailMessage
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -340,13 +341,30 @@ def generate_mom(
 
 @router.get("/download")
 def download_mom(
+    request: Request,
     project_id: int,
-    fmt: str = Query("docx", pattern="^(docx|pdf)$"),
+    fmt: str = Query("docx", pattern="^(docx|pdf|minute-pdf)$"),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
     project = get_project_or_404(db, project_id)
     mom = get_mom_or_404(project)
+    if fmt == "minute-pdf":
+        # The web view rendered to a file — what the reader sees on screen.
+        styled = _mom_styled_pdf(
+            project, mom, mom.details or {}, base_url=str(request.base_url).rstrip("/")
+        )
+        if styled is None or not styled.exists():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "The PDF renderer (Chromium) is not available in this "
+                    "deployment, so the minute cannot be converted here."
+                ),
+            )
+        return FileResponse(
+            styled, filename=styled.name, media_type="application/pdf"
+        )
     if fmt == "pdf":
         if not mom.pdf_filename:
             raise HTTPException(
@@ -368,8 +386,48 @@ def download_mom(
     return FileResponse(path, filename=filename, media_type=media_type)
 
 
-def _mom_html_body(project: Project, mom: MomRecord, details: dict) -> str | None:
-    """The minute as HTML - what makes the email read like a web page."""
+def _mom_styled_pdf(
+    project: Project, mom: MomRecord, details: dict, base_url: str = "",
+) -> Path | None:
+    """The minute exactly as the app shows it, as a PDF file.
+
+    Chromium prints the same HTML the screen renders, so the file matches what
+    the reader sees. LibreOffice was tried first and produced a black-and-white
+    document with no logo and a broken table layout (its HTML import drops the
+    stylesheet). Returns None when Chromium is unavailable.
+    """
+    from ..services import docgen, mom_html
+
+    context = build_mom_context(project, details, mom.version)
+    html = mom_html.render_html(
+        mom_html.build_html_context(
+            project=project,
+            details=details,
+            derived=_derive_tracker_fields(project),
+            version=mom.version,
+            context=context,
+            base_url=base_url or None,
+            for_email=False,
+        )
+    )
+    filename = (
+        f"MOM_{storage.safe_name(project.pr_number)}_v{mom.version}_minute.pdf"
+    )
+    path = storage.project_dir(project.pr_number, "mom") / filename
+    if path.exists():
+        return path
+    return docgen.html_to_pdf(html, path)
+
+
+def _mom_html_body(
+    project: Project, mom: MomRecord, details: dict, base_url: str | None = None,
+) -> str | None:
+    """The minute as HTML - what makes the email read like a web page.
+
+    `base_url` only affects the KAUST logo, which the email loads remotely
+    from the app (clients that block remote images simply show the IHP
+    wordmark instead, which is text and always renders).
+    """
     from ..services import mom_html
 
     try:
@@ -381,7 +439,7 @@ def _mom_html_body(project: Project, mom: MomRecord, details: dict) -> str | Non
                 derived=_derive_tracker_fields(project),
                 version=mom.version,
                 context=context,
-                base_url=None,
+                base_url=base_url,
                 for_email=True,
             )
         )
@@ -558,6 +616,7 @@ def _set_email_bodies(
 
 @router.get("/email.eml")
 def mom_email_draft(
+    request: Request,
     project_id: int,
     to: str | None = Query(default=None, description="Comma separated recipients"),
     cc: str | None = Query(default=None),
@@ -605,7 +664,9 @@ def mom_email_draft(
     if copied:
         message["Cc"] = ", ".join(copied)
     message["X-Unsent"] = "1"
-    html_body = _mom_html_body(project, mom, details)
+    html_body = _mom_html_body(
+        project, mom, details, base_url=str(request.base_url).rstrip("/")
+    )
     if attach:
         plain = mom.email_body or ""
     else:
@@ -622,7 +683,12 @@ def mom_email_draft(
     _set_email_bodies(message, plain, html_body, html_only=html_only)
 
     mom_dir = storage.project_dir(project.pr_number, "mom")
-    # The PDF needs LibreOffice, so it may be absent; the DOCX always exists.
+    # The PDFs need LibreOffice / Chromium, so they may be absent; the DOCX
+    # always exists. The "minute" PDF is the web view itself, so a mail client
+    # that shows plain text still delivers the styled document.
+    styled_pdf = _mom_styled_pdf(
+        project, mom, details, base_url=str(request.base_url).rstrip("/")
+    )
     attachments = [
         (
             mom_dir / mom.docx_filename if mom.docx_filename else None,
@@ -634,6 +700,7 @@ def mom_email_draft(
             "application",
             "pdf",
         ),
+        (styled_pdf, "application", "pdf"),
     ]
     if attach:
         for path, maintype, subtype in attachments:

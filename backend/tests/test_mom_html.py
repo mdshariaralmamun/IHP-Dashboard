@@ -318,4 +318,80 @@ class TestTheEmailIsTheWebView:
         assert resp.headers["content-type"].startswith("text/html")
         assert "Minutes of Meeting" in resp.text
 
+class TestMinutePdf:
+    """The web view as a downloadable PDF file."""
+
+    def _mom(self, client, admin_headers, pr):
+        resp = client.post(
+            "/api/projects",
+            headers=admin_headers,
+            json={"pr_number": pr, "title": "Minute PDF", "pi_email": "pi@example.com"},
+        )
+        assert resp.status_code in (200, 201), resp.text
+        pid = resp.json()["id"]
+        resp = client.post(
+            f"/api/projects/{pid}/mom/generate", headers=admin_headers, json={}
+        )
+        assert resp.status_code == 200, resp.text
+        return pid
+
+    def test_a_missing_renderer_is_reported_not_crashed(
+        self, client, admin_headers, monkeypatch,
+    ):
+        """Chromium is in the deployed image; a developer machine may not have
+        it, and that must read as a clear message rather than a 500."""
+        pid = self._mom(client, admin_headers, "PR-71701")
+        monkeypatch.setattr("shutil.which", lambda name: None)
+        resp = client.get(
+            f"/api/projects/{pid}/mom/download?fmt=minute-pdf", headers=admin_headers
+        )
+        assert resp.status_code == 503
+        assert "renderer" in resp.text.lower()
+
+    def test_the_email_still_builds_without_a_renderer(
+        self, client, admin_headers, monkeypatch,
+    ):
+        """The styled PDF is an extra attachment: its absence must not stop the
+        minute from being sent."""
+        from email import message_from_bytes
+
+        pid = self._mom(client, admin_headers, "PR-71702")
+        monkeypatch.setattr("shutil.which", lambda name: None)
+        resp = client.get(
+            f"/api/projects/{pid}/mom/email.eml?attach=true", headers=admin_headers
+        )
+        assert resp.status_code == 200, resp.text
+        message = message_from_bytes(resp.content)
+        assert message["X-Unsent"] == "1"
+        body = next(
+            part for part in message.walk()
+            if part.get_content_type() == "text/html"
+        )
+        assert "Minutes of Meeting" in body.get_payload(decode=True).decode()
+
+    def test_the_minute_pdf_is_offered_when_a_renderer_exists(
+        self, client, admin_headers, monkeypatch, tmp_path,
+    ):
+        """With Chromium present the route returns a real PDF named after the
+        minute, so the download is unambiguous."""
+        from app.api import mom as mom_api
+
+        pid = self._mom(client, admin_headers, "PR-71703")
+
+        def fake_pdf(html: str, out_path, *, base_url: str = ""):
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_bytes(b"%PDF-1.4\n% fake for the test\n")
+            return out_path
+
+        monkeypatch.setattr("app.services.docgen.html_to_pdf", fake_pdf)
+        resp = client.get(
+            f"/api/projects/{pid}/mom/download?fmt=minute-pdf", headers=admin_headers
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.headers["content-type"] == "application/pdf"
+        assert resp.content.startswith(b"%PDF")
+        assert "_minute.pdf" in resp.headers["content-disposition"]
+        assert mom_api is not None
+
+
 

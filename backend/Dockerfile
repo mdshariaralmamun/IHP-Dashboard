@@ -8,11 +8,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # LibreOffice (headless `soffice`) + fonts for PDF conversion of generated
 # documents. --no-install-recommends keeps the image lean.
+#
+# Chromium as well, because it is the only renderer here that reproduces the
+# HTML minute faithfully: LibreOffice's HTML import drops the stylesheet (CSS
+# variables, flex layout, colours), so the "web view as PDF" came out as a
+# plain black-and-white document with no logo. Chromium prints the page the
+# way the browser shows it.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        libreoffice-core \
        libreoffice-writer \
        fonts-dejavu \
+       chromium \
+       fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

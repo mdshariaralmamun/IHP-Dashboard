@@ -442,6 +442,28 @@ export default function MomPanel({
     void run('webview', () => openMomWebView(projectId));
   }
 
+  /**
+   * The minute as a PDF FILE, rendered from the same HTML the screen shows.
+   *
+   * Different from the "Download PDF" beside it: that one is the Word minute
+   * exported by LibreOffice, this one is the styled page as you see it.
+   */
+  function handleDownloadMinutePdf() {
+    void run('download-minute-pdf', async () => {
+      try {
+        await downloadMom(projectId, 'minute-pdf');
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 503) {
+          throw new ApiError(
+            503,
+            'This deployment has no PDF renderer, so the styled minute cannot be converted here.',
+          );
+        }
+        throw err;
+      }
+    });
+  }
+
   function handleDownload(fmt: 'docx' | 'pdf') {
     void run(`download-${fmt}`, async () => {
       try {
@@ -1062,7 +1084,7 @@ export default function MomPanel({
                   onClick={() => setEmailView('rich')}
                   className={`px-2.5 py-1 text-[11px] font-semibold ${emailView === 'rich' ? 'bg-primary text-white' : 'text-apple-muted hover:bg-apple-surface'}`}
                 >
-                  Web view
+                  Styled
                 </button>
                 <button
                   type="button"
@@ -1078,7 +1100,7 @@ export default function MomPanel({
               {emailView === 'rich' ? (
                 emailHtml ? (
                   <iframe
-                    title="MOM email — web view"
+                    title="MOM email — styled minute"
                     srcDoc={emailHtml}
                     className="mt-2 h-[560px] w-full rounded-md border border-apple-border bg-white"
                   />
@@ -1121,7 +1143,15 @@ export default function MomPanel({
               disabled={busy !== null}
               className={secondaryButton}
             >
-              {busy === 'webview' ? 'Opening…' : 'Open web view'}
+              {busy === 'webview' ? 'Opening…' : 'Open in browser'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleDownloadMinutePdf()}
+              disabled={busy !== null}
+              className={secondaryButton}
+            >
+              {busy === 'download-minute-pdf' ? 'Rendering…' : 'Download minute PDF'}
             </button>
             <button
               type="button"

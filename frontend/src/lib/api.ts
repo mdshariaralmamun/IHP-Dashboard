@@ -1001,8 +1001,15 @@ export function downloadAttachment(
   return downloadFile(`/api/projects/${projectId}/attachments/${attachmentId}/download`, filename);
 }
 
-export function downloadMom(projectId: number, fmt: 'docx' | 'pdf'): Promise<void> {
-  return downloadFile(`/api/projects/${projectId}/mom/download?fmt=${fmt}`, `mom.${fmt}`);
+export function downloadMom(
+  projectId: number,
+  fmt: 'docx' | 'pdf' | 'minute-pdf',
+): Promise<void> {
+  const name = fmt === 'minute-pdf' ? 'MOM_minute.pdf' : `mom.${fmt}`;
+  return downloadFile(
+    `/api/projects/${projectId}/mom/download?fmt=${fmt}`,
+    name,
+  );
 }
 
 /**
