@@ -1005,11 +1005,14 @@ export function downloadMom(
   projectId: number,
   fmt: 'docx' | 'pdf' | 'minute-pdf',
 ): Promise<void> {
+  const params = new URLSearchParams({ fmt });
+  if (fmt === 'minute-pdf' && typeof window !== 'undefined') {
+    // The server needs an absolute origin for the logo: behind the proxy its
+    // own request.base_url is the internal service name.
+    params.set('base_url', window.location.origin);
+  }
   const name = fmt === 'minute-pdf' ? 'MOM_minute.pdf' : `mom.${fmt}`;
-  return downloadFile(
-    `/api/projects/${projectId}/mom/download?fmt=${fmt}`,
-    name,
-  );
+  return downloadFile(`/api/projects/${projectId}/mom/download?${params}`, name);
 }
 
 /**
@@ -1033,6 +1036,9 @@ export function downloadMomEmail(
   if (cc?.trim()) params.set('cc', cc.trim());
   params.set('attach', attach ? 'true' : 'false');
   params.set('html_only', htmlOnly ? 'true' : 'false');
+  if (typeof window !== 'undefined') {
+    params.set('base_url', window.location.origin);
+  }
   return downloadFile(
     `/api/projects/${projectId}/mom/email.eml?${params.toString()}`,
     'MOM.eml',

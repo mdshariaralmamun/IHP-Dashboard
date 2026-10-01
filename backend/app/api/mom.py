@@ -344,6 +344,9 @@ def download_mom(
     request: Request,
     project_id: int,
     fmt: str = Query("docx", pattern="^(docx|pdf|minute-pdf)$"),
+    base_url: str | None = Query(
+        default=None, description="Public origin, for the logo in the PDF"
+    ),
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
@@ -352,7 +355,8 @@ def download_mom(
     if fmt == "minute-pdf":
         # The web view rendered to a file — what the reader sees on screen.
         styled = _mom_styled_pdf(
-            project, mom, mom.details or {}, base_url=str(request.base_url).rstrip("/")
+            project, mom, mom.details or {},
+            base_url=_public_base_url(request, base_url),
         )
         if styled is None or not styled.exists():
             raise HTTPException(
@@ -384,6 +388,27 @@ def download_mom(
             status_code=status.HTTP_404_NOT_FOUND, detail="MOM file missing on disk"
         )
     return FileResponse(path, filename=filename, media_type=media_type)
+
+
+def _public_base_url(request: Request | None, explicit: str | None = None) -> str:
+    """Absolute base URL for assets inside a server-rendered document.
+
+    The browser's own origin when it tells us (the web view already passes
+    `base_url`), else the configured PUBLIC_BASE_URL. `request.base_url` is
+    the last resort and is usually WRONG behind the Next.js proxy: it reports
+    the internal service name, which is why the logo was missing from the
+    first generated PDF.
+    """
+    from ..core.config import get_settings
+
+    for candidate in (
+        explicit,
+        get_settings().PUBLIC_BASE_URL,
+        str(request.base_url).rstrip("/") if request is not None else "",
+    ):
+        if candidate and candidate.strip():
+            return candidate.strip().rstrip("/")
+    return ""
 
 
 def _mom_styled_pdf(
@@ -621,6 +646,9 @@ def mom_email_draft(
     to: str | None = Query(default=None, description="Comma separated recipients"),
     cc: str | None = Query(default=None),
     attach: bool = Query(default=True, description="Attach the MOM DOCX/PDF"),
+    base_url: str | None = Query(
+        default=None, description="Public origin, for the logo in the email"
+    ),
     html_only: bool = Query(
         default=True,
         description=(
@@ -664,9 +692,8 @@ def mom_email_draft(
     if copied:
         message["Cc"] = ", ".join(copied)
     message["X-Unsent"] = "1"
-    html_body = _mom_html_body(
-        project, mom, details, base_url=str(request.base_url).rstrip("/")
-    )
+    origin = _public_base_url(request, base_url)
+    html_body = _mom_html_body(project, mom, details, base_url=origin)
     if attach:
         plain = mom.email_body or ""
     else:
@@ -686,9 +713,7 @@ def mom_email_draft(
     # The PDFs need LibreOffice / Chromium, so they may be absent; the DOCX
     # always exists. The "minute" PDF is the web view itself, so a mail client
     # that shows plain text still delivers the styled document.
-    styled_pdf = _mom_styled_pdf(
-        project, mom, details, base_url=str(request.base_url).rstrip("/")
-    )
+    styled_pdf = _mom_styled_pdf(project, mom, details, base_url=origin)
     attachments = [
         (
             mom_dir / mom.docx_filename if mom.docx_filename else None,

@@ -393,5 +393,35 @@ class TestMinutePdf:
         assert "_minute.pdf" in resp.headers["content-disposition"]
         assert mom_api is not None
 
+class TestPublicOrigin:
+    """Assets inside a server-rendered document need a real origin."""
+
+    def test_the_browser_origin_wins_then_the_setting_then_the_request(
+        self, monkeypatch,
+    ):
+        from app.api import mom as mom_api
+        from app.core import config
+
+        class _Settings:
+            PUBLIC_BASE_URL = "https://configured.example"
+
+        class _NoSetting:
+            PUBLIC_BASE_URL = ""
+
+        class _Request:
+            # What request.base_url actually is behind the Next.js proxy.
+            base_url = "http://backend:8000/"
+
+        monkeypatch.setattr(config, "get_settings", lambda: _Settings())
+        assert mom_api._public_base_url(_Request(), "https://ihp.shariar.dev/") == (
+            "https://ihp.shariar.dev"
+        )
+        assert mom_api._public_base_url(_Request(), None) == "https://configured.example"
+
+        monkeypatch.setattr(config, "get_settings", lambda: _NoSetting())
+        assert mom_api._public_base_url(_Request(), None) == "http://backend:8000"
+        assert mom_api._public_base_url(None, None) == ""
+
+
 
 

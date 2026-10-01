@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     DATA_DIR: str = "./data"
     TEMPLATES_DIR: str = "./templates"
 
+    # Where this deployment is reached by a BROWSER, e.g.
+    # https://ihp.shariar.dev. Server-side rendering that needs an absolute
+    # asset URL (the KAUST logo in a generated PDF or an email body) cannot
+    # work it out from the request: the frontend proxies /api/* with the
+    # internal service name, so request.base_url is http://backend:8000.
+    PUBLIC_BASE_URL: str = ""
+
     # Planner's materials price master (markdown table, updated frequently;
     # synced into master_pricing via services/price_master.py)
     PRICE_MASTER_PATH: str = (

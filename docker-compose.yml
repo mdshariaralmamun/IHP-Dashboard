@@ -45,6 +45,10 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       DATA_DIR: /data
       TEMPLATES_DIR: /app/templates
+      # The public origin, so server-rendered documents (the minute PDF, the
+      # HTML email body) can reference the KAUST logo by an absolute URL.
+      # Needed because behind the Next.js proxy request.base_url is backend:8000.
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://ihp.shariar.dev}
       # Optional SMTP settings; empty values mean "mail disabled".
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-}
