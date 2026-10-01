@@ -138,7 +138,24 @@ def organizer_from_invitation(invitation: str | None) -> str | None:
                 return found.group(0)
         return None
 
-    return value_for(_ORGANIZER_KEYS) or value_for(_SENDER_KEYS)
+    found = value_for(_ORGANIZER_KEYS) or value_for(_SENDER_KEYS)
+    if found:
+        return found
+
+    # Outlook also prints the participant list with the role in brackets:
+    # "Chris Asis (Meeting Organizer)" / "Adrian Ichim (Accepted Meeting)".
+    # No header line at all, which is how a copied invitation usually arrives.
+    for line in lines:
+        match = re.match(
+            r"^(?P<name>[^()]+?)\s*\(\s*(?:meeting\s+)?organi[sz]er\s*\)",
+            line,
+            re.IGNORECASE,
+        )
+        if match:
+            name = match.group("name").strip(" -\u2013\u2014")
+            if name:
+                return name
+    return None
 
 
 def _drop_repeated_trade(lines: list[str], trade: str) -> list[str]:
@@ -194,6 +211,9 @@ def build_html_context(
             None,
         )
         or organizer_from_invitation(details.get("invitation"))
+        # Last resort: the requester usually calls the meeting, and showing a
+        # sensible name beats the "N/A" this row used to print. Editable.
+        or (project.pi_name or None)
     )
 
     attendees = []

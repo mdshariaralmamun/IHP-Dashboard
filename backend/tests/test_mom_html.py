@@ -146,6 +146,21 @@ class TestOrganizerFromInvitation:
         # The row must not read N/A while the invitation says who called it.
         assert "<dt>Organizer</dt><dd>Adrian Ichim</dd>" in html
 
+    def test_the_outlook_participant_list_names_the_organizer(self):
+        """What a copied invitation actually looks like: no headers, just the
+        participants with their role in brackets."""
+        text = (
+            "Chris Asis (Meeting Organizer)\n"
+            "Adrian Ichim (Accepted Meeting)\n"
+            "In-House Projects Design"
+        )
+        assert organizer_from_invitation(text) == "Chris Asis"
+
+    def test_the_pi_is_the_last_resort(self):
+        """Showing the requester beats the N/A this row used to print."""
+        html = _render(invitation="Subject: nothing that names an organizer")
+        assert "<dt>Organizer</dt><dd>Adrian Ichim</dd>" in html
+
     def test_a_typed_organizer_overrides_the_invitation(self):
         html = _render(organizer="Mohammed Shariar Mamun")
         assert "<dt>Organizer</dt><dd>Mohammed Shariar Mamun</dd>" in html
