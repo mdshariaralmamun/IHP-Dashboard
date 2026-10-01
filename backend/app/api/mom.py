@@ -447,7 +447,7 @@ def mom_email_link(
         context=context,
         include_attachments=False,
     )
-    subject = mom.email_subject or f"PR {project.pr_number} - {project.title}"
+    subject = mom.email_subject or f"{emailer.pr_label(project)} - {project.title}"
     params = [f"subject={quote(subject)}", f"body={quote(body)}"]
     copied = _split(cc)
     if copied:

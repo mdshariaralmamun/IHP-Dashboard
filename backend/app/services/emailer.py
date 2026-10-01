@@ -11,6 +11,18 @@ from ..core.config import get_settings
 from ..models import Project
 
 
+def pr_label(project: Project) -> str:
+    """The PR number the way people write it.
+
+    Real projects store the number WITH its prefix ("PR-12804"), so prefixing
+    it again produced subjects reading "PR PR-12804 - ...".
+    """
+    number = (project.pr_number or "").strip()
+    if not number:
+        return "PR"
+    return number if number.upper().startswith("PR") else f"PR {number}"
+
+
 def mom_recipients(project: Project, details: dict | None = None) -> list[str]:
     """Every participant email for a MOM, plus the PI (deduplicated).
 
@@ -47,7 +59,7 @@ def build_mom_draft(
     the minute itself: when/where it took place, who attended and the agenda with
     its Action by / ETC columns.
     """
-    subject = f"PR {project.pr_number} – {project.title} – Request confirmation"
+    subject = f"{pr_label(project)} – {project.title} – Request confirmation"
     lines = [
         f"Dear {project.pi_name or 'Principal Investigator'},",
         "",
@@ -152,7 +164,7 @@ def _tracking_text_body(
     project: Project, stage_label: str, note: str, tracking_url: str,
 ) -> str:
     lines = [
-        f"PR {project.pr_number} - {project.title}",
+        f"{pr_label(project)} - {project.title}",
         "",
         f"Current stage : {stage_label or project.stage}",
         f"PI            : {project.pi_name or '-'}",
@@ -201,7 +213,7 @@ def _tracking_html_body(
     )
     return (
         '<div style="font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#111827">'
-        f'<h2 style="margin:0 0 4px;font-size:18px">PR {esc(project.pr_number)}</h2>'
+        f'<h2 style="margin:0 0 4px;font-size:18px">{esc(pr_label(project))}</h2>'
         f'<p style="margin:0 0 16px;font-size:15px">{esc(project.title)}</p>'
         f'<table style="border-collapse:collapse">{cells}</table>'
         f"{note_html}{link_html}"
@@ -229,7 +241,7 @@ def build_tracking_draft(
     recipient can save or forward it. Nothing is sent from the server - the
     file is handed to the user's own mail client, exactly like the MOM draft.
     """
-    subject = f"PR {project.pr_number} - {project.title} - project tracker"
+    subject = f"{pr_label(project)} - {project.title} - project tracker"
     message = EmailMessage()
     _draft_headers(message, subject, recipients, cc)
     message.set_content(

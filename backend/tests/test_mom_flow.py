@@ -48,8 +48,10 @@ def test_mom_happy_path(client, admin_headers, data_dir):
     mom = resp.json()
     assert mom["status"] == "draft"
     assert mom["version"] == 1
+    # The stored PR number already carries its "PR-" prefix; prefixing it
+    # again produced subjects that read "PR PR-1234 - ...".
     assert mom["email_subject"] == (
-        f"PR {pr} {EN_DASH} Lab renovation {EN_DASH} Request confirmation"
+        f"{pr} {EN_DASH} Lab renovation {EN_DASH} Request confirmation"
     )
     assert "scope.txt" in mom["email_body"]
     assert "photos.txt" in mom["email_body"]
