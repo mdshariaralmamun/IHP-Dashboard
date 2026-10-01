@@ -259,6 +259,11 @@ class ProjectListItem(BaseModel):
     #: True when the row is present in the NEWEST Planner snapshot. Stale
     #: rows (removed/cancelled PRs) are excluded from the live counts.
     in_latest_planner: bool = False
+    #: True when the PR WAS in a Planner snapshot and is gone from the newest
+    #: one (cancelled, or moved to the O&M equipment branch). Distinct from
+    #: in_latest_planner=False for a PR that was never tracker-managed at all
+    #: (intake/manual), which must never be treated as removed.
+    planner_removed: bool = False
 
 
 class AttachmentOut(BaseModel):

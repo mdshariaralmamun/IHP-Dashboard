@@ -60,10 +60,32 @@ def collect(db: Session) -> dict[str, Any]:
     rows = list(db.scalars(select(Project)).all())
     derived = {p.id: _derive_tracker_fields(p) for p in rows}
 
+    sync = max(
+        (
+            info.get("planner_sync_date")
+            for info in derived.values()
+            if info.get("planner_sync_date")
+        ),
+        default=None,
+    )
+
+    def _removed(info: dict[str, Any]) -> bool:
+        """Seen in an older Planner snapshot, absent from the newest one.
+
+        Cancelled / equipment-branch PRs. The dashboard hides them, so the
+        assistant's division and stage counts must not include them either -
+        otherwise "how many EAR projects?" disagreed with the screen.
+        A row that was never tracker-managed has no sync date and is kept.
+        """
+        date = info.get("planner_sync_date")
+        return bool(sync and date and date != sync)
+
     by_division: Counter[str] = Counter()
     by_stage: Counter[str] = Counter()
     for project in rows:
         info = derived[project.id]
+        if _removed(info):
+            continue
         by_division[
             phase_for(
                 bucket=project.planner_bucket,
@@ -73,15 +95,6 @@ def collect(db: Session) -> dict[str, Any]:
             or "Unassigned"
         ] += 1
         by_stage[(project.stage or "unknown").upper()] += 1
-
-    sync = max(
-        (
-            info.get("planner_sync_date")
-            for info in derived.values()
-            if info.get("planner_sync_date")
-        ),
-        default=None,
-    )
 
     # Only the newest Planner import is live (older imports would double
     # count the same project) - the same rule the construction board uses.

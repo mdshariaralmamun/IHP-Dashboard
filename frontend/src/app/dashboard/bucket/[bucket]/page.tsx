@@ -67,30 +67,37 @@ function BucketDetail({ bucket }: { bucket: string }) {
     load();
   }, [load]);
 
+  // A PR removed from the newest Planner is not in this bucket any more;
+  // counting it here made the drill-down disagree with the dashboard tile.
+  const live = useMemo(
+    () => (projects ?? []).filter((p) => !p.planner_removed),
+    [projects],
+  );
+
   const statusCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    (projects ?? []).forEach((p) => {
+    live.forEach((p) => {
       c[p.stage] = (c[p.stage] ?? 0) + 1;
     });
     return c;
-  }, [projects]);
+  }, [live]);
 
   const stages = useMemo(
-    () => Array.from(new Set((projects ?? []).map((p) => p.stage))).sort(), [projects]);
+    () => Array.from(new Set(live.map((p) => p.stage))).sort(), [live]);
   const trades = useMemo(
-    () => Array.from(new Set((projects ?? []).flatMap((p) => p.trades ?? []))).sort(),
-    [projects]);
+    () => Array.from(new Set(live.flatMap((p) => p.trades ?? []))).sort(),
+    [live]);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return (projects ?? []).filter((p) => {
+    return live.filter((p) => {
       if (stage && p.stage !== stage) return false;
       if (trade && !(p.trades ?? []).includes(trade)) return false;
       if (q && ![p.pr_number, p.title, p.pi_name, p.location]
           .some((v) => (v ?? '').toLowerCase().includes(q))) return false;
       return true;
     });
-  }, [projects, search, stage, trade]);
+  }, [live, search, stage, trade]);
 
   async function changeStatus(project: ProjectSummary, newStage: string) {
     setBusyId(project.id);

@@ -81,6 +81,15 @@ function BucketDashboard() {
     }
   }
 
+  // PRs that dropped out of the newest Planner are not IHP work any more
+  // (cancelled, or handed to the equipment branch). They must not appear in
+  // ANY dashboard figure — the "All / Unbucketed" card used to be the sum of
+  // exactly those rows, which is how PR-12725 showed up as a live project.
+  const live = useMemo(
+    () => (projects ?? []).filter((p) => !p.planner_removed),
+    [projects],
+  );
+
   // Bucket totals and division totals are kept in SEPARATE maps on purpose:
   // "EAR" is both a Planner bucket and a division name, so one shared map
   // would count every EAR project twice (26 bucket + 26 division = 52).
@@ -154,23 +163,23 @@ function BucketDashboard() {
 
   const priorityCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    (projects ?? []).forEach((p) => {
+    live.forEach((p) => {
       if (p.priority) c[p.priority] = (c[p.priority] ?? 0) + 1;
     });
     return c;
-  }, [projects]);
+  }, [live]);
 
   const typeCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    (projects ?? []).forEach((p) => {
+    live.forEach((p) => {
       if (p.project_type) c[p.project_type] = (c[p.project_type] ?? 0) + 1;
     });
     return c;
-  }, [projects]);
+  }, [live]);
 
   const flagCounts = useMemo(() => {
     const c: Record<string, number> = {};
-    (projects ?? []).forEach((p) => {
+    live.forEach((p) => {
       (p.flags ?? []).forEach((f) => {
         c[f] = (c[f] ?? 0) + 1;
       });
@@ -178,7 +187,7 @@ function BucketDashboard() {
     return Object.fromEntries(Object.entries(c).sort((a, b) => b[1] - a[1]));
   }, [projects]);
 
-  const total = projects?.length ?? 0;
+  const total = live.length;
   // Bucketed = rows carrying a Planner bucket in the current snapshot.
   const bucketed = Object.values(bucketCounts).reduce((a, b) => a + b, 0);
 

@@ -118,10 +118,12 @@ def list_projects(
     for p, derived in derived_all:
         if source and derived["source"] != source:
             continue
-        current = (
-            derived["planner_sync_date"] is not None
-            and derived["planner_sync_date"] == snapshot
-        )
+        sync_date = derived["planner_sync_date"]
+        # "Removed" means the PR HAD a snapshot and is missing from the newest
+        # one. A row with no sync date was never tracker-managed (intake or
+        # manual) and must not be treated as removed.
+        removed = sync_date is not None and sync_date != snapshot
+        current = sync_date is not None and sync_date == snapshot
         out.append(ProjectListItem(
             id=p.id, pr_number=p.pr_number, title=p.title,
             pi_name=p.pi_name, location=p.location,
@@ -129,6 +131,7 @@ def list_projects(
             disposition=p.disposition, created_at=p.created_at,
             planner_bucket=p.planner_bucket,
             in_latest_planner=current,
+            planner_removed=removed,
             **derived,
         ))
     return out

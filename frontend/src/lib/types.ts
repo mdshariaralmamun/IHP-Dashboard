@@ -224,6 +224,13 @@ export interface ProjectSummary {
    * are excluded from the live division counts.
    */
   in_latest_planner?: boolean;
+  /**
+   * True when the PR was in an earlier Planner snapshot and is gone from the
+   * newest one — cancelled, or moved to the O&M equipment branch. These rows
+   * are hidden from the live dashboard and register by default, and stay
+   * reachable through the "Removed from Planner" view for audit.
+   */
+  planner_removed?: boolean;
 }
 
 /**

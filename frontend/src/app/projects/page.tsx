@@ -60,6 +60,11 @@ function ProjectRegister() {
   // Drill-down links (dashboard, KPI cards) arrive as ?stage=A,B and ?disposition=ICR.
   // Seed the matching filter; a multi-stage list uses the search box as fallback.
   const [seededStage, setSeededStage] = useState<string>('');
+  // A PR that dropped out of the newest Planner is no longer IHP work:
+  // leaving it in the register made cancelled / equipment-branch PRs (e.g.
+  // PR-12725, an ASEPC item that only exists in the O&M closed-equipment
+  // tab) look like live projects. It stays reachable here for audit.
+  const [showRemoved, setShowRemoved] = useState(false);
   useEffect(() => {
     if (!searchParams) return;
     const st = searchParams.get('stage');
@@ -140,11 +145,18 @@ function ProjectRegister() {
     }
   }
 
+  const removedCount = useMemo(
+    () => (projects ?? []).filter((p) => p.planner_removed).length,
+    [projects],
+  );
+
   // ---- filter + sort + project memo ----
   const visibleProjects = useMemo(() => {
     if (!projects) return null;
     const multiStages = seededStage ? seededStage.split(',').map((s) => s.trim()) : [];
     const out = projects.filter((p) => {
+      // Live view by default; the removed ones are one click away.
+      if (showRemoved ? !p.planner_removed : p.planner_removed) return false;
       if (stageFilter && p.stage !== stageFilter) return false;
       if (multiStages.length > 0 && !multiStages.includes(p.stage)) return false;
       if (dispositionFilter && p.disposition !== dispositionFilter) return false;
@@ -183,7 +195,7 @@ function ProjectRegister() {
       return 0;
     });
     return out;
-  }, [projects, stageFilter, dispositionFilter, typeFilter, tradeFilter, bucketFilter, search, sortKey, sortDir, seededStage, phaseFilter]);
+  }, [projects, stageFilter, dispositionFilter, typeFilter, tradeFilter, bucketFilter, search, sortKey, sortDir, seededStage, phaseFilter, showRemoved]);
 
   // Distinct values for filter dropdowns
   const distinctTypes = useMemo(() => {
@@ -326,6 +338,33 @@ function ProjectRegister() {
             {parsing
               ? 'Reading PR form…'
               : 'Drag & drop a KAUST PR request form here, or click to browse. The PR is created automatically.'}
+          </div>
+        )}
+
+        {/* ---- Live vs removed-from-Planner ---- */}
+        {projects && removedCount > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-apple-border bg-apple-surface/50 px-4 py-2.5 text-xs backdrop-blur-md">
+            <div className="flex overflow-hidden rounded-lg border border-apple-border">
+              <button
+                type="button"
+                onClick={() => setShowRemoved(false)}
+                className={`px-3 py-1.5 font-semibold ${showRemoved ? 'text-apple-muted hover:bg-apple-surface' : 'bg-primary text-white'}`}
+              >
+                Live ({(projects.length ?? 0) - removedCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRemoved(true)}
+                className={`px-3 py-1.5 font-semibold ${showRemoved ? 'bg-primary text-white' : 'text-apple-muted hover:bg-apple-surface'}`}
+              >
+                Removed from Planner ({removedCount})
+              </button>
+            </div>
+            <span className="text-apple-muted">
+              {showRemoved
+                ? 'Gone from the newest Planner export — cancelled, or moved to the equipment branch. Not IHP work, and excluded from the dashboard.'
+                : 'Only PRs present in the newest Planner export.'}
+            </span>
           </div>
         )}
 
