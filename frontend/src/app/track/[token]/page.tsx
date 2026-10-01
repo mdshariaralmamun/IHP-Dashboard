@@ -1,8 +1,9 @@
 'use client';
 
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import { ProjectSummary } from '@/lib/types';
-import TrackerStepper from '@/components/TrackerStepper';
+import TrackerStepper, { stageLabel } from '@/components/TrackerStepper';
+import TrackingShare from '@/components/TrackingShare';
 
 export default function PublicTrackerPage({ params }: { params: Promise<{ token: string }> }) {
   const resolvedParams = use(params);
@@ -10,6 +11,8 @@ export default function PublicTrackerPage({ params }: { params: Promise<{ token:
   const [project, setProject] = useState<ProjectSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // The card that gets captured for copy / save / email.
+  const cardRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     fetch(`/api/projects/track/${token}`)
@@ -59,7 +62,10 @@ export default function PublicTrackerPage({ params }: { params: Promise<{ token:
       </header>
       
       <main className="flex-1 max-w-6xl w-full mx-auto p-6 flex flex-col gap-8">
-        <section className="bg-apple-surface p-8 rounded-xl shadow-sm border border-apple-border">
+        <section
+          ref={cardRef}
+          className="bg-apple-surface p-8 rounded-xl shadow-sm border border-apple-border"
+        >
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
               <span className="px-3 py-1 bg-apple-surface text-apple-muted text-sm font-medium rounded-full">
@@ -83,6 +89,16 @@ export default function PublicTrackerPage({ params }: { params: Promise<{ token:
             <TrackerStepper project={project} />
           </div>
         </section>
+
+        {/* Sits outside the captured card so the buttons never appear in the
+            picture that gets copied or emailed. */}
+        <TrackingShare
+          target={cardRef}
+          endpoint={`/api/projects/track/${token}/tracking-email`}
+          prNumber={project.pr_number}
+          stageLabel={stageLabel(project.stage)}
+          trackingToken={token}
+        />
       </main>
       
       <footer className="bg-apple-surface py-6 border-t border-apple-border mt-auto text-center text-apple-muted text-sm">

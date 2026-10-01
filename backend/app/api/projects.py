@@ -5,7 +5,7 @@ from typing import Any
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
@@ -30,7 +30,7 @@ from ..schemas import (
     ProjectListItem,
     ProjectUpdate,
 )
-from ..services import storage, workflow
+from ..services import emailer, storage, workflow
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -1068,6 +1068,137 @@ def get_public_tracker(token: str, db: Session = Depends(get_db)):
         **derived,
     )
 
+
+
+@router.post("/track/{token}/tracking-email")
+def public_tracking_email_draft(
+    token: str,
+    image: UploadFile = File(...),
+    to: str = Form(""),
+    cc: str = Form(""),
+    note: str = Form(""),
+    stage_label: str = Form(""),
+    base_url: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    """An Outlook draft of the live tracker, for anyone holding the share link.
+
+    Deliberately DRAFT-ONLY: the server has no mailbox and never sends, it just
+    returns an .eml the requester's own mail client opens. Whoever holds the
+    tracking token can already read this project, so building a draft from it
+    grants nothing new - and nothing can be relayed from here.
+    """
+    project = db.scalar(select(Project).where(Project.tracking_token == token))
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or invalid token",
+        )
+    return _tracking_draft_response(
+        project, image, to=to, cc=cc, note=note,
+        stage_label=stage_label, base_url=base_url,
+    )
+
+
+@router.post("/{project_id}/tracking-email")
+def tracking_email_draft(
+    project_id: int,
+    image: UploadFile = File(...),
+    to: str = Form(""),
+    cc: str = Form(""),
+    note: str = Form(""),
+    stage_label: str = Form(""),
+    base_url: str = Form(""),
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """An Outlook draft of the live tracker, for a signed-in user.
+
+    Defaults the recipient to the project's PI so the common case is one click.
+    """
+    project = get_project_or_404(db, project_id)
+    return _tracking_draft_response(
+        project, image, to=to or (project.pi_email or ""), cc=cc, note=note,
+        stage_label=stage_label, base_url=base_url,
+    )
+
+
+#: What a tracker snapshot may be. The browser captures it with
+#: html-to-image, which produces PNG; JPEG/WebP are accepted for Safari.
+SNAPSHOT_TYPES = {"image/png", "image/jpeg", "image/webp"}
+#: A 2x-DPI capture of a wide card is ~200-400 KB; this is a generous ceiling
+#: that still stops anyone using the endpoint as free storage.
+SNAPSHOT_MAX_BYTES = 8 * 1024 * 1024
+
+
+def _split_emails(value: str | None) -> list[str]:
+    return [
+        part.strip()
+        for part in (value or "").replace(";", ",").split(",")
+        if part.strip()
+    ]
+
+
+def _tracking_draft_response(
+    project: Project,
+    image: UploadFile,
+    *,
+    to: str,
+    cc: str = "",
+    note: str = "",
+    stage_label: str = "",
+    base_url: str = "",
+) -> Response:
+    """Validate the uploaded snapshot and return the .eml draft."""
+    kind = (image.content_type or "").lower()
+    if kind not in SNAPSHOT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="The snapshot must be a PNG, JPEG or WebP image.",
+        )
+    payload = image.file.read()
+    if not payload:
+        raise HTTPException(status_code=400, detail="The snapshot is empty.")
+    if len(payload) > SNAPSHOT_MAX_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=(
+                f"The snapshot is larger than "
+                f"{SNAPSHOT_MAX_BYTES // (1024 * 1024)} MB."
+            ),
+        )
+    recipients = _split_emails(to)
+    if not recipients:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Add at least one recipient email address.",
+        )
+
+    filename = f"tracker_{storage.safe_name(project.pr_number)}.png"
+    tracking_url = (
+        f"{base_url.rstrip('/')}/track/{project.tracking_token}"
+        if base_url.strip() and project.tracking_token
+        else ""
+    )
+    message = emailer.build_tracking_draft(
+        project,
+        payload,
+        recipients=recipients,
+        cc=_split_emails(cc) or None,
+        filename=filename,
+        stage_label=(
+            stage_label.strip()
+            or (project.stage or "").replace("_", " ").title()
+        ),
+        note=note,
+        tracking_url=tracking_url,
+    )
+    stem = f"Tracker_{storage.safe_name(project.pr_number)}"
+    return Response(
+        content=message.as_bytes(),
+        media_type="message/rfc822",
+        headers={"Content-Disposition": f'attachment; filename="{stem}.eml"'},
+    )
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)

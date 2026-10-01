@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
@@ -18,7 +18,8 @@ import MomPanel from '@/components/project/MomPanel';
 import PunchListPanel from '@/components/project/PunchListPanel';
 import SowBoqPanel from '@/components/project/SowBoqPanel';
 import PromoteToEarModal from '@/components/project/PromoteToEarModal';
-import TrackerStepper from '@/components/TrackerStepper';
+import TrackerStepper, { stageLabel } from '@/components/TrackerStepper';
+import TrackingShare from '@/components/TrackingShare';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
 import { canDo, useUser } from '@/lib/useUser';
 import type { AuditEntry, ProjectDetail } from '@/lib/types';
@@ -47,6 +48,8 @@ function ProjectDetailView() {
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [showPromoteModal, setShowPromoteModal] = useState(false);
+  // Captured for the "copy / save / email the tracker" buttons.
+  const trackingRef = useRef<HTMLDivElement | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -177,9 +180,21 @@ function ProjectDetailView() {
             {/* Stage Stepper Tabs */}
             {(activeTab === 'all') && (
               <div className="bg-apple-surface p-6 rounded-lg shadow-sm border border-apple-border mb-6">
-                <h3 className="text-base font-bold text-apple-text mb-4">Live Tracking</h3>
-                <TrackerStepper project={project} audit={audit} />
-                
+                <div ref={trackingRef}>
+                  <h3 className="text-base font-bold text-apple-text mb-4">Live Tracking</h3>
+                  <TrackerStepper project={project} audit={audit} />
+                </div>
+
+                {/* Outside the captured node, so the buttons stay out of the image. */}
+                <TrackingShare
+                  target={trackingRef}
+                  endpoint={`/api/projects/${project.id}/tracking-email`}
+                  prNumber={project.pr_number}
+                  defaultTo={project.pi_email ?? null}
+                  stageLabel={stageLabel(project.stage)}
+                  trackingToken={project.tracking_token ?? null}
+                />
+
                 <div className="mt-6 p-4 bg-apple-surface/50 border border-apple-border rounded-md">
                   <h4 className="text-sm font-semibold text-apple-text mb-1">Public Tracking Link</h4>
                   <p className="text-xs text-apple-muted mb-2">Share this link with the PI or external stakeholders so they can track the project without logging in.</p>

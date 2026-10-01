@@ -16,24 +16,36 @@ const STAGES = [
   { id: 'TECH_LIBRARY', label: 'Tech Library' },
 ];
 
+/**
+ * Which tracker step a backend stage belongs to.
+ *
+ * Exported so a snapshot or email can name the same step the bar shows,
+ * instead of repeating this mapping (and drifting from it).
+ */
+export function stageIndex(stage: string | null | undefined): number {
+  const currentStage = stage ?? '';
+  if (currentStage === 'INTAKE') return 0;
+  if (currentStage.startsWith('MOM_') || currentStage === 'DISPOSITION') return 1;
+  if (currentStage.startsWith('EAR_')) return 2;
+  if (currentStage.startsWith('SOW_')) return 3;
+  if (currentStage === 'PROCUREMENT') return 4;
+  if (currentStage.startsWith('MTO_') || currentStage === 'WORK_PERMIT') return 5;
+  if (currentStage === 'CONSTRUCTION') return 6;
+  if (currentStage === 'SHUTDOWN') return 7;
+  if (currentStage === 'QUALITY_INSPECTION') return 8;
+  if (currentStage === 'CLOSEOUT') return 9;
+  if (currentStage === 'PUNCH_LIST') return 10;
+  if (currentStage === 'TECH_LIBRARY' || currentStage === 'ICR_DONE') return 11;
+  return 0;
+}
+
+/** The tracker step's display name, e.g. "Design". */
+export function stageLabel(stage: string | null | undefined): string {
+  return STAGES[stageIndex(stage)]?.label ?? 'Intake';
+}
+
 export default function TrackerStepper({ project, audit = [] }: { project: ProjectSummary, audit?: AuditEntry[] }) {
-  const currentStage = project.stage;
-  
-  // Map backend stages to the visual tracker index
-  let currentIndex = 0;
-  if (currentStage === 'INTAKE') currentIndex = 0;
-  else if (currentStage.startsWith('MOM_') || currentStage === 'DISPOSITION') currentIndex = 1;
-  else if (currentStage.startsWith('EAR_')) currentIndex = 2;
-  else if (currentStage.startsWith('SOW_')) currentIndex = 3;
-  else if (currentStage === 'PROCUREMENT') currentIndex = 4;
-  else if (currentStage.startsWith('MTO_') || currentStage === 'WORK_PERMIT') currentIndex = 5;
-  else if (currentStage === 'CONSTRUCTION') currentIndex = 6;
-  else if (currentStage === 'SHUTDOWN') currentIndex = 7;
-  else if (currentStage === 'QUALITY_INSPECTION') currentIndex = 8;
-  else if (currentStage === 'CLOSEOUT') currentIndex = 9;
-  else if (currentStage === 'PUNCH_LIST') currentIndex = 10;
-  else if (currentStage === 'TECH_LIBRARY') currentIndex = 11;
-  else if (currentStage === 'ICR_DONE') currentIndex = 11;
+  const currentIndex = stageIndex(project.stage);
 
   // Map audit log to stage times (very naive matching by taking the first audit action mentioning the stage)
   const stageDetails = useMemo(() => {
