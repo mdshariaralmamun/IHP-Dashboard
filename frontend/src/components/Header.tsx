@@ -41,6 +41,7 @@ const NAV_MENUS: NavMenu[] = [
       { label: 'Construction & Materials', href: '/dashboard/construction', hint: 'Execution, permits and materials', group: 'Overview' },
       { label: 'Active PRs (O&M)', href: '/dashboard/active-prs', hint: 'Classified active requests, equipment split out', group: 'Overview' },
       { label: 'Consistency Check', href: '/dashboard/consistency', hint: 'Where the Planner and O&M disagree', group: 'Overview' },
+      { label: 'Areas & Labs', href: '/areas', hint: 'By room or area: current and previous PIs, active and finished projects', group: 'Overview' },
 
       { label: 'EAR', href: '/projects?phase=EAR', hint: 'Assessment & project summary', group: 'Divisions' },
       { label: 'Design', href: '/projects?phase=Design', hint: 'Detail design, Procore & MTO', group: 'Divisions' },

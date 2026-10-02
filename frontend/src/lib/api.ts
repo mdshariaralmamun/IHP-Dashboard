@@ -372,6 +372,40 @@ export function planImageUrl(projectId: number, attachmentId: number, page = 1):
   return `/api/projects/${projectId}/markers/plan/${attachmentId}.png?page=${page}`;
 }
 
+// ---------- Area lookup ----------
+
+export interface AreaProjectRow {
+  id: number;
+  pr_number: string;
+  title: string;
+  stage: string;
+  pi_name: string | null;
+  planner_bucket: string | null;
+  finish: string | null;
+  status: string | null;
+  marker_labels: string[];
+}
+
+export interface AreaReport {
+  ok: boolean;
+  error?: string;
+  input?: string;
+  described?: string;
+  current_pis?: string[];
+  previous_pis?: string[];
+  active_count?: number;
+  finished_count?: number;
+  active_projects?: AreaProjectRow[];
+  finished_projects?: AreaProjectRow[];
+}
+
+/** Who is in an area now, who was there before, and what ran there. */
+export function getAreaReport(location: string): Promise<AreaReport> {
+  return request<AreaReport>(
+    `/api/areas/report?location=${encodeURIComponent(location)}`,
+  );
+}
+
 /** Trade-wise SOW scope suggestions mined from similar archived SOWs. */
 export interface SowSuggestion {
   text: string;
