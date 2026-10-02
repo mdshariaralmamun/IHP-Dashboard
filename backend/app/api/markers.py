@@ -187,7 +187,15 @@ def plan_png(
                     status.HTTP_400_BAD_REQUEST,
                     f"Page {page} is beyond the {document.page_count} this plan has.",
                 )
-            pixmap = document[page - 1].get_pixmap(matrix=fitz.Matrix(2, 2))
+            # Cap the render: a site plan is A0 and a fixed 2x would produce a
+            # 11000px-wide PNG (tens of MB) for a canvas that is only ever
+            # displayed at screen size. Pins are percent-of-page, so a smaller
+            # render costs nothing.
+            page_rect = document[page - 1].rect
+            zoom = min(2.0, 4000.0 / max(page_rect.width, page_rect.height))
+            pixmap = document[page - 1].get_pixmap(
+                matrix=fitz.Matrix(max(zoom, 0.2), max(zoom, 0.2))
+            )
             pixmap.save(cached)
             document.close()
         except HTTPException:
