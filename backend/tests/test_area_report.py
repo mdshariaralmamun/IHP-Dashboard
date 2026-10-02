@@ -14,11 +14,12 @@ _ACTIVE, _FINISHED = "CONSTRUCTION", "CLOSEOUT"
 
 
 def _make(client, headers, *, location, pi, stage=_ACTIVE, pr=None):
+    number = pr or f"PR-{next(_SEQ)}"
     resp = client.post(
         "/api/projects",
         headers=headers,
         json={
-            "pr_number": pr or f"PR-{next(_SEQ)}",
+            "pr_number": number,
             "title": f"Work in {location}",
             "location": location,
             "pi_name": pi,
@@ -32,7 +33,7 @@ def _make(client, headers, *, location, pi, stage=_ACTIVE, pr=None):
             headers=headers,
             json={"stage": stage, "justification": "test setup"},
         )
-    return pid
+    return pid, number
 
 
 def _report(client, headers, where):
@@ -49,36 +50,45 @@ class TestAreaReport:
     def test_who_is_there_now_who_was_there_before(
         self, client, admin_headers
     ):
-        _make(client, admin_headers, location="B5 L3 A1", pi="Current PI")
-        _make(client, admin_headers, location="5-3610", pi="Old PI", stage=_FINISHED)
+        # Building 12: the shared test database holds other suites' B5/B7
+        # projects, so this suite owns a building of its own.
+        _pid, active_pr = _make(
+            client, admin_headers, location="B12 L4 A1", pi="Current PI"
+        )
+        _fid, finished_pr = _make(
+            client, admin_headers, location="12-4610", pi="Old PI", stage=_FINISHED
+        )
 
-        report = _report(client, admin_headers, "5-3610")
+        report = _report(client, admin_headers, "12-4610")
         assert report["ok"] is True
-        assert report["decoded"]["building"] == 5
-        assert "Building 5" in report["described"]
+        assert report["decoded"]["building"] == 12
+        assert "Building 12" in report["described"]
+        assert active_pr in [r["pr_number"] for r in report["active_projects"]]
+        assert finished_pr in [r["pr_number"] for r in report["finished_projects"]]
         # The finished row's PI is history; the active one is current.
         assert "Current PI" in report["current_pis"]
         assert "Old PI" in report["previous_pis"]
         assert "Old PI" not in report["current_pis"]
-        assert report["active_count"] == 1
-        assert report["finished_count"] == 1
-        assert report["finished_projects"][0]["stage"] == _FINISHED
 
     def test_other_floors_do_not_leak_in(self, client, admin_headers):
         # Its own building: the shared test database already holds other
         # tests' projects, and an area report is not scoped to a fixture.
-        _make(client, admin_headers, location="B9 L4 A2", pi="Right")
-        _make(client, admin_headers, location="B9 L3 A2", pi="Wrong")
+        _right_pid, right_pr = _make(
+            client, admin_headers, location="B9 L4 A2", pi="Right"
+        )
+        _wrong_pid, wrong_pr = _make(
+            client, admin_headers, location="B9 L3 A2", pi="Wrong"
+        )
 
         report = _report(client, admin_headers, "B9 L4 A2")
-        assert report["active_count"] == 1
-        assert report["current_pis"] == ["Right"]
+        assert right_pr in [r["pr_number"] for r in report["active_projects"]]
+        assert wrong_pr not in [r["pr_number"] for r in report["active_projects"]]
         assert "Wrong" not in report["current_pis"]
 
     def test_a_pin_labels_the_area_even_when_the_register_is_loose(
         self, client, admin_headers
     ):
-        pid = _make(client, admin_headers, location="B7", pi="Register PI")
+        pid, _pr = _make(client, admin_headers, location="B7", pi="Register PI")
         resp = client.post(
             f"/api/projects/{pid}/markers",
             headers=admin_headers,
