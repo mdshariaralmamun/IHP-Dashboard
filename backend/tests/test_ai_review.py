@@ -112,6 +112,35 @@ class TestHelpers:
         with pytest.raises(ValueError):
             parse_review("I could not read the documents.")
 
+    def test_raw_newlines_and_trailing_commas_are_repaired(self):
+        """The two defects a long answer actually contains. Both used to fail
+        the whole review with a 502."""
+        raw = '{"summary": "line one\nline two", "findings": [{"severity": "major",}],}'
+        parsed = parse_review(raw)
+        assert parsed["summary"].startswith("line one")
+        assert parsed["findings"][0]["severity"] == "major"
+
+    def test_flat_scope_rows_are_grouped_back_into_trades(self):
+        """One row per line is what the model is now asked for - nested arrays
+        are where it produced unbalanced brackets - and the report shape is
+        unchanged."""
+        parsed = parse_review(
+            '{"scope_by_trade": ['
+            '{"trade": "Plumbing", "item": "a"},'
+            '{"trade": "Plumbing", "item": "b"},'
+            '{"trade": "HVAC", "item": "c"}]}'
+        )
+        assert parsed["scope_by_trade"] == [
+            {"trade": "Plumbing", "items": ["a", "b"]},
+            {"trade": "HVAC", "items": ["c"]},
+        ]
+
+    def test_the_nested_shape_still_parses(self):
+        parsed = parse_review(
+            '{"scope_by_trade": [{"trade": "HVAC", "items": ["a"]}]}'
+        )
+        assert parsed["scope_by_trade"] == [{"trade": "HVAC", "items": ["a"]}]
+
 
 class TestReviewEndpoint:
     def test_a_review_is_stored_and_returned(self, client, admin_headers, monkeypatch):
@@ -187,3 +216,87 @@ class TestReviewEndpoint:
         resp = client.post(f"/api/projects/{pid}/ai-review", headers=admin_headers)
         assert resp.status_code == 502
         assert "could not be read" in resp.text.lower()
+    def test_an_unbalanced_answer_is_retried_once(
+        self, client, admin_headers, monkeypatch,
+    ):
+        """Production: the model closed a nested array one bracket out and the
+        whole review 502'd. One repair round fixes that instead."""
+        pid = _project(client, admin_headers, pr="PR-73006")
+        calls = {"n": 0}
+
+        def flaky(messages, system=None, model=None, provider=None):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return '{"summary": "ok", "scope_by_trade": [[ ]]'
+            assert "invalid" in messages[-1]["content"].lower()
+            return json.dumps({"summary": "ok", "scope_by_trade": []})
+
+        monkeypatch.setattr(ai_provider, "chat", flaky)
+        resp = client.post(f"/api/projects/{pid}/ai-review", headers=admin_headers)
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["summary"] == "ok"
+        assert calls["n"] == 2
+
+    def test_a_hopeless_answer_still_fails_clearly(
+        self, client, admin_headers, monkeypatch,
+    ):
+        pid = _project(client, admin_headers, pr="PR-73007")
+        monkeypatch.setattr(
+            ai_provider, "chat", lambda *a, **k: "still not json at all"
+        )
+        resp = client.post(f"/api/projects/{pid}/ai-review", headers=admin_headers)
+        assert resp.status_code == 502
+        assert "could not be read" in resp.text.lower()
+
+    def test_a_citation_the_reviewer_never_read_is_flagged(
+        self, client, admin_headers, monkeypatch,
+    ):
+        """An invented filename must not read as evidence."""
+        pid = _project(client, admin_headers, pr="PR-73008")
+        _index_document(pid, "spec.docx", "Design pressure 10 bar.")
+
+        payload = {
+            "summary": "s",
+            "findings": [
+                {
+                    "id": "F1",
+                    "severity": "critical",
+                    "title": "Pressure disagrees",
+                    "documents": ["spec.docx", "ghost-document.pdf"],
+                }
+            ],
+        }
+        monkeypatch.setattr(
+            ai_provider, "chat", lambda *a, **k: json.dumps(payload)
+        )
+        resp = client.post(f"/api/projects/{pid}/ai-review", headers=admin_headers)
+        assert resp.status_code == 200, resp.text
+        finding = resp.json()["findings"][0]
+        assert finding["documents_unverified"] == ["ghost-document.pdf"]
+
+    def test_attachments_that_could_not_be_read_are_named_not_called_missing(
+        self, client, admin_headers, monkeypatch,
+    ):
+        """"Not attached" and "attached but not indexed" are different
+        problems with different owners."""
+        pid = _project(client, admin_headers, pr="PR-73009")
+        uploaded = client.post(
+            f"/api/projects/{pid}/attachments",
+            files=[("files", ("Utility Matrix B7.xlsx", b"data", "application/vnd.ms-excel"))],
+            headers=admin_headers,
+        )
+        assert uploaded.status_code == 200, uploaded.text
+
+        captured: dict = {}
+
+        def fake_chat(messages, system=None, model=None, provider=None):
+            captured["prompt"] = messages[-1]["content"]
+            return json.dumps({"summary": "s"})
+
+        monkeypatch.setattr(ai_provider, "chat", fake_chat)
+        resp = client.post(f"/api/projects/{pid}/ai-review", headers=admin_headers)
+        assert resp.status_code == 200, resp.text
+        assert "ATTACHED BUT NOT READABLE" in captured["prompt"]
+        assert "Utility Matrix B7.xlsx" in captured["prompt"]
+        assert "never list them under missing_documents" in captured["prompt"]
+

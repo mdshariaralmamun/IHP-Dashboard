@@ -285,6 +285,8 @@ export interface AiReviewFinding {
   detail?: string;
   why?: string;
   required_fix?: string;
+  /** Cited documents the reviewer had NOT read - treated as unverified. */
+  documents_unverified?: string[];
 }
 
 /** The model's structured review of everything uploaded to a project. */
@@ -298,6 +300,8 @@ export interface AiReview {
   findings?: AiReviewFinding[];
   questions?: string[];
   missing_documents?: string[];
+  /** Attached but unreadable (unsupported format or not indexed yet). */
+  unread_documents?: string[];
   confidence?: string;
   model?: string;
   generated_at?: string;

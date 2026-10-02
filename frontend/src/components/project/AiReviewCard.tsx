@@ -166,6 +166,19 @@ export default function AiReviewCard({
         </div>
       )}
 
+      {(review?.unread_documents ?? []).length > 0 && (
+        <div className="mt-4">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-apple-muted">
+            Attached but not read
+          </h4>
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-apple-muted">
+            {(review?.unread_documents ?? []).map((d, i) => (
+              <li key={i}>{d}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {(review?.missing_documents ?? []).length > 0 && (
         <div className="mt-4">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-apple-muted">
@@ -238,6 +251,13 @@ function Finding({ finding }: { finding: AiReviewFinding }) {
       {(finding.documents ?? []).length > 0 && (
         <p className="mt-1 text-[11px] text-apple-muted">
           From: {(finding.documents ?? []).join(', ')}
+        </p>
+      )}
+      {(finding.documents_unverified ?? []).length > 0 && (
+        <p className="mt-1 text-[11px] font-medium text-amber-700">
+          Unverified: {(finding.documents_unverified ?? []).join(', ')} — the reviewer did not
+          read {finding.documents_unverified?.length === 1 ? 'this file' : 'these files'}, so
+          confirm the quote before acting on it.
         </p>
       )}
     </div>

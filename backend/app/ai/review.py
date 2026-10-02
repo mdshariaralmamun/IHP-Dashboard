@@ -90,8 +90,11 @@ REVIEW_INSTRUCTION = (
     '  "documents": [{"name": "file name", "kind": "pr_form|equipment_spec|'
     'utility_matrix|invitation|calculation|drawing|boq|other", "gist": "one '
     'line: what this document contributes"}],\n'
+    # ONE row per scope line, not a nested array: the nested shape is where
+    # the model produced unbalanced brackets in production. The rows are
+    # grouped into trades here, so the report shape is unchanged.
     '  "scope_by_trade": [{"trade": "Civil/Architectural|Plumbing|HVAC|'
-    'Electrical|General", "items": ["specific scope line"]}],\n'
+    'Electrical|General", "item": "one specific scope line"}],\n'
     '  "deliverables": ["what the team must produce or buy"],\n'
     '  "findings": [{"id": "F1", "severity": "critical|major|minor|info", '
     '"kind": "conflict|deficiency|calculation|missing_input|unclear", '
@@ -103,8 +106,11 @@ REVIEW_INSTRUCTION = (
     'answer"],\n'
     '  "confidence": "high|medium|low",\n'
     '  "missing_documents": ["a document that should have been attached and '
-    'was not"]\n'
-    "}"
+    'was not"],\n'
+    '  "unread_documents": ["a file listed under ATTACHED BUT NOT READABLE"]\n'
+    "}\n\n"
+    "Every string must fit on one line: no raw line breaks inside a string, "
+    "no trailing commas, and no array nested directly inside another array."
 )
 
 
@@ -179,6 +185,127 @@ def project_documents(
     return out
 
 
+def strip_fences(raw: str) -> str:
+    """Drop the markdown fence a model wraps JSON in."""
+    text = (raw or "").strip()
+    fence = re.search(r"\x60\x60\x60(?:json)?\s*(.+?)\x60\x60\x60", text, re.S)
+    return fence.group(1).strip() if fence else text
+
+
+def escape_control_chars(text: str) -> str:
+    """Escape raw newlines/tabs INSIDE strings, which JSON forbids.
+
+    A long answer quoting a document almost always contains one, and it is the
+    most common reason a hand-rolled parser sees "Expecting ',' delimiter".
+    """
+    out: list[str] = []
+    in_string = False
+    escaped = False
+    for char in text:
+        if not in_string:
+            if char == '"':
+                in_string = True
+            out.append(char)
+            continue
+        if escaped:
+            escaped = False
+            out.append(char)
+        elif char == "\\":
+            escaped = True
+            out.append(char)
+        elif char == '"':
+            in_string = False
+            out.append(char)
+        elif char == "\n":
+            out.append("\\n")
+        elif char == "\r":
+            out.append("\\r")
+        elif char == "\t":
+            out.append("\\t")
+        elif ord(char) < 0x20:
+            out.append(" ")
+        else:
+            out.append(char)
+    return "".join(out)
+
+
+def _normalise(data: dict) -> dict[str, Any]:
+    """Fill the gaps and group the flat scope rows back into trades."""
+    for key, default in (
+        ("summary", ""), ("documents", []), ("scope_by_trade", []),
+        ("deliverables", []), ("findings", []), ("questions", []),
+        ("missing_documents", []), ("unread_documents", []),
+        ("confidence", "low"),
+    ):
+        data.setdefault(key, default)
+
+    grouped: dict[str, list[str]] = {}
+    for row in data.get("scope_by_trade") or []:
+        if isinstance(row, dict) and "item" in row:
+            grouped.setdefault(str(row.get("trade") or "General"), []).append(
+                str(row["item"])
+            )
+        elif isinstance(row, dict) and isinstance(row.get("items"), list):
+            grouped.setdefault(str(row.get("trade") or "General"), []).extend(
+                str(item) for item in row["items"]
+            )
+    if grouped:
+        data["scope_by_trade"] = [
+            {"trade": trade, "items": items} for trade, items in grouped.items()
+        ]
+
+    for finding in data["findings"]:
+        if not isinstance(finding, dict):
+            continue
+        severity = str(finding.get("severity") or "minor").lower()
+        finding["severity"] = severity if severity in SEVERITIES else "minor"
+        finding.setdefault("documents", [])
+    return data
+
+
+def parse_review(raw: str) -> dict[str, Any]:
+    """Tolerant JSON extraction.
+
+    Models fence, pad, quote and - in production - emit the odd unbalanced
+    bracket inside a nested array. Rather than fail the whole review, try the
+    answer as-is and then with the mechanical defects repaired.
+    """
+    text = strip_fences(raw)
+    attempts = [text]
+    repaired = escape_control_chars(re.sub(r",(\s*[}\]])", r"\1", text))
+    if repaired != text:
+        attempts.append(repaired)
+
+    for candidate in attempts:
+        start, end = candidate.find("{"), candidate.rfind("}")
+        if start == -1 or end <= start:
+            continue
+        try:
+            data = json.loads(candidate[start : end + 1])
+        except json.JSONDecodeError:
+            continue
+        if isinstance(data, dict):
+            return _normalise(data)
+    raise ValueError("the model did not return valid JSON")
+
+
+def unread_attachments(
+    project: Project, documents: list[dict[str, str]],
+) -> list[str]:
+    """Files on the project that the review could not read.
+
+    They must not be reported as MISSING: the difference between "nobody
+    attached it" and "it is attached but not indexed" is what tells the team
+    whether to chase the requester or press the index button.
+    """
+    read = {doc["name"].lower() for doc in documents}
+    return [
+        attachment.filename
+        for attachment in project.attachments
+        if attachment.filename.lower() not in read
+    ]
+
+
 def project_facts(project: Project, derived: dict[str, Any]) -> str:
     """The live register row, so the review can spot a tracker/document clash."""
     rows = [
@@ -203,7 +330,10 @@ def project_facts(project: Project, derived: dict[str, Any]) -> str:
 
 
 def build_prompt(
-    project: Project, derived: dict[str, Any], documents: list[dict[str, str]],
+    project: Project,
+    derived: dict[str, Any],
+    documents: list[dict[str, str]],
+    unread: list[str] | None = None,
 ) -> str:
     parts = [
         REVIEW_INSTRUCTION,
@@ -221,37 +351,20 @@ def build_prompt(
         parts += [
             "",
             "== DOCUMENTS ==",
-            "None have been indexed yet. Say so in missing_documents and review",
-            "only what the project facts contain.",
+            "None have been indexed yet. Review only what the project facts",
+            "contain, and do NOT list files below as missing_documents.",
+        ]
+    if unread:
+        parts += [
+            "",
+            "== ATTACHED BUT NOT READABLE BY YOU ==",
+            "These files exist on the project but could not be read (not indexed,",
+            "or a format with no text). They are NOT missing: never claim their",
+            "contents and never list them under missing_documents. List them under",
+            "unread_documents instead.",
+            *(f"- {name}" for name in unread),
         ]
     return "\n".join(parts)
-
-
-def parse_review(raw: str) -> dict[str, Any]:
-    """Tolerant JSON extraction: models fence, pad and prefix their JSON."""
-    text = (raw or "").strip()
-    fence = re.search(r"\x60\x60\x60(?:json)?\s*(.+?)\x60\x60\x60", text, re.S)
-    if fence:
-        text = fence.group(1).strip()
-    start, end = text.find("{"), text.rfind("}")
-    if start == -1 or end == -1 or end <= start:
-        raise ValueError("the model did not return a JSON object")
-    data = json.loads(text[start : end + 1])
-    if not isinstance(data, dict):
-        raise ValueError("the model returned JSON that is not an object")
-    for key, default in (
-        ("summary", ""), ("documents", []), ("scope_by_trade", []),
-        ("deliverables", []), ("findings", []), ("questions", []),
-        ("missing_documents", []), ("confidence", "low"),
-    ):
-        data.setdefault(key, default)
-    for finding in data["findings"]:
-        if not isinstance(finding, dict):
-            continue
-        severity = str(finding.get("severity") or "minor").lower()
-        finding["severity"] = severity if severity in SEVERITIES else "minor"
-        finding.setdefault("documents", [])
-    return data
 
 
 def critical_count(payload: dict[str, Any]) -> int:
@@ -271,7 +384,8 @@ def run_review(
     answer is a failed review, never a silently empty one.
     """
     documents = project_documents(db, project)
-    prompt = build_prompt(project, derived, documents)
+    unread = unread_attachments(project, documents)
+    prompt = build_prompt(project, derived, documents, unread)
     raw = provider.chat(
         [{"role": "user", "content": prompt}], system=REVIEW_SYSTEM, model=model
     )
@@ -282,8 +396,47 @@ def run_review(
         )
     try:
         payload = parse_review(raw)
-    except (ValueError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"The AI review could not be read: {exc}") from exc
+    except (ValueError, json.JSONDecodeError) as first_error:
+        # One repair round. A model that emits one bad bracket should not cost
+        # the whole review - it is asked to return the same content, valid.
+        repaired = provider.chat(
+            [
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": raw[:6000]},
+                {
+                    "role": "user",
+                    "content": (
+                        f"That JSON is invalid ({first_error}). Return the SAME "
+                        "review as valid JSON only: every string on one line, no "
+                        "trailing commas, no array nested directly inside another "
+                        "array."
+                    ),
+                },
+            ],
+            system=REVIEW_SYSTEM,
+            model=model,
+        )
+        try:
+            if not repaired:
+                raise ValueError(str(first_error))
+            payload = parse_review(repaired)
+        except (ValueError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"The AI review could not be read, even after asking the model "
+                f"to correct it ({exc})."
+            ) from exc
+
+    # A finding may only cite a document the reviewer actually read; anything
+    # else is flagged rather than presented as evidence.
+    read_names = {doc["name"].lower() for doc in documents}
+    for finding in payload.get("findings") or []:
+        if not isinstance(finding, dict):
+            continue
+        finding["documents_unverified"] = [
+            str(name)
+            for name in finding.get("documents") or []
+            if str(name).lower() not in read_names
+        ]
 
     payload["project_id"] = project.id
     payload["pr_number"] = project.pr_number
