@@ -1,0 +1,306 @@
+[
+ {
+  "number": 1,
+  "description": "Red Sea Science & Engineering & LFO 74"
+ },
+ {
+  "number": 2,
+  "description": "Nanobiophysics Lab (Chaieb)"
+ },
+ {
+  "number": 3,
+  "description": "Plant Stress Genomics & Technologies"
+ },
+ {
+  "number": 4,
+  "description": "Solar Technology (Jabbour)"
+ },
+ {
+  "number": 5,
+  "description": "Bioscience Lab (Bajic)"
+ },
+ {
+  "number": 7,
+  "description": "Membranes"
+ },
+ {
+  "number": 9,
+  "description": "Catalysis (RC Basset)"
+ },
+ {
+  "number": 10,
+  "description": "H.R. Tomography & Micro-Structural Control (Al-Kassab)"
+ },
+ {
+  "number": 12,
+  "description": "DNA Replication and Recombination (Hamdan)"
+ },
+ {
+  "number": 13,
+  "description": "High Speed Fluids (Thoroddsen)"
+ },
+ {
+  "number": 15,
+  "description": "Heterogeneous Materials Analysis and Simulation (Lubineau)"
+ },
+ {
+  "number": 16,
+  "description": "Photonics Laboratory (Ooi)"
+ },
+ {
+  "number": 17,
+  "description": "Sensors Laboratory (Salama)"
+ },
+ {
+  "number": 19,
+  "description": "Applied Math Lab (Kassimov)"
+ },
+ {
+  "number": 20,
+  "description": "Functional Materials (Alshareef)"
+ },
+ {
+  "number": 21,
+  "description": "Stem Cell Trafficking (Merzaban)"
+ },
+ {
+  "number": 24,
+  "description": "Integrative System Biology (Ravasi)"
+ },
+ {
+  "number": 25,
+  "description": "SMS Laboratory (Roqan)"
+ },
+ {
+  "number": 27,
+  "description": "Solar Powered Absorption Desalination Pilot Plant (Special Partnership Ng)"
+ },
+ {
+  "number": 28,
+  "description": "Thin Film (RC Zhang)"
+ },
+ {
+  "number": 29,
+  "description": "Analytical (CORE)"
+ },
+ {
+  "number": 30,
+  "description": "FMD3 (Eddaoudi)"
+ },
+ {
+  "number": 31,
+  "description": "Oligo (Support)"
+ },
+ {
+  "number": 32,
+  "description": "Water Desalination & Reuse (RC)"
+ },
+ {
+  "number": 33,
+  "description": "Drug Design & Delivery (Khashab)"
+ },
+ {
+  "number": 34,
+  "description": "Molecular Electrical Interfaces (Amassian)"
+ },
+ {
+  "number": 37,
+  "description": "Biomolecular Lab (Gehring/Bajic)"
+ },
+ {
+  "number": 38,
+  "description": "Bioactive Molecules Lab (Magistretti)"
+ },
+ {
+  "number": 39,
+  "description": "Seismology Lab (Schuster)"
+ },
+ {
+  "number": 40,
+  "description": "Integrated Nanotechnology Lab (Hussain)"
+ },
+ {
+  "number": 41,
+  "description": "Inorganic Membranes Lab (Zhiping)"
+ },
+ {
+  "number": 44,
+  "description": "Environmental and Nanotechnology Lab (Wang)"
+ },
+ {
+  "number": 45,
+  "description": "Functional Nanomaterials Lab (Bakr)"
+ },
+ {
+  "number": 53,
+  "description": "Metrology Core (Zhang)"
+ },
+ {
+  "number": 54,
+  "description": "Distributed Sensing Systems Laboratory (Claudel)"
+ },
+ {
+  "number": 55,
+  "description": "Micellar and Supermolecular Catalysis (Rodionov)"
+ },
+ {
+  "number": 56,
+  "description": "Heterogeneous Photocatalysis (Takanabe)"
+ },
+ {
+  "number": 59,
+  "description": "IMPACT Lab (Shamim)"
+ },
+ {
+  "number": 60,
+  "description": "Macromolecular Science and Engineering Lab"
+ },
+ {
+  "number": 61,
+  "description": "Inorganic Synthesis Lab (Rothenberger)"
+ },
+ {
+  "number": 62,
+  "description": "Nanostructured Polymeric Membranes & Water Desalination"
+ },
+ {
+  "number": 63,
+  "description": "LFO 32 Closeout (Amy)"
+ },
+ {
+  "number": 64,
+  "description": "Microfluidics (Foulds)"
+ },
+ {
+  "number": 65,
+  "description": "Open Access Analytical Core Lab (Fayad)"
+ },
+ {
+  "number": 68,
+  "description": "Hight Pressure Combustion Lab (Roberts)"
+ },
+ {
+  "number": 69,
+  "description": "Chemistry Neighborhood (TBD) & LFO 45 (Bakr) & LFO60 (Beaujuge)"
+ },
+ {
+  "number": 70,
+  "description": "Biology Neighborhood & LFO71 SMSML"
+ },
+ {
+  "number": 71,
+  "description": "Single Molecule S&M"
+ },
+ {
+  "number": 72,
+  "description": "LFO 43 CCRC Closeout (Chung) & Pyrolysis & Combustion Chemistry Lab (Sarathy)"
+ },
+ {
+  "number": 76,
+  "description": "Polymer Synthesis"
+ },
+ {
+  "number": 78,
+  "description": "Chemistry Neighborhood Combo 1"
+ },
+ {
+  "number": 79,
+  "description": "Chemistry Neighborhood Combo 2"
+ },
+ {
+  "number": 80,
+  "description": "Chemistry Neighborhood Combo 3"
+ },
+ {
+  "number": 81,
+  "description": "Biology Neighborhood 1"
+ },
+ {
+  "number": 82,
+  "description": "Biology Neighborhood 2"
+ },
+ {
+  "number": 84,
+  "description": "Chemistry Swing Lab 1 Gen 2"
+ },
+ {
+  "number": 85,
+  "description": "Chemistry Swing Lab Gen 2"
+ },
+ {
+  "number": 86,
+  "description": "Material Sciences Swing Lab 1"
+ },
+ {
+  "number": 87,
+  "description": "Material Sciences Swing Lab 2"
+ },
+ {
+  "number": 90,
+  "description": "Thin Film (Zhang)"
+ },
+ {
+  "number": 92,
+  "description": "Earth Science and Engineering (Younis)"
+ },
+ {
+  "number": 93,
+  "description": "Nano-Oxides for Sustainable Energy"
+ },
+ {
+  "number": 94,
+  "description": "Ultrafast Laser Spect and 4D Electrom Imaging"
+ },
+ {
+  "number": 95,
+  "description": "Dr. Da Costa"
+ },
+ {
+  "number": 96,
+  "description": "Molecular Sensing and Imaging"
+ },
+ {
+  "number": 97,
+  "description": "Water Resources Modeling & Observation Laboratory, Temporary"
+ },
+ {
+  "number": 98,
+  "description": "Environmentsl Epigenetrics Research"
+ },
+ {
+  "number": 99,
+  "description": "Structural Biomolecular Engineering"
+ },
+ {
+  "number": 100,
+  "description": "TBD"
+ },
+ {
+  "number": 101,
+  "description": "Center for Desert Agriculture"
+ },
+ {
+  "number": 102,
+  "description": "Materials for Energy Conversion"
+ },
+ {
+  "number": 103,
+  "description": "Center for Desert Agriculture"
+ },
+ {
+  "number": 105,
+  "description": "Magnetism/Spintronic/ Multiferrous Material/ Nano"
+ },
+ {
+  "number": 106,
+  "description": "Marine Environmental Research Lab"
+ },
+ {
+  "number": 107,
+  "description": "Computational Biology Lab"
+ },
+ {
+  "number": 108,
+  "description": "Plant Stress Genomics Lab"
+ }
+]

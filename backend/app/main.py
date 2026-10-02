@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import select
 
-from .api import (
+from .api import (  # noqa: F401 (routers registered below)
     access_requests,
     admin,
     ai,
@@ -19,6 +19,8 @@ from .api import (
     construction,
     construction_crew,
     construction_mto,
+    markers,
+    reference,
     data_points,
     disposition,
     ear,
@@ -144,6 +146,8 @@ def create_app() -> FastAPI:
     app.include_router(imports.router, prefix="/api")
     app.include_router(settings.router, prefix="/api")
     app.include_router(mto.router, prefix="/api")
+    app.include_router(reference.router, prefix="/api")
+    app.include_router(markers.router, prefix="/api")
     app.include_router(data_points.router, prefix="/api")
     # Public (no auth): the read-only dashboard + the access-request form.
     app.include_router(public.router, prefix="/api")

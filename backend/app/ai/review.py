@@ -326,7 +326,15 @@ def project_facts(project: Project, derived: dict[str, Any]) -> str:
         ("Finish", derived.get("finish_date")),
         ("Latest status", derived.get("latest_status")),
     ]
-    return "\n".join(f"- {label}: {value}" for label, value in rows if value)
+    lines = [f"- {label}: {value}" for label, value in rows if value]
+    # Decode the location against the site's own master list, so the reviewer
+    # can catch a document naming a building/level the register disagrees with.
+    from ..services import reference
+
+    described = reference.describe_location(project.location)
+    if described:
+        lines.append(f"- Location decoded: {described}")
+    return "\n".join(lines)
 
 
 def build_prompt(

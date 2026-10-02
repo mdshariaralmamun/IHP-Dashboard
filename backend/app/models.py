@@ -107,6 +107,9 @@ class Project(Base):
         DateTime, default=utcnow, onupdate=utcnow
     )
 
+    plan_markers: Mapped[list["PlanMarker"]] = relationship(
+        back_populates="project", cascade="all, delete-orphan"
+    )
     attachments: Mapped[list["Attachment"]] = relationship(
         back_populates="project", order_by="Attachment.id", cascade="all, delete-orphan"
     )
@@ -161,6 +164,45 @@ class Attachment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     project: Mapped[Project] = relationship(back_populates="attachments")
+
+
+
+
+class PlanMarker(Base):
+    """A labelled pin on a floor-plan drawing.
+
+    The plan itself is an ordinary project attachment (a PDF export of the
+    AutoCAD drawing); a marker points at a spot on it, expressed in percent of
+    the rendered page so it survives re-rendering at any size. The label
+    carries the PI (names change), an optional PR reference and a note - a
+    location that used to be one PI's becomes two markers when it is divided,
+    and the history of who held what is the audit trail, not a guess.
+    """
+
+    __tablename__ = "plan_markers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), index=True
+    )
+    #: The attachment this pin belongs to (the plan PDF), when chosen.
+    attachment_id: Mapped[int | None] = mapped_column(
+        ForeignKey("attachments.id", ondelete="SET NULL"), nullable=True
+    )
+    #: Page of the PDF the coordinates refer to (1-based).
+    page: Mapped[int] = mapped_column(Integer, default=1)
+    label: Mapped[str] = mapped_column(String(200))
+    pi_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    pr_ref: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: Position as a percent of the page (0-100), origin top-left.
+    x: Mapped[float] = mapped_column(Float)
+    y: Mapped[float] = mapped_column(Float)
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
+
+    project: Mapped[Project] = relationship(back_populates="plan_markers")
 
 
 class MomRecord(Base):

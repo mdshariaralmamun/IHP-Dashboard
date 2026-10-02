@@ -22,6 +22,7 @@ import TrackerStepper, { stageLabel } from '@/components/TrackerStepper';
 import TrackingShare from '@/components/TrackingShare';
 import StageChangePanel from '@/components/project/StageChangePanel';
 import AiReviewCard from '@/components/project/AiReviewCard';
+import PlanMarkersCard from '@/components/project/PlanMarkersCard';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
 import { canDo, useUser } from '@/lib/useUser';
 import type { AuditEntry, ProjectDetail } from '@/lib/types';
@@ -237,6 +238,15 @@ function ProjectDetailView() {
                 projectId={project.id}
                 attachmentCount={project.attachments.length}
                 canRun={canEditProject}
+              />
+            </div>
+
+            {/* The plan and its pins: the drawing the project is really about. */}
+            <div className="mb-6">
+              <PlanMarkersCard
+                projectId={project.id}
+                attachments={project.attachments}
+                canEdit={canEditProject}
               />
             </div>
 

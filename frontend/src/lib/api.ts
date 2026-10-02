@@ -322,6 +322,56 @@ export function runAiReview(projectId: number): Promise<AiReview> {
   return request<AiReview>(`/api/projects/${projectId}/ai-review`, { method: 'POST' });
 }
 
+// ---------- Plan markers (labelled pins on floor-plan drawings) ----------
+
+export interface PlanMarker {
+  id: number;
+  label: string;
+  pi_name: string | null;
+  pr_ref: string | null;
+  notes: string | null;
+  attachment_id: number | null;
+  page: number;
+  x: number;
+  y: number;
+  created_by: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export function listPlanMarkers(projectId: number): Promise<PlanMarker[]> {
+  return request<PlanMarker[]>(`/api/projects/${projectId}/markers`);
+}
+
+export function createPlanMarker(
+  projectId: number,
+  marker: Pick<PlanMarker, 'label' | 'x' | 'y'> &
+    Partial<Pick<PlanMarker, 'pi_name' | 'pr_ref' | 'notes' | 'attachment_id' | 'page'>>,
+): Promise<PlanMarker> {
+  return request<PlanMarker>(`/api/projects/${projectId}/markers`, { method: 'POST' }, marker);
+}
+
+export function updatePlanMarker(
+  projectId: number,
+  markerId: number,
+  patch: Partial<Pick<PlanMarker, 'label' | 'pi_name' | 'pr_ref' | 'notes' | 'x' | 'y' | 'page'>>,
+): Promise<PlanMarker> {
+  return request<PlanMarker>(
+    `/api/projects/${projectId}/markers/${markerId}`,
+    { method: 'PATCH' },
+    patch,
+  );
+}
+
+export function deletePlanMarker(projectId: number, markerId: number): Promise<void> {
+  return request(`/api/projects/${projectId}/markers/${markerId}`, { method: 'DELETE' });
+}
+
+/** The rendered plan page pins are placed on (percent coordinates match). */
+export function planImageUrl(projectId: number, attachmentId: number, page = 1): string {
+  return `/api/projects/${projectId}/markers/plan/${attachmentId}.png?page=${page}`;
+}
+
 /** Trade-wise SOW scope suggestions mined from similar archived SOWs. */
 export interface SowSuggestion {
   text: string;

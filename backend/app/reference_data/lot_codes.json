@@ -1,0 +1,1042 @@
+[
+ {
+  "code": "000",
+  "description": "Architecture"
+ },
+ {
+  "code": "001",
+  "description": "Decoration"
+ },
+ {
+  "code": "002",
+  "description": "Synthesis"
+ },
+ {
+  "code": "003",
+  "description": "Methods"
+ },
+ {
+  "code": "004",
+  "description": "OPC"
+ },
+ {
+  "code": "005",
+  "description": "General Earthworks"
+ },
+ {
+  "code": "006",
+  "description": "Complementary Earthworks"
+ },
+ {
+  "code": "007",
+  "description": "Levelling"
+ },
+ {
+  "code": "008",
+  "description": "Special Foundations"
+ },
+ {
+  "code": "015",
+  "description": "Sewage and Drainage Networks"
+ },
+ {
+  "code": "016",
+  "description": "Water Supply Networks"
+ },
+ {
+  "code": "017",
+  "description": "Electricity Networks"
+ },
+ {
+  "code": "018",
+  "description": "Networks Synthesis"
+ },
+ {
+  "code": "019",
+  "description": "Misc. VRD Works"
+ },
+ {
+  "code": "020",
+  "description": "Reinf. Concrete Structures"
+ },
+ {
+  "code": "021",
+  "description": "Site Mobilization"
+ },
+ {
+  "code": "022",
+  "description": "Prefab Bungalows"
+ },
+ {
+  "code": "023",
+  "description": "Site Camps"
+ },
+ {
+  "code": "025",
+  "description": "Precast Components"
+ },
+ {
+  "code": "026",
+  "description": "Steelworks"
+ },
+ {
+  "code": "029",
+  "description": "Road Works & Parking"
+ },
+ {
+  "code": "030",
+  "description": "Masonry Works"
+ },
+ {
+  "code": "040",
+  "description": "Screeds"
+ },
+ {
+  "code": "049",
+  "description": "Misc. Civil Works"
+ },
+ {
+  "code": "050",
+  "description": "Structural Steel"
+ },
+ {
+  "code": "051",
+  "description": "Wall Sheeting"
+ },
+ {
+  "code": "052",
+  "description": "Metal Construction"
+ },
+ {
+  "code": "059",
+  "description": "Misc. Metal Construction"
+ },
+ {
+  "code": "070",
+  "description": "Wooden Structures"
+ },
+ {
+  "code": "071",
+  "description": "Wooden Glued Laminated Struc."
+ },
+ {
+  "code": "079",
+  "description": "Misc Wooden Construction"
+ },
+ {
+  "code": "080",
+  "description": "Water Proofing"
+ },
+ {
+  "code": "081",
+  "description": "Underground Water Proofing"
+ },
+ {
+  "code": "082",
+  "description": "Tanking Water Proofing"
+ },
+ {
+  "code": "089",
+  "description": "Misc Waterproofing"
+ },
+ {
+  "code": "090",
+  "description": "Roof Covering"
+ },
+ {
+  "code": "091",
+  "description": "Metal Roofing"
+ },
+ {
+  "code": "095",
+  "description": "Stretched Canvas Roofing"
+ },
+ {
+  "code": "099",
+  "description": "Misc Roofing"
+ },
+ {
+  "code": "100",
+  "description": "Thermal Dry Lining"
+ },
+ {
+  "code": "101",
+  "description": "Fire Protection"
+ },
+ {
+  "code": "102",
+  "description": "External Facade Insulation"
+ },
+ {
+  "code": "109",
+  "description": "Misc Lining - Insulation"
+ },
+ {
+  "code": "110",
+  "description": "Light Weight Partitions"
+ },
+ {
+  "code": "111",
+  "description": "Plastering"
+ },
+ {
+  "code": "119",
+  "description": "Misc. Light Weight Partitions"
+ },
+ {
+  "code": "120",
+  "description": "Demountable Partitions"
+ },
+ {
+  "code": "129",
+  "description": "Misc. Demountable Partitions"
+ },
+ {
+  "code": "130",
+  "description": "Int. Standard False Ceiling"
+ },
+ {
+  "code": "131",
+  "description": "Int. Gypsum False Ceiling"
+ },
+ {
+  "code": "132",
+  "description": "External Metal False Ceiling"
+ },
+ {
+  "code": "133",
+  "description": "Ext. Gypsum False Ceiling"
+ },
+ {
+  "code": "134",
+  "description": "Internal Wooden False Ceiling"
+ },
+ {
+  "code": "135",
+  "description": "External Wooden False Ceiling"
+ },
+ {
+  "code": "139",
+  "description": "Misc. False Ceiling"
+ },
+ {
+  "code": "150",
+  "description": "Standard Wood Joinery"
+ },
+ {
+  "code": "151",
+  "description": "Noble Door Units"
+ },
+ {
+  "code": "159",
+  "description": "Misc. Wood Joinery"
+ },
+ {
+  "code": "160",
+  "description": "Metal External Joinery"
+ },
+ {
+  "code": "161",
+  "description": "PVC External Joinery"
+ },
+ {
+  "code": "164",
+  "description": "External Wood Joinery"
+ },
+ {
+  "code": "169",
+  "description": "Misc. External Joinery"
+ },
+ {
+  "code": "170",
+  "description": "GRC Works"
+ },
+ {
+  "code": "171",
+  "description": "Bricks"
+ },
+ {
+  "code": "172",
+  "description": "Zelliges"
+ },
+ {
+  "code": "173",
+  "description": "Tiles Facade Finishing"
+ },
+ {
+  "code": "174",
+  "description": "Ext. Gypsum Plaster Fitting"
+ },
+ {
+  "code": "179",
+  "description": "Misc. Special Fac. Coverings"
+ },
+ {
+  "code": "190",
+  "description": "Standard Metal Work"
+ },
+ {
+  "code": "191",
+  "description": "Decorative Metalwork"
+ },
+ {
+  "code": "199",
+  "description": "Misc. Metalwork"
+ },
+ {
+  "code": "200",
+  "description": "Internal Glazing And Mirrors"
+ },
+ {
+  "code": "209",
+  "description": "Misc. Int Glazing And Mirrors"
+ },
+ {
+  "code": "210",
+  "description": "Carpet And Flexible Flooring"
+ },
+ {
+  "code": "211",
+  "description": "Handtufted Carpet"
+ },
+ {
+  "code": "219",
+  "description": "Misc. Flexible Floorings"
+ },
+ {
+  "code": "220",
+  "description": "Floor And Wall Tiling"
+ },
+ {
+  "code": "221",
+  "description": "Internal Decorative Mosaic"
+ },
+ {
+  "code": "222",
+  "description": "Terra Cotta Tiling Works"
+ },
+ {
+  "code": "223",
+  "description": "Internal Bricks"
+ },
+ {
+  "code": "229",
+  "description": "Misc. Tiling"
+ },
+ {
+  "code": "230",
+  "description": "Stretched Wall Fabric"
+ },
+ {
+  "code": "231",
+  "description": "Embroidery"
+ },
+ {
+  "code": "239",
+  "description": "Misc. Stretched Wall Fabric"
+ },
+ {
+  "code": "240",
+  "description": "Int. Marble And Stoneworks"
+ },
+ {
+  "code": "249",
+  "description": "Misc. Int. Marble And Stone"
+ },
+ {
+  "code": "250",
+  "description": "Facade Surface Finishing"
+ },
+ {
+  "code": "259",
+  "description": "Misc. Facade Surf. Finishing"
+ },
+ {
+  "code": "260",
+  "description": "Bonded Coverings And Painting"
+ },
+ {
+  "code": "261",
+  "description": "Soil Painting And Resin"
+ },
+ {
+  "code": "269",
+  "description": "Misc. Painting Works"
+ },
+ {
+  "code": "270",
+  "description": "Ext. Marble And Stone Works"
+ },
+ {
+  "code": "275",
+  "description": "Riyadh Stone Works"
+ },
+ {
+  "code": "279",
+  "description": "Misc. Ext. Marble And Stone"
+ },
+ {
+  "code": "280",
+  "description": "Suspended Floors"
+ },
+ {
+  "code": "289",
+  "description": "Misc. Suspended Floors"
+ },
+ {
+  "code": "291",
+  "description": "Sculptured Gypsum Plaster"
+ },
+ {
+  "code": "292",
+  "description": "Zelliges"
+ },
+ {
+  "code": "293",
+  "description": "Moroccan Zouaqs"
+ },
+ {
+  "code": "294",
+  "description": "Wooden Sculptured Works"
+ },
+ {
+  "code": "295",
+  "description": "Decorative Rendering"
+ },
+ {
+  "code": "296",
+  "description": "Special Mirror Works"
+ },
+ {
+  "code": "299",
+  "description": "Misc. Special Deco Works"
+ },
+ {
+  "code": "300",
+  "description": "Curtains And Net Curtains"
+ },
+ {
+  "code": "309",
+  "description": "Misc. Curtains - Net Curtains"
+ },
+ {
+  "code": "310",
+  "description": "Rugs"
+ },
+ {
+  "code": "319",
+  "description": "Misc. Rugs"
+ },
+ {
+  "code": "320",
+  "description": "Light. Fixt. And Chandeliers"
+ },
+ {
+  "code": "327",
+  "description": "Table Lamps"
+ },
+ {
+  "code": "329",
+  "description": "Misc. Lighting Fixtures"
+ },
+ {
+  "code": "330",
+  "description": "Wood Fittings"
+ },
+ {
+  "code": "331",
+  "description": "Int. Gypsum Plaster Fitting"
+ },
+ {
+  "code": "334",
+  "description": "Noble Wood Flooring"
+ },
+ {
+  "code": "339",
+  "description": "Misc. Fitting Works"
+ },
+ {
+  "code": "340",
+  "description": "TV Hi-Fi"
+ },
+ {
+  "code": "349",
+  "description": "Misc. TV Hi-Fi"
+ },
+ {
+  "code": "350",
+  "description": "Furniture"
+ },
+ {
+  "code": "359",
+  "description": "Misc. Furniture - Bedding"
+ },
+ {
+  "code": "360",
+  "description": "Linenware"
+ },
+ {
+  "code": "362",
+  "description": "Embroidered Bedroom Linen"
+ },
+ {
+  "code": "369",
+  "description": "Misc. Linen"
+ },
+ {
+  "code": "370",
+  "description": "Crockery"
+ },
+ {
+  "code": "371",
+  "description": "Tableware"
+ },
+ {
+  "code": "372",
+  "description": "Service Tableware"
+ },
+ {
+  "code": "373",
+  "description": "China Crockery"
+ },
+ {
+  "code": "374",
+  "description": "Metal Plateware"
+ },
+ {
+  "code": "376",
+  "description": "Service Set"
+ },
+ {
+  "code": "377",
+  "description": "Kitchen Set"
+ },
+ {
+  "code": "379",
+  "description": "Misc. Crockery - Tableware"
+ },
+ {
+  "code": "380",
+  "description": "Bathroom Access. Small Equipt"
+ },
+ {
+  "code": "382",
+  "description": "Extinguishers"
+ },
+ {
+  "code": "383",
+  "description": "Cleaning Equipment"
+ },
+ {
+  "code": "389",
+  "description": "Misc. Bathroom Accessories"
+ },
+ {
+  "code": "391",
+  "description": "Framed Reproductions"
+ },
+ {
+  "code": "392",
+  "description": "Ashtrays"
+ },
+ {
+  "code": "393",
+  "description": "Internal Plants"
+ },
+ {
+  "code": "395",
+  "description": "Offices Accessories"
+ },
+ {
+  "code": "396",
+  "description": "Decorative Articles"
+ },
+ {
+  "code": "399",
+  "description": "Misc. Decorative Accessories"
+ },
+ {
+  "code": "400",
+  "description": "HVAC"
+ },
+ {
+  "code": "409",
+  "description": "Misc. HVAC"
+ },
+ {
+  "code": "410",
+  "description": "Plumbing"
+ },
+ {
+  "code": "412",
+  "description": "Medical Fluids"
+ },
+ {
+  "code": "419",
+  "description": "Misc. Plumbing"
+ },
+ {
+  "code": "420",
+  "description": "Industrial Kitchens"
+ },
+ {
+  "code": "421",
+  "description": "Cold Rooms"
+ },
+ {
+  "code": "422",
+  "description": "Restaurant Equipment"
+ },
+ {
+  "code": "429",
+  "description": "Misc. Indust. Kit. Cold Rooms"
+ },
+ {
+  "code": "430",
+  "description": "Pantries And Domestic Laund."
+ },
+ {
+  "code": "439",
+  "description": "Misc. Pant And Dom. Laundries"
+ },
+ {
+  "code": "450",
+  "description": "High Current Electricity"
+ },
+ {
+  "code": "459",
+  "description": "Misc. High Current Elec."
+ },
+ {
+  "code": "460",
+  "description": "Low Current Systems"
+ },
+ {
+  "code": "462",
+  "description": "Fire Security System"
+ },
+ {
+  "code": "469",
+  "description": "Misc. Low Current Systems"
+ },
+ {
+  "code": "470",
+  "description": "Elevators"
+ },
+ {
+  "code": "471",
+  "description": "Escalators And Conveyors"
+ },
+ {
+  "code": "479",
+  "description": "Misc. Elevators"
+ },
+ {
+  "code": "480",
+  "description": "Computer Equipment"
+ },
+ {
+  "code": "489",
+  "description": "Misc. Computer Equipment"
+ },
+ {
+  "code": "490",
+  "description": "Fire Fighting System"
+ },
+ {
+  "code": "499",
+  "description": "Misc. Fire Fighting System"
+ },
+ {
+  "code": "500",
+  "description": "Chilled Water Production"
+ },
+ {
+  "code": "509",
+  "description": "Misc. Chilled Water Prod."
+ },
+ {
+  "code": "510",
+  "description": "Industrial Laundries"
+ },
+ {
+  "code": "519",
+  "description": "Misc. Industrial Laundries"
+ },
+ {
+  "code": "520",
+  "description": "Water Treatment"
+ },
+ {
+  "code": "529",
+  "description": "Misc. Water Treatment"
+ },
+ {
+  "code": "530",
+  "description": "Sewage Treatment Plant"
+ },
+ {
+  "code": "539",
+  "description": "Misc. Sewage Treatment Plant"
+ },
+ {
+  "code": "540",
+  "description": "Centralized Vacuuming System"
+ },
+ {
+  "code": "549",
+  "description": "Misc. Cent. Vacuuming System"
+ },
+ {
+  "code": "550",
+  "description": "Generators"
+ },
+ {
+  "code": "559",
+  "description": "Misc. Generators"
+ },
+ {
+  "code": "560",
+  "description": "Transf. And Medium Voltage"
+ },
+ {
+  "code": "569",
+  "description": "Misc. Transf And Medium Volt."
+ },
+ {
+  "code": "570",
+  "description": "LVGB"
+ },
+ {
+  "code": "579",
+  "description": "Misc. LVGB"
+ },
+ {
+  "code": "580",
+  "description": "PABX"
+ },
+ {
+  "code": "589",
+  "description": "Misc. PABX"
+ },
+ {
+  "code": "590",
+  "description": "Incinerators Equipment"
+ },
+ {
+  "code": "599",
+  "description": "Misc. Incinerators"
+ },
+ {
+  "code": "600",
+  "description": "Swimming Pool Equipment"
+ },
+ {
+  "code": "609",
+  "description": "Misc. Swimming Pool Equipment"
+ },
+ {
+  "code": "610",
+  "description": "Fountains Equipment"
+ },
+ {
+  "code": "619",
+  "description": "Misc. Fountains Equipment"
+ },
+ {
+  "code": "620",
+  "description": "Sauna Equipment"
+ },
+ {
+  "code": "629",
+  "description": "Misc. Sauna Equipment"
+ },
+ {
+  "code": "630",
+  "description": "Gas Station Equipment"
+ },
+ {
+  "code": "631",
+  "description": "Workshop Equipment"
+ },
+ {
+  "code": "632",
+  "description": "Shelving And Storing System"
+ },
+ {
+  "code": "633",
+  "description": "Military Equipment"
+ },
+ {
+  "code": "639",
+  "description": "Misc. Gas Stat. & Workshop Eq"
+ },
+ {
+  "code": "640",
+  "description": "Cleaning Cradle"
+ },
+ {
+  "code": "649",
+  "description": "Misc. Cleaning Cradle"
+ },
+ {
+  "code": "650",
+  "description": "Medical Equipment"
+ },
+ {
+  "code": "659",
+  "description": "Misc. Medical Equipment"
+ },
+ {
+  "code": "660",
+  "description": "Printing Equipment"
+ },
+ {
+  "code": "661",
+  "description": "Office Equipment"
+ },
+ {
+  "code": "669",
+  "description": "Misc. Printing Equipment"
+ },
+ {
+  "code": "670",
+  "description": "Pneumatic Tube  System Mail"
+ },
+ {
+  "code": "679",
+  "description": "Misc. Pneu. Tube System Mail"
+ },
+ {
+  "code": "682",
+  "description": "Audio Visual And Conf. Equipt"
+ },
+ {
+  "code": "683",
+  "description": "Security Equipment"
+ },
+ {
+  "code": "684",
+  "description": "Military Communication Equipt"
+ },
+ {
+  "code": "687",
+  "description": "Hotel Management System"
+ },
+ {
+  "code": "689",
+  "description": "Misc. Low Current Special Eq."
+ },
+ {
+  "code": "691",
+  "description": "Indoor Sport Equipment"
+ },
+ {
+  "code": "699",
+  "description": "Misc. Indoor Sport Equipment"
+ },
+ {
+  "code": "730",
+  "description": "Ext. Chilled Water Network"
+ },
+ {
+  "code": "739",
+  "description": "Misc. Ext. Chilled Water Net."
+ },
+ {
+  "code": "740",
+  "description": "External Water Supply Network"
+ },
+ {
+  "code": "749",
+  "description": "Misc. Ext Water Supply Net."
+ },
+ {
+  "code": "750",
+  "description": "External Drainage Network"
+ },
+ {
+  "code": "759",
+  "description": "Misc. External Drainage Net."
+ },
+ {
+  "code": "760",
+  "description": "External Electrical Works"
+ },
+ {
+  "code": "761",
+  "description": "External Low Current Network"
+ },
+ {
+  "code": "762",
+  "description": "External Network Lighting"
+ },
+ {
+  "code": "769",
+  "description": "Misc. Ext. Electrical Works"
+ },
+ {
+  "code": "770",
+  "description": "Outdoor Sport Equipment"
+ },
+ {
+  "code": "779",
+  "description": "Misc. Outdoor Sport Equipment"
+ },
+ {
+  "code": "781",
+  "description": "Fences Stone, Marble, Tiles"
+ },
+ {
+  "code": "782",
+  "description": "Fences Wall Surf. Finishing"
+ },
+ {
+  "code": "783",
+  "description": "Wire And Metal Fences"
+ },
+ {
+  "code": "784",
+  "description": "Claustras, Fence Roofing"
+ },
+ {
+  "code": "789",
+  "description": "Misc. Ext. Walls And Fences"
+ },
+ {
+  "code": "790",
+  "description": "Landscaping & Irrigat. System"
+ },
+ {
+  "code": "792",
+  "description": "Fog System"
+ },
+ {
+  "code": "799",
+  "description": "Misc. Landscaping"
+ },
+ {
+  "code": "800",
+  "description": "Internal Signs"
+ },
+ {
+  "code": "809",
+  "description": "Misc. Internal Signs"
+ },
+ {
+  "code": "821",
+  "description": "Equipment For Animals"
+ },
+ {
+  "code": "822",
+  "description": "Animals"
+ },
+ {
+  "code": "829",
+  "description": "Misc. Equipment For Animals"
+ },
+ {
+  "code": "830",
+  "description": "Strong Room & Bullet Proofing"
+ },
+ {
+  "code": "839",
+  "description": "Misc. Strong Room"
+ },
+ {
+  "code": "840",
+  "description": "External Signs"
+ },
+ {
+  "code": "841",
+  "description": "Traffic Lights"
+ },
+ {
+  "code": "849",
+  "description": "Misc. External Signs"
+ },
+ {
+  "code": "851",
+  "description": "Laboratory Equipment"
+ },
+ {
+  "code": "852",
+  "description": "Gas Production"
+ },
+ {
+  "code": "853",
+  "description": "Industrial Equipment"
+ },
+ {
+  "code": "854",
+  "description": "Heavy Equipment"
+ },
+ {
+  "code": "859",
+  "description": "Misc. Special Equipment"
+ },
+ {
+  "code": "900",
+  "description": "Exterior Tiled Paving"
+ },
+ {
+  "code": "909",
+  "description": "Misc. Exterior Tiled Paving"
+ },
+ {
+  "code": "910",
+  "description": "External Fountains Finishing"
+ },
+ {
+  "code": "919",
+  "description": "Misc. Ext. Fountains Finish."
+ },
+ {
+  "code": "920",
+  "description": "Ext. Swimming Pool Finishing"
+ },
+ {
+  "code": "929",
+  "description": "Misc. Ext. Swim. Pool Finish."
+ },
+ {
+  "code": "931",
+  "description": "Covered External Works"
+ },
+ {
+  "code": "939",
+  "description": "Misc. Covered External Works"
+ },
+ {
+  "code": "940",
+  "description": "Gates And Parking Barriers"
+ },
+ {
+  "code": "949",
+  "description": "Misc. Gates And Park Barriers"
+ },
+ {
+  "code": "961",
+  "description": "Miscellaneous External Works"
+ },
+ {
+  "code": "991",
+  "description": "Catering"
+ },
+ {
+  "code": "992",
+  "description": "Heavy Equipment"
+ },
+ {
+  "code": "993",
+  "description": "Rental Of Equipment"
+ },
+ {
+  "code": "998",
+  "description": "Turn Key Job"
+ },
+ {
+  "code": "999",
+  "description": "Miscellaneous"
+ }
+]

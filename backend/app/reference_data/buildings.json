@@ -1,0 +1,122 @@
+[
+ {
+  "number": 1,
+  "code": "UN 1550",
+  "title": "APPLIED MATHEMATICS BUILDING"
+ },
+ {
+  "number": 2,
+  "code": "UN 2300",
+  "title": "SOUTH RESEARCH LABORATORY TWO"
+ },
+ {
+  "number": 3,
+  "code": "UN 2400",
+  "title": "SOUTH RESEARCH LABORATORY ONE"
+ },
+ {
+  "number": 4,
+  "code": "UN 2600",
+  "title": "NORTH RESEARCH LABORATORY TWO"
+ },
+ {
+  "number": 5,
+  "code": "UN 2700",
+  "title": "NORTH RESEARCH LABORATORY ONE"
+ },
+ {
+  "number": 6,
+  "code": "UN 3200",
+  "title": "GREEN HOUSE"
+ },
+ {
+  "number": 7,
+  "code": "UN 3300",
+  "title": "HIGH BAY/PILOT PLANT"
+ },
+ {
+  "number": 8,
+  "code": "UN 3400",
+  "title": "HIGH BAY/PILOT PLANT"
+ },
+ {
+  "number": 9,
+  "code": "UN 3450",
+  "title": "ENGINEERING & SCIENCE BUILDING"
+ },
+ {
+  "number": 10,
+  "code": "UN 3600",
+  "title": "HIGH BAY/PILOT PLANT"
+ },
+ {
+  "number": 11,
+  "code": "UN 3700",
+  "title": "HIGH BAY/PILOT PLANT"
+ },
+ {
+  "number": 12,
+  "code": "UN 1450",
+  "title": "CAMPUS LIBRARY"
+ },
+ {
+  "number": 13,
+  "code": "UN 1500",
+  "title": "THE COMMONS (BELOW PLAZA LEVEL)"
+ },
+ {
+  "number": 14,
+  "code": "UN 2200",
+  "title": "BUSINESS DATA CENTER BUILDING"
+ },
+ {
+  "number": 15,
+  "code": "UN 2450",
+  "title": "CAMPUS MOSQUE"
+ },
+ {
+  "number": 16,
+  "code": "UN 2500",
+  "title": "UNIVERSITY ADMINISTRATION BUILDING"
+ },
+ {
+  "number": 19,
+  "code": "UN 3550",
+  "title": "CONFERENCE CENTER"
+ },
+ {
+  "number": 17,
+  "code": "UN 2550",
+  "title": "SUPPORT SERVICES BUILDING"
+ },
+ {
+  "number": 18,
+  "code": "UN 2800",
+  "title": "UNIVERSITY CENTER"
+ },
+ {
+  "number": 20,
+  "code": "UN 3555",
+  "title": "AUDITORIUM"
+ },
+ {
+  "number": 22,
+  "code": "RP 1010",
+  "title": "RESEARCH PARK-START UP"
+ },
+ {
+  "number": 23,
+  "code": "RP 1020",
+  "title": "RESEARCH PARK-START UP"
+ },
+ {
+  "number": 24,
+  "code": "RP 1030",
+  "title": "RESEARCH PARK-START UP"
+ },
+ {
+  "number": 25,
+  "code": "RP 1040",
+  "title": "RESEARCH PARK-START UP"
+ }
+]
