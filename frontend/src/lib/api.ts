@@ -275,6 +275,49 @@ export function autoImportTrackers(dryRun = false): Promise<{
   return request(`/api/admin/import/auto${q}`, { method: 'POST' });
 }
 
+/** One finding from the AI document review. */
+export interface AiReviewFinding {
+  id?: string;
+  severity: 'critical' | 'major' | 'minor' | 'info' | string;
+  kind?: string;
+  title?: string;
+  documents?: string[];
+  detail?: string;
+  why?: string;
+  required_fix?: string;
+}
+
+/** The model's structured review of everything uploaded to a project. */
+export interface AiReview {
+  /** "none" when no review has been run yet. */
+  status?: string;
+  summary?: string;
+  documents?: { name: string; kind?: string; gist?: string }[];
+  scope_by_trade?: { trade: string; items: string[] }[];
+  deliverables?: string[];
+  findings?: AiReviewFinding[];
+  questions?: string[];
+  missing_documents?: string[];
+  confidence?: string;
+  model?: string;
+  generated_at?: string;
+  documents_read?: { name: string; kind: string }[];
+  documents_indexed?: number;
+  critical_count?: number;
+}
+
+export function getAiReview(projectId: number): Promise<AiReview> {
+  return request<AiReview>(`/api/projects/${projectId}/ai-review`);
+}
+
+/**
+ * Read the project's indexed documents and review them: summary, scope by
+ * trade, the questions, and the findings that must be cleared first.
+ */
+export function runAiReview(projectId: number): Promise<AiReview> {
+  return request<AiReview>(`/api/projects/${projectId}/ai-review`, { method: 'POST' });
+}
+
 /** Trade-wise SOW scope suggestions mined from similar archived SOWs. */
 export interface SowSuggestion {
   text: string;

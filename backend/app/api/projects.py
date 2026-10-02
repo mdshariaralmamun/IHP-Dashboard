@@ -4,7 +4,16 @@ from pathlib import Path
 from typing import Any
 import uuid
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse, Response
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
@@ -1128,6 +1137,58 @@ def get_public_tracker(token: str, db: Session = Depends(get_db)):
         **derived,
     )
 
+
+
+@router.get("/{project_id}/ai-review")
+def get_ai_review(
+    project_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """The last AI review of this project's documents, if one has been run.
+
+    `{"status": "none"}` means nothing has been reviewed yet - it is not an
+    error, and the UI uses it to offer the first run.
+    """
+    from ..ai import review as ai_review
+
+    project = get_project_or_404(db, project_id)
+    payload = ai_review.load_review(project)
+    return payload or {"status": "none"}
+
+
+@router.post("/{project_id}/ai-review")
+def run_ai_review(
+    project_id: int,
+    model: str | None = Query(default=None, description="Override the chat model"),
+    db: Session = Depends(get_db),
+    _user: User = Depends(require_capability(CAP_PROJECTS_EDIT)),
+):
+    """Read every indexed document on this project and review it.
+
+    Returns the summary, the scope by trade, the questions the engineer must
+    answer - and the findings that have to be cleared before the scope is
+    committed: two documents disagreeing, a design deficiency, arithmetic that
+    does not add up, a missing input. Each finding carries its severity, the
+    documents involved, why it matters and the fix.
+
+    Only documents already indexed into the corpus are read (`documents_read`
+    in the answer says which). Indexing is a separate, slower job
+    (`POST /api/projects/attachments/reindex`), so a project with attachments
+    but no corpus entries reports them as missing rather than guessing at
+    files nobody has read.
+    """
+    from ..ai import review as ai_review
+
+    project = get_project_or_404(db, project_id)
+    try:
+        return ai_review.run_review(
+            db, project, _derive_tracker_fields(project), model=model
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY, detail=str(exc)
+        ) from exc
 
 
 @router.post("/track/{token}/tracking-email")

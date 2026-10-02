@@ -21,6 +21,7 @@ import PromoteToEarModal from '@/components/project/PromoteToEarModal';
 import TrackerStepper, { stageLabel } from '@/components/TrackerStepper';
 import TrackingShare from '@/components/TrackingShare';
 import StageChangePanel from '@/components/project/StageChangePanel';
+import AiReviewCard from '@/components/project/AiReviewCard';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
 import { canDo, useUser } from '@/lib/useUser';
 import type { AuditEntry, ProjectDetail } from '@/lib/types';
@@ -229,6 +230,16 @@ function ProjectDetailView() {
               </div>
             )}
             
+            {/* The document review sits above the tabs: it is about the PR as a
+                whole (its uploaded documents), not about one workflow stage. */}
+            <div className="mb-6">
+              <AiReviewCard
+                projectId={project.id}
+                attachmentCount={project.attachments.length}
+                canRun={canEditProject}
+              />
+            </div>
+
             {/* Phase changes live here, not inside a tab, so they are always
                 one click away whatever the project is doing. */}
             {canEditProject && (
