@@ -153,12 +153,18 @@ def sync_from_file(db: Session, path: Path | str) -> dict:
             ))
             imported += 1
 
+    # Only rows THIS list previously imported may be retired: a second price
+    # list (the store's quotation export) must never deactivate the Planner's
+    # own estimates, and vice versa.
     deactivated = 0
     for code, pricing in by_code.items():
-        if code not in seen and pricing.is_active:
-            pricing.is_active = False
-            pricing.last_updated = now
-            deactivated += 1
+        if code in seen or not pricing.is_active:
+            continue
+        if (pricing.notes or "") != marker:
+            continue
+        pricing.is_active = False
+        pricing.last_updated = now
+        deactivated += 1
 
     db.commit()
     return {
@@ -330,12 +336,18 @@ def sync_rows(db: Session, rows: list[dict], source: str) -> dict:
                 )
             )
             imported += 1
+    # Only rows THIS list previously imported may be retired: a second price
+    # list (the store's quotation export) must never deactivate the Planner's
+    # own estimates, and vice versa.
     deactivated = 0
     for code, pricing in by_code.items():
-        if code not in seen and pricing.is_active:
-            pricing.is_active = False
-            pricing.last_updated = now
-            deactivated += 1
+        if code in seen or not pricing.is_active:
+            continue
+        if (pricing.notes or "") != marker:
+            continue
+        pricing.is_active = False
+        pricing.last_updated = now
+        deactivated += 1
     db.commit()
     return {
         "source": source,
@@ -373,7 +385,7 @@ def suggest_price(db: Session, description: str, unit: str | None = None) -> dic
     candidates = db.scalars(
         select(MasterPricing).where(MasterPricing.is_active.is_(True))
     ).all()
-    best: tuple[float, MasterPricing] | None = None
+    best: tuple[float, str, MasterPricing] | None = None
     for row in candidates:
         have = _tokens(row.description)
         if not have:
@@ -384,11 +396,12 @@ def suggest_price(db: Session, description: str, unit: str | None = None) -> dic
         score = overlap / max(len(wanted), 1)
         if unit and row.unit and unit.strip().lower() == row.unit.strip().lower():
             score += 0.1
-        if best is None or score > best[0]:
-            best = (score, row)
+        # Tie-break on the item code so a repeat run always picks the same row.
+        if best is None or (score, row.item_code) > (best[0], best[1]):
+            best = (score, row.item_code, row)
     if best is None or best[0] < 0.45:
         return None
-    score, row = best
+    score, _code, row = best
     return {
         "item_code": row.item_code,
         "description": row.description,
@@ -396,6 +409,9 @@ def suggest_price(db: Session, description: str, unit: str | None = None) -> dic
         "unit_price": float(row.base_unit_rate or 0.0),
         "currency": row.currency or "SAR",
         "score": round(score, 2),
+        # Provenance: which list the rate came from, and who quoted it.
+        "source": (row.notes or "").replace(NOTES_MARKER, "") or "manual",
+        "supplier": row.supplier,
     }
 
 
