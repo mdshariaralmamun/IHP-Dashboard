@@ -39,7 +39,7 @@ from ..db import SessionLocal, get_db
 from ..models import Project, SourceBrief, SourceDocument, User
 from ..schemas import SourceBriefOut, SourceDocumentOut, SourceRoomOut
 from ..services import source_extract, storage, workflow
-from .projects import get_project_or_404
+from .projects import _derive_tracker_fields, get_project_or_404
 
 router = APIRouter(prefix="/projects", tags=["sources"])
 sources_router = APIRouter(prefix="/sources", tags=["sources"])
@@ -337,13 +337,16 @@ def generate_deliverables(
             detail="Run Analyze with AI first - the documents are built from it.",
         )
     payload = brief.payload
+    derived = _derive_tracker_fields(project)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
     work = Path(tempfile.mkdtemp(prefix="ihp-gen-"))
     jobs = (
         (
             "Project Summary",
             f"{project.pr_number} Project Summary {stamp}.docx",
-            lambda out: template_docgen.generate_project_summary(project, payload, out),
+            lambda out: template_docgen.generate_project_summary(
+                project, payload, out, derived
+            ),
         ),
         (
             "Scope of Work",

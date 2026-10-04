@@ -123,7 +123,8 @@ def tag_sow(source: Path, out: Path) -> None:
         drop(extra)
 
     table = doc.sections[0].header.tables[0]
-    clear_cell(table.cell(1, 0), ["{{ project_title }}", "{{ location_line }}"])
+    clear_cell(table.cell(1, 0), ["{{ project_title }}"])
+    clear_cell(table.cell(2, 1), ["{{ location_line }}"])
     clear_cell(
         table.cell(1, 2),
         ["Rev.-{{ revision }}", "PR # {{ pr_no }}", "EAR# {{ ear_no }}"],

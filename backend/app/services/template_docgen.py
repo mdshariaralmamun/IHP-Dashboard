@@ -49,6 +49,18 @@ def _text(value: Any) -> str:
     return str(value).strip()
 
 
+def pr_number(value: str | None) -> str:
+    """The bare request number, the way the documents print it.
+
+    The register stores "PR-12592"; the templates print "PR # 12592", so
+    prefixing the stored value again produced "PR # PR-12592".
+    """
+    text = _text(value)
+    if text.upper().startswith("PR"):
+        text = text[2:]
+    return text.lstrip("-_ #")
+
+
 def trade_for(raw: str | None) -> str:
     """Map a brief's free-text trade onto the document's own trade name."""
     needle = (raw or "").strip().lower()
@@ -133,15 +145,20 @@ def _intro(project: Project, why: str) -> str:
 # Word documents
 # ---------------------------------------------------------------------------
 
-def summary_context(project: Project, brief: dict[str, Any] | None) -> dict[str, Any]:
+def summary_context(
+    project: Project,
+    brief: dict[str, Any] | None,
+    derived: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     blocks = scope_blocks(brief)
+    derived = derived or {}
     return {
         "date": _today(),
         "recipient": project.pi_name or "Project Proponent",
         "introduction": _intro(project, "proceed with " + project.title),
         "scope": blocks,
         "project_reference": f"{project.pr_number} {project.title}".strip(),
-        "division": _division(project),
+        "division": _division(project, derived),
         "customer": project.pi_name or "TBD",
         "contact": project.pi_email or "TBD",
         "project_location": project.location or "TBD",
@@ -163,24 +180,28 @@ def sow_context(project: Project, brief: dict[str, Any] | None) -> dict[str, Any
             project, "avail the services for " + project.title
         ),
         "scope": scope_blocks(brief),
-        "pr_no": project.pr_number,
-        "ear_no": project.ear_number or "TBD",
+        "pr_no": pr_number(project.pr_number),
+        "ear_no": pr_number(project.ear_number) or "TBD",
         "revision": "1",
         "project_title": project.title,
         "location_line": project.location or "",
     }
 
 
-def _division(project: Project) -> str:
-    for attr in ("division",):
-        value = getattr(project, attr, None)
+def _division(project: Project, derived: dict[str, Any] | None = None) -> str:
+    """The division the team files the PR under (from the tracker, else IHP)."""
+    for source in (derived or {}, {"division": getattr(project, "division", None)}):
+        value = source.get("division")
         if value:
             return str(value)
     return "IHP"
 
 
 def generate_project_summary(
-    project: Project, brief: dict[str, Any] | None, out_path: Path
+    project: Project,
+    brief: dict[str, Any] | None,
+    out_path: Path,
+    derived: dict[str, Any] | None = None,
 ) -> Path:
     from docxtpl import DocxTemplate
 
@@ -190,7 +211,7 @@ def generate_project_summary(
     if not template.exists():
         raise FileNotFoundError(f"Template not found: {template}")
     doc = DocxTemplate(str(template))
-    doc.render(summary_context(project, brief))
+    doc.render(summary_context(project, brief, derived))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     doc.save(str(out_path))
     return out_path
@@ -246,8 +267,8 @@ def generate_boq(
         for cell in row:
             cell.value = None
 
-    ear = f" / EAR# {project.ear_number}" if project.ear_number else ""
-    sheet["A1"] = f"PR # {project.pr_number}{ear}"
+    ear = f" / EAR# {pr_number(project.ear_number)}" if project.ear_number else ""
+    sheet["A1"] = f"PR # {pr_number(project.pr_number)}{ear}"
     sheet["B1"] = project.title
     sheet["G1"] = "Date:"
     sheet["I1"] = datetime.now().date().isoformat()
