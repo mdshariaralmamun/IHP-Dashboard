@@ -536,13 +536,16 @@ def list_contacts(
     and it can never drift from the register.
     """
     projects = db.scalars(select(Project).order_by(Project.id.desc())).all()
-    people: dict[tuple[str, str], dict[str, Any]] = {}
+    # Grouped by the person, not by the row: the same PI owns several PRs and
+    # only some of them carry the email, so the address is merged across their
+    # projects instead of producing one contact per spelling.
+    people: dict[str, dict[str, Any]] = {}
     for project in projects:
         name = (project.pi_name or "").strip()
         email = (project.pi_email or "").strip()
         if not name and not email:
             continue
-        key = (name.lower(), email.lower())
+        key = " ".join(name.lower().split()) or email.lower()
         entry = people.setdefault(
             key,
             {
@@ -553,6 +556,10 @@ def list_contacts(
                 "projects": [],
             },
         )
+        if email and not entry["email"]:
+            entry["email"] = email
+        if name and not entry["name"]:
+            entry["name"] = name
         entry["project_count"] += 1
         if project.stage not in ("CLOSEOUT", "PUNCH_LIST", "ICR_DONE", "CANCELLED"):
             entry["active_count"] += 1
