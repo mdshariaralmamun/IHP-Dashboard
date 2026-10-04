@@ -177,7 +177,13 @@ def test_generate_deliverables_from_the_brief(client, admin_headers, monkeypatch
     assert generated.status_code == 200, generated.text
     body = generated.json()
     kinds = [doc["kind"] for doc in body["documents"]]
-    assert kinds == ["Project Summary", "Scope of Work", "BOQ", "MTO"], body
+    assert kinds == [
+        "Project Summary",
+        "Scope of Work",
+        "BOQ",
+        "Cost Estimate",
+        "MTO",
+    ], body
     for doc in body["documents"]:
         assert doc["size_bytes"] > 5000, doc
 
@@ -192,6 +198,79 @@ def test_generate_deliverables_from_the_brief(client, admin_headers, monkeypatch
         f"/api/projects/{empty['id']}/sources/generate", headers=admin_headers
     )
     assert refused.status_code == 409
+
+
+def test_price_master_import_and_suggestion(client, admin_headers, tmp_path):
+    """A markdown price list lands in the master and prices a line item."""
+    from app.db import SessionLocal
+    from app.services import price_master
+
+    rows = [
+        {
+            "ref": "PX-001",
+            "description": "Copper pipe 1/2 inch hard drawn Mueller",
+            "unit": "L.M.",
+            "item_price": 42.5,
+            "total": 0.0,
+        },
+        {
+            "ref": "PX-002",
+            "description": "13 A duplex socket with GFCI",
+            "unit": "EA",
+            "item_price": 180.0,
+            "total": 0.0,
+        },
+    ]
+    db = SessionLocal()
+    try:
+        result = price_master.sync_rows(db, rows, "unit-test.md")
+        assert result["imported"] + result["updated"] >= 2
+        match = price_master.suggest_price(db, "Copper pipe 1/2 inch Mueller", "L.M.")
+        assert match is not None, "the copper pipe should match the master"
+        assert match["item_code"] == "PX-001"
+        assert match["unit_price"] == 42.5
+        # A line nothing in the master resembles is never guessed at.
+        assert price_master.suggest_price(db, "Underwater basket weaving", "EA") is None
+    finally:
+        db.close()
+
+
+def test_price_master_import_endpoint(client, admin_headers):
+    """The Planner's markdown price list is uploaded and stored."""
+    body = (
+        "# IHP - Cost Estimates\n\n"
+        "| REF | DESCRIPTION | Unit | QTY | ITEM PRICE | TOTAL |\n"
+        "| --- | --- | --- | --- | --- | --- |\n"
+        "| 987001 | Ball valve 1/2 inch Conbraco 82-200 | EA | 1 | 320 | 320 |\n"
+        "| 987002 | Closed cell pipe insulation 1/2 inch | L.M. | 1 | 18.5 | 18.5 |\n"
+    )
+    resp = client.post(
+        "/api/mto/pricing/import",
+        files=[("file", ("IHP - Cost Estimates.md", io.BytesIO(body.encode()), "text/markdown"))],
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200, resp.text
+    result = resp.json()
+    assert result["file_rows"] >= 2, result
+
+    from app.db import SessionLocal
+    from app.services import price_master
+
+    db = SessionLocal()
+    try:
+        match = price_master.suggest_price(db, "Ball valve 1/2 inch Conbraco", "EA")
+        assert match is not None, "the ball valve should be priced from the list"
+        assert match["item_code"] == "987001"
+        assert match["unit_price"] == 320.0
+    finally:
+        db.close()
+
+    bad = client.post(
+        "/api/mto/pricing/import",
+        files=[("file", ("notes.pdf", io.BytesIO(b"%PDF-1.4"), "application/pdf"))],
+        headers=admin_headers,
+    )
+    assert bad.status_code == 422
 
 
 def test_delete_source_removes_the_file(client, admin_headers):

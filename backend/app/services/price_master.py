@@ -176,3 +176,229 @@ def sync_from_file(db: Session, path: Path | str) -> dict:
         "note": "trade values are keyword-inferred (the file has no trade "
                 "column) and are used only for filtering",
     }
+
+
+def parse_xlsx_table(path: Path | str) -> list[dict]:
+    """Read a priced workbook (BOQ / quotation) with openpyxl.
+
+    Accepts any sheet whose header row names a REF / DESCRIPTION / Unit and a
+    price column, because the team's quotations come from several suppliers
+    and none of them share a layout. Returns the same shape as
+    parse_markdown_table: [{ref, description, unit, item_price, total}].
+    """
+    import openpyxl
+
+    workbook = openpyxl.load_workbook(path, data_only=True, read_only=True)
+    out: list[dict] = []
+    try:
+        for sheet in workbook.worksheets:
+            header_row = None
+            columns: dict[str, int] = {}
+            for row_index, row in enumerate(sheet.iter_rows(values_only=True), start=1):
+                cells = ["" if v is None else str(v).strip() for v in row]
+                lowered = [c.lower() for c in cells]
+                if header_row is None:
+                    ref = next((i for i, c in enumerate(lowered) if c in ("ref", "ref.", "item", "item code", "no")), None)
+                    desc = next((i for i, c in enumerate(lowered) if c.startswith("description") or c in ("desc", "item description")), None)
+                    price = next(
+                        (i for i, c in enumerate(lowered)
+                         if c in ("item price", "unit price", "u.p.", "rate", "price")),
+                        None,
+                    )
+                    if ref is not None and desc is not None and price is not None:
+                        header_row = row_index
+                        columns = {
+                            "ref": ref,
+                            "description": desc,
+                            "unit": next(
+                                (i for i, c in enumerate(lowered) if c in ("unit", "u", "uom", "u.m")),
+                                -1,
+                            ),
+                            "price": price,
+                            "total": next(
+                                (i for i, c in enumerate(lowered) if c in ("total", "amount", "extended")),
+                                -1,
+                            ),
+                        }
+                    continue
+                ref = cells[columns["ref"]] if columns["ref"] < len(cells) else ""
+                description = cells[columns["description"]] if columns["description"] < len(cells) else ""
+                if not description:
+                    continue
+                try:
+                    price = float(str(cells[columns["price"]]).replace(",", ""))
+                except (ValueError, IndexError):
+                    price = 0.0
+                unit = ""
+                if columns["unit"] >= 0 and columns["unit"] < len(cells):
+                    unit = cells[columns["unit"]] or "EA"
+                out.append(
+                    {
+                        "ref": ref or description[:40],
+                        "description": description,
+                        "unit": unit or "EA",
+                        "item_price": price,
+                        "total": 0.0,
+                    }
+                )
+            if out:
+                break
+    finally:
+        workbook.close()
+    return out
+
+
+def sync_rows(db: Session, rows: list[dict], source: str) -> dict:
+    """Upsert parsed rows into master_pricing, scoped to `source`."""
+    marker = f"{NOTES_MARKER}{source}"
+    now = datetime.now(timezone.utc)
+    existing = db.scalars(
+        select(MasterPricing).where(MasterPricing.notes.like(f"{NOTES_MARKER}%"))
+    ).all()
+    by_code = {p.item_code: p for p in existing}
+    imported = updated = 0
+    seen: set[str] = set()
+    for row in rows:
+        code = str(row["ref"]).strip()
+        if not code:
+            continue
+        seen.add(code)
+        trade = infer_trade(row["description"])
+        current = by_code.get(code)
+        if current is not None:
+            current.description = row["description"]
+            current.unit = row["unit"]
+            current.base_unit_rate = row["item_price"]
+            current.trade = trade
+            current.notes = marker
+            current.is_active = True
+            current.last_updated = now
+            updated += 1
+        else:
+            db.add(
+                MasterPricing(
+                    item_code=code,
+                    description=row["description"],
+                    trade=trade,
+                    unit=row["unit"],
+                    base_unit_rate=row["item_price"],
+                    currency="SAR",
+                    notes=marker,
+                )
+            )
+            imported += 1
+    deactivated = 0
+    for code, pricing in by_code.items():
+        if code not in seen and pricing.is_active:
+            pricing.is_active = False
+            pricing.last_updated = now
+            deactivated += 1
+    db.commit()
+    return {
+        "source": source,
+        "file_rows": len(rows),
+        "imported": imported,
+        "updated": updated,
+        "deactivated": deactivated,
+    }
+
+
+#: Words that carry no pricing signal when matching a line item to the master.
+_STOPWORDS = frozenset(
+    "and or the of for with to a an in on at per as by supply install "
+    "installation complete including all necessary accessories new existing "
+    "nos no ea lot lm m2 unit".split()
+)
+
+
+def _tokens(text: str) -> set[str]:
+    cleaned = re.sub(r"[^a-z0-9 ]+", " ", (text or "").lower())
+    return {t for t in cleaned.split() if t and t not in _STOPWORDS and len(t) > 2}
+
+
+def suggest_price(db: Session, description: str, unit: str | None = None) -> dict | None:
+    """The closest price-master row for a line item, or None.
+
+    Scored on description-token overlap (the master is keyed by REF, but a
+    brief's line items rarely carry the Planner's REF), with a unit bonus so
+    an "EA" is never priced from an "L.M." line. Only a clear winner is
+    returned: a weak match would put a wrong number in front of the QS.
+    """
+    wanted = _tokens(description)
+    if not wanted:
+        return None
+    candidates = db.scalars(
+        select(MasterPricing).where(MasterPricing.is_active.is_(True))
+    ).all()
+    best: tuple[float, MasterPricing] | None = None
+    for row in candidates:
+        have = _tokens(row.description)
+        if not have:
+            continue
+        overlap = len(wanted & have)
+        if overlap == 0:
+            continue
+        score = overlap / max(len(wanted), 1)
+        if unit and row.unit and unit.strip().lower() == row.unit.strip().lower():
+            score += 0.1
+        if best is None or score > best[0]:
+            best = (score, row)
+    if best is None or best[0] < 0.45:
+        return None
+    score, row = best
+    return {
+        "item_code": row.item_code,
+        "description": row.description,
+        "unit": row.unit,
+        "unit_price": float(row.base_unit_rate or 0.0),
+        "currency": row.currency or "SAR",
+        "score": round(score, 2),
+    }
+
+
+
+def parse_csv_table(path: Path | str) -> list[dict]:
+    """Parse a CSV/TSV price list with a REF/DESCRIPTION/Unit/price header."""
+    import csv as _csv
+
+    text = Path(path).read_text(encoding="utf-8", errors="replace")
+    delimiter = "\t" if str(path).lower().endswith(".tsv") else ","
+    rows: list[dict] = []
+    reader = _csv.reader(text.splitlines(), delimiter=delimiter)
+    header: list[str] | None = None
+    for cells in reader:
+        cells = [c.strip() for c in cells]
+        lowered = [c.lower() for c in cells]
+        if header is None:
+            if any(c.startswith("description") for c in lowered):
+                header = lowered
+            continue
+        if not header or len(cells) < 2:
+            continue
+        def column(*names: str) -> int:
+            for name in names:
+                if name in header:
+                    return header.index(name)
+            return -1
+
+        description = cells[column("description", "desc", "item description")] if column("description", "desc", "item description") >= 0 else ""
+        if not description:
+            continue
+        ref_index = column("ref", "ref.", "item", "item code", "no")
+        price_index = column("item price", "unit price", "u.p.", "rate", "price")
+        unit_index = column("unit", "u", "uom")
+        try:
+            price = float(cells[price_index].replace(",", "")) if price_index >= 0 and price_index < len(cells) else 0.0
+        except ValueError:
+            price = 0.0
+        rows.append(
+            {
+                "ref": (cells[ref_index] if 0 <= ref_index < len(cells) else "") or description[:40],
+                "description": description,
+                "unit": (cells[unit_index] if 0 <= unit_index < len(cells) else "") or "EA",
+                "item_price": price,
+                "total": 0.0,
+            }
+        )
+    return rows
+

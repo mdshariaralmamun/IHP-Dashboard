@@ -4,10 +4,12 @@ Handles MTO generation, budget suggestions from master pricing,
 and Project Budget Summary tracking at MTO stage.
 """
 
+import tempfile
 from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
@@ -122,6 +124,65 @@ def upsert_pricing_suggestion(
     return db.scalar(
         select(MasterPricing).where(MasterPricing.item_code == payload.item_code)
     )
+
+
+
+
+@router.post("/pricing/import", response_model=dict)
+async def import_price_master(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability("users.manage")),
+):
+    """Import a price list into the master pricing table.
+
+    Accepts what the Planner and the suppliers actually send: a markdown table
+    exported from Excel, a CSV, or a priced workbook (BOQ / quotation). Rows
+    are upserted on their REF and scoped to the file, so re-importing an
+    updated list never touches MACC or manually entered prices.
+    """
+    from ..services import price_master
+
+    data = await file.read()
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Empty file."
+        )
+    name = file.filename or "price-list.md"
+    suffix = Path(name).suffix.lower()
+    with tempfile.TemporaryDirectory(prefix="ihp-price-") as work:
+        path = Path(work) / name
+        path.write_bytes(data)
+        try:
+            if suffix in {".xlsx", ".xlsm"}:
+                rows = price_master.parse_xlsx_table(path)
+            elif suffix in {".csv", ".tsv"}:
+                rows = price_master.parse_csv_table(path)
+            elif suffix in {".md", ".txt"}:
+                rows = price_master.parse_markdown_table(path)
+                if not rows:
+                    rows = price_master.parse_csv_table(path)
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Unsupported price list: {suffix or name}",
+                )
+        except HTTPException:
+            raise
+        except Exception as exc:  # noqa: BLE001 - reported to the caller
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Could not read the price list: {exc}",
+            ) from exc
+        if not rows:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="No priced rows found (need REF, DESCRIPTION, Unit and a price column).",
+            )
+        result = price_master.sync_rows(db, rows, name)
+    workflow.log_action(db, user, "pricing:import", None, result)
+    db.commit()
+    return result
 
 
 @router.post("/pricing/sync", response_model=dict)

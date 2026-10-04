@@ -245,6 +245,7 @@ def generate_boq(
     vat: float = 0.15,
     fx: float = 3.75,
     title: str = "BILL OF QUANTITIES",
+    prices: dict[str, float] | None = None,
 ) -> Path:
     """Fill the team's own BOQ workbook: identity block, items, totals.
 
@@ -298,6 +299,12 @@ def generate_boq(
             sheet.cell(row=row, column=2, value=description or "TBD")
             sheet.cell(row=row, column=3, value=_text(item.get("unit")) or None)
             sheet.cell(row=row, column=4, value=_quantity(item.get("qty")))
+            # A price comes from the Planner's price master when the line item
+            # matched a row there; otherwise the cell stays empty for the QS.
+            key = _text(item.get("ref")) or description
+            price = (prices or {}).get(key)
+            if price:
+                sheet.cell(row=row, column=9, value=float(price))
             sheet.cell(row=row, column=10, value=f"=I{row}*D{row}")
             last_item_row = row
             row += 1
@@ -354,3 +361,30 @@ def generate_boq_mto(
     return generate_boq(
         project, brief, out_path, revision=revision, title="MATERIALS TAKEOFF"
     )
+
+
+def generate_cost_estimate(
+    project: Project,
+    brief: dict[str, Any] | None,
+    out_path: Path,
+    *,
+    prices: dict[str, float] | None = None,
+) -> Path:
+    """The EAR Cost Estimate: the BOQ grid with the price master filled in.
+
+    This is the Project Budget step between the MOM and the EAR summary: the
+    quantities come from the data room, the rates come from the Planner's
+    price master. Lines the master cannot price stay empty for the QS.
+    """
+    return generate_boq(
+        project,
+        brief,
+        out_path,
+        title="EAR COST ESTIMATE",
+        prices=prices,
+    )
+
+
+#: Stable key for a line item (the brief's REF, else its description).
+def line_key(item: dict[str, Any]) -> str:
+    return _text(item.get("ref")) or _text(item.get("description"))

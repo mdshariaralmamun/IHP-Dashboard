@@ -57,6 +57,7 @@ REPORT_CONTENT_TYPES = {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ),
     "BOQ": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "Cost Estimate": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "MTO": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 }
 
@@ -339,6 +340,22 @@ def generate_deliverables(
     payload = brief.payload
     derived = _derive_tracker_fields(project)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+    # Project Budget step (between the MOM and the EAR summary): match every
+    # line item against the Planner's price master. Only clear matches are
+    # used; the rest stay empty for the QS.
+    from ..services import price_master
+
+    suggestions: dict[str, Any] = {}
+    for item in payload.get("line_items") or []:
+        if not isinstance(item, dict):
+            continue
+        match = price_master.suggest_price(
+            db, item.get("description"), item.get("unit")
+        )
+        if match and match["unit_price"]:
+            suggestions[template_docgen.line_key(item)] = match
+    prices = {key: value["unit_price"] for key, value in suggestions.items()}
     work = Path(tempfile.mkdtemp(prefix="ihp-gen-"))
     jobs = (
         (
@@ -357,6 +374,13 @@ def generate_deliverables(
             "BOQ",
             f"{project.pr_number} BOQ {stamp}.xlsx",
             lambda out: template_docgen.generate_boq(project, payload, out),
+        ),
+        (
+            "Cost Estimate",
+            f"{project.pr_number} Cost Estimate {stamp}.xlsx",
+            lambda out: template_docgen.generate_cost_estimate(
+                project, payload, out, prices=prices
+            ),
         ),
         (
             "MTO",
@@ -425,6 +449,8 @@ def generate_deliverables(
         "project_id": project.id,
         "brief_version": brief.version,
         "documents": generated,
+        "priced_lines": len(suggestions),
+        "price_suggestions": suggestions,
     }
 
 
