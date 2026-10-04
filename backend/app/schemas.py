@@ -27,6 +27,8 @@ class MasterPricingOut(BaseModel):
     unit: str
     base_unit_rate: float
     currency: str
+    #: Who quoted it, when the price came from a supplier quotation.
+    supplier: str | None = None
     description_ar: str | None
     is_active: bool
     created_date: datetime

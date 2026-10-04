@@ -695,6 +695,8 @@ class MasterPricing(Base):
     unit: Mapped[str] = mapped_column(String(32), default="EA")
     base_unit_rate: Mapped[float] = mapped_column(default=0.0)
     currency: Mapped[str] = mapped_column(String(16), default="SAR")
+    #: Who quoted it (the store's quotation export carries the supplier).
+    supplier: Mapped[str | None] = mapped_column(String(200), nullable=True)
     description_ar: Mapped[str | None] = mapped_column(Text, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)

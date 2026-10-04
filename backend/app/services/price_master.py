@@ -190,6 +190,7 @@ def parse_xlsx_table(path: Path | str) -> list[dict]:
 
     workbook = openpyxl.load_workbook(path, data_only=True, read_only=True)
     out: list[dict] = []
+    seen_codes: set[str] = set()
     try:
         for sheet in workbook.worksheets:
             header_row = None
@@ -198,25 +199,51 @@ def parse_xlsx_table(path: Path | str) -> list[dict]:
                 cells = ["" if v is None else str(v).strip() for v in row]
                 lowered = [c.lower() for c in cells]
                 if header_row is None:
-                    ref = next((i for i, c in enumerate(lowered) if c in ("ref", "ref.", "item", "item code", "no")), None)
-                    desc = next((i for i, c in enumerate(lowered) if c.startswith("description") or c in ("desc", "item description")), None)
+                    # Several price lists land here: the Planner's export
+                    # (REF / DESCRIPTION / Unit / ITEM PRICE) and the store's
+                    # quotation export (Item Code / Item Name / Standard Cost /
+                    # Supplier). Recognise both rather than make the team
+                    # reformat a file they already have.
+                    ref = next(
+                        (i for i, c in enumerate(lowered)
+                         if c in ("ref", "ref.", "item code", "stock number", "item", "no", "id")),
+                        None,
+                    )
+                    desc = next(
+                        (i for i, c in enumerate(lowered)
+                         if c.startswith("description") or c in ("desc", "item description", "item name")),
+                        None,
+                    )
                     price = next(
                         (i for i, c in enumerate(lowered)
-                         if c in ("item price", "unit price", "u.p.", "rate", "price")),
+                         if c in ("item price", "unit price", "u.p.", "rate", "price",
+                                  "standard cost", "list price")),
                         None,
                     )
                     if ref is not None and desc is not None and price is not None:
                         header_row = row_index
+                        # A supplier's item list numbers its own rows, which
+                        # collide with the Planner's REFs (both start at 1):
+                        # prefix those so one list never overwrites the other.
+                        layout_prefix = (
+                            "SUP-" if lowered[desc].startswith("item name") else ""
+                        )
                         columns = {
                             "ref": ref,
                             "description": desc,
                             "unit": next(
-                                (i for i, c in enumerate(lowered) if c in ("unit", "u", "uom", "u.m")),
+                                (i for i, c in enumerate(lowered)
+                                 if c in ("unit", "u", "uom", "u.m", "quantity per unit")),
                                 -1,
                             ),
                             "price": price,
                             "total": next(
                                 (i for i, c in enumerate(lowered) if c in ("total", "amount", "extended")),
+                                -1,
+                            ),
+                            "supplier": next(
+                                (i for i, c in enumerate(lowered)
+                                 if c in ("supplier ids", "supplier", "vendor", "supplier name")),
                                 -1,
                             ),
                         }
@@ -232,13 +259,25 @@ def parse_xlsx_table(path: Path | str) -> list[dict]:
                 unit = ""
                 if columns["unit"] >= 0 and columns["unit"] < len(cells):
                     unit = cells[columns["unit"]] or "EA"
+                supplier = ""
+                supplier_index = columns.get("supplier", -1)
+                if supplier_index >= 0 and supplier_index < len(cells):
+                    supplier = cells[supplier_index]
+                # The store's export repeats one quotation id on every line:
+                # a non-unique code would collapse the whole list into one
+                # row, so anything repeated gets the row number appended.
+                code = (layout_prefix + (ref or description[:40])).strip()
+                if code in seen_codes:
+                    code = f"{code}-{row_index}"
+                seen_codes.add(code)
                 out.append(
                     {
-                        "ref": ref or description[:40],
+                        "ref": code,
                         "description": description,
                         "unit": unit or "EA",
                         "item_price": price,
                         "total": 0.0,
+                        "supplier": supplier,
                     }
                 )
             if out:
@@ -264,6 +303,7 @@ def sync_rows(db: Session, rows: list[dict], source: str) -> dict:
             continue
         seen.add(code)
         trade = infer_trade(row["description"])
+        supplier = str(row.get("supplier") or "").strip() or None
         current = by_code.get(code)
         if current is not None:
             current.description = row["description"]
@@ -271,6 +311,8 @@ def sync_rows(db: Session, rows: list[dict], source: str) -> dict:
             current.base_unit_rate = row["item_price"]
             current.trade = trade
             current.notes = marker
+            if supplier:
+                current.supplier = supplier[:200]
             current.is_active = True
             current.last_updated = now
             updated += 1
@@ -284,6 +326,7 @@ def sync_rows(db: Session, rows: list[dict], source: str) -> dict:
                     base_unit_rate=row["item_price"],
                     currency="SAR",
                     notes=marker,
+                    supplier=supplier[:200] if supplier else None,
                 )
             )
             imported += 1
