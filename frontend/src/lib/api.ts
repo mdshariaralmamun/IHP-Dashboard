@@ -981,6 +981,28 @@ export function analyzeSources(projectId: number): Promise<SourceBrief> {
   );
 }
 
+export interface GeneratedDocument {
+  kind: string;
+  filename: string;
+  attachment_id: number;
+  size_bytes: number;
+  download_url: string;
+}
+
+export interface GenerateResult {
+  project_id: number;
+  brief_version: number;
+  documents: GeneratedDocument[];
+}
+
+/** Render the project documents from the latest brief and attach them. */
+export function generateDeliverables(projectId: number): Promise<GenerateResult> {
+  return request<GenerateResult>(
+    '/api/projects/' + projectId + '/sources/generate',
+    { method: 'POST' },
+  );
+}
+
 export function getSourceBrief(projectId: number): Promise<SourceBrief | null> {
   return request<SourceBrief | null>('/api/projects/' + projectId + '/sources/brief');
 }

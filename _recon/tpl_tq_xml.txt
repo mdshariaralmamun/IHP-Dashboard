@@ -1,0 +1,37 @@
+FILE: C:\Users\MOHAMMED MAMUN\IHP Design and Construction\_recon\conv\PDEC-4-005-F2 (Technical Query Form).docx
+====================================================================================================
+
+### ZIP PARTS ###
+  word/document.xml  (79375 bytes)
+  word/styles.xml  (7311 bytes)
+  word/media/image1.png  (76341 bytes)
+  word/media/image2.png  (24380 bytes)
+  word/media/image3.png  (6320 bytes)
+  word/settings.xml  (397 bytes)
+  word/fontTable.xml  (1859 bytes)
+  word/theme/theme1.xml  (2257 bytes)
+  word/_rels/document.xml.rels  (1059 bytes)
+  docProps/custom.xml  (484 bytes)
+  docProps/core.xml  (837 bytes)
+  docProps/app.xml  (450 bytes)
+  _rels/.rels  (720 bytes)
+  [Content_Types].xml  (1452 bytes)
+
+### FIELD / MERGE MARKERS in document.xml ###
+  MERGEFIELD: 0 occurrence(s)
+  fldSimple: 0 occurrence(s)
+  w:sdt: 0 occurrence(s)
+  w:sdtPr: 0 occurrence(s)
+  w:instrText: 0 occurrence(s)
+  fldChar: 0 occurrence(s)
+  w:dataBinding: 0 occurrence(s)
+  SHAPE: 0 occurrence(s)
+  w:fldChar: 0 occurrence(s)
+
+### instrText CONTENTS (document.xml) ###
+
+### MERGEFIELD names in document order ###
+
+### sdt blocks (content controls) ###
+
+### HEADERS / FOOTERS ###

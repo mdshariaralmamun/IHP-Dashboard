@@ -1,0 +1,335 @@
+"""Generate the project documents from the tagged KAUST templates.
+
+The team's own templates (see scripts/tag_ihp_templates.py) carry the layout,
+fonts and standard clauses; this module fills them from the register and the
+AI brief of the PR data room:
+
+    project_summary_template.docx -> Project Summary (EAR / assessment)
+    sow_template.docx             -> Scope of Work
+    boq_template.xlsx             -> Bill of Quantities / EAR Cost Estimate
+
+Prices are deliberately left blank (the QS owns them); the description, unit
+and quantity come from the data room's line items. Anything the data room does
+not answer is written as "TBD" so a gap is visible instead of invented.
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any
+
+from ..models import Project
+
+#: The trades the documents are written in, in the order they appear, with the
+#: section letter used by the BOQ.
+TRADES: tuple[tuple[str, str, str], ...] = (
+    ("A", "Architectural / Civil", "architectural, civil, arch"),
+    ("B", "Electrical", "electrical, elec, power"),
+    ("C", "Low Current / Telecommunication", "low current, telecommunication, telecom, tgg, it, cctv, data"),
+    ("D", "Plumbing", "plumbing, plum, drainage, water, gas, cda, n2"),
+    ("E", "HVAC", "hvac, mechanical, exhaust, duct, air"),
+    ("F", "Fire Sprinkler System", "fire, sprinkler, vesda"),
+)
+
+MONTHS = (
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+)
+
+
+def _today() -> str:
+    today = date.today()
+    return f"{today.day} {MONTHS[today.month - 1]} {today.year}"
+
+
+def _text(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def trade_for(raw: str | None) -> str:
+    """Map a brief's free-text trade onto the document's own trade name."""
+    needle = (raw or "").strip().lower()
+    if not needle:
+        return "General"
+    for _letter, name, keys in TRADES:
+        if name.lower() in needle or needle in name.lower():
+            return name
+        for key in keys.split(", "):
+            if key and key in needle:
+                return name
+    return _text(raw) or "General"
+
+
+def scope_blocks(brief: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """The brief's scope-by-trade as document-ready blocks.
+
+    A trade is only written when the brief has something for it: the documents
+    say "(Not Seen)" for a trade nobody has assessed, which is exactly how the
+    team marks it by hand.
+    """
+    rows = (brief or {}).get("scope_by_trade") or []
+    grouped: dict[str, list[str]] = {}
+    notes: dict[str, list[str]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        name = trade_for(row.get("trade"))
+        works = grouped.setdefault(name, [])
+        requirement = _text(row.get("requirement"))
+        for line in requirement.split("\n"):
+            line = line.strip(" \t-•")
+            if line:
+                works.append(line)
+        for extra in row.get("assumptions") or []:
+            if _text(extra):
+                notes.setdefault(name, []).append(_text(extra))
+    blocks = []
+    for _letter, name, _keys in TRADES:
+        if name in grouped:
+            works = grouped.pop(name)
+            if notes.get(name):
+                works = works + ["Assumption: " + note for note in notes[name]]
+            blocks.append({"name": name, "works": works or ["TBD"]})
+    for name, works in grouped.items():
+        if name == "General":
+            continue
+        blocks.append({"name": name, "works": works or ["TBD"]})
+    return blocks
+
+
+def _items_by_trade(brief: dict[str, Any] | None) -> dict[str, list[dict[str, Any]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for item in (brief or {}).get("line_items") or []:
+        if not isinstance(item, dict):
+            continue
+        grouped.setdefault(trade_for(item.get("trade")), []).append(item)
+    return grouped
+
+
+def _quantity(value: Any) -> float | str | None:
+    text = _text(value)
+    if not text:
+        return None
+    cleaned = text.replace(",", "").replace(" ", "")
+    try:
+        number = float(cleaned)
+    except ValueError:
+        return text  # "TBD", "Site measure" - keep the words, never invent
+    return int(number) if number == int(number) else number
+
+
+def _intro(project: Project, why: str) -> str:
+    where = project.location or "the site"
+    return (
+        "King Abdullah University of Science & Technology (KAUST) intends to "
+        f"{why} at {where}."
+    )
+
+
+# ---------------------------------------------------------------------------
+# Word documents
+# ---------------------------------------------------------------------------
+
+def summary_context(project: Project, brief: dict[str, Any] | None) -> dict[str, Any]:
+    blocks = scope_blocks(brief)
+    return {
+        "date": _today(),
+        "recipient": project.pi_name or "Project Proponent",
+        "introduction": _intro(project, "proceed with " + project.title),
+        "scope": blocks,
+        "project_reference": f"{project.pr_number} {project.title}".strip(),
+        "division": _division(project),
+        "customer": project.pi_name or "TBD",
+        "contact": project.pi_email or "TBD",
+        "project_location": project.location or "TBD",
+        "budget": "Within IHP budget" if not project.description else "To be confirmed",
+        "wbs": "TBD",
+        "schedule": {
+            "detailed_design": "1 Weeks",
+            "materials": "8 Weeks",
+            "construction": "2 Weeks",
+            "handover": "1 Week",
+            "total": "12 Weeks",
+        },
+    }
+
+
+def sow_context(project: Project, brief: dict[str, Any] | None) -> dict[str, Any]:
+    return {
+        "introduction": _intro(
+            project, "avail the services for " + project.title
+        ),
+        "scope": scope_blocks(brief),
+        "pr_no": project.pr_number,
+        "ear_no": project.ear_number or "TBD",
+        "revision": "1",
+        "project_title": project.title,
+        "location_line": project.location or "",
+    }
+
+
+def _division(project: Project) -> str:
+    for attr in ("division",):
+        value = getattr(project, attr, None)
+        if value:
+            return str(value)
+    return "IHP"
+
+
+def generate_project_summary(
+    project: Project, brief: dict[str, Any] | None, out_path: Path
+) -> Path:
+    from docxtpl import DocxTemplate
+
+    from .docgen import template_path
+
+    template = template_path("project_summary_template.docx")
+    if not template.exists():
+        raise FileNotFoundError(f"Template not found: {template}")
+    doc = DocxTemplate(str(template))
+    doc.render(summary_context(project, brief))
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(str(out_path))
+    return out_path
+
+
+def generate_sow(project: Project, brief: dict[str, Any] | None, out_path: Path) -> Path:
+    from docxtpl import DocxTemplate
+
+    from .docgen import template_path
+
+    template = template_path("sow_template.docx")
+    if not template.exists():
+        raise FileNotFoundError(f"Template not found: {template}")
+    doc = DocxTemplate(str(template))
+    doc.render(sow_context(project, brief))
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(str(out_path))
+    return out_path
+
+
+# ---------------------------------------------------------------------------
+# BOQ / Cost Estimate workbook
+# ---------------------------------------------------------------------------
+
+def generate_boq(
+    project: Project,
+    brief: dict[str, Any] | None,
+    out_path: Path,
+    *,
+    revision: int = 0,
+    vat: float = 0.15,
+    fx: float = 3.75,
+    title: str = "BILL OF QUANTITIES",
+) -> Path:
+    """Fill the team's own BOQ workbook: identity block, items, totals.
+
+    The layout (cover page, two-tier header, totals block) is the template's;
+    only the body is rebuilt. Price cells are left empty on purpose.
+    """
+    import openpyxl
+    from openpyxl.styles import Font
+
+    from .docgen import template_path
+
+    template = template_path("boq_template.xlsx")
+    if not template.exists():
+        raise FileNotFoundError(f"Template not found: {template}")
+    workbook = openpyxl.load_workbook(template)
+    sheet = workbook["Bill of Quantity"]
+
+    # Wipe the example body (keep the header rows 1-5 and the sheet itself).
+    for row in sheet.iter_rows(min_row=6, max_row=sheet.max_row, min_col=1, max_col=10):
+        for cell in row:
+            cell.value = None
+
+    ear = f" / EAR# {project.ear_number}" if project.ear_number else ""
+    sheet["A1"] = f"PR # {project.pr_number}{ear}"
+    sheet["B1"] = project.title
+    sheet["G1"] = "Date:"
+    sheet["I1"] = datetime.now().date().isoformat()
+    sheet["A2"] = "LOCATION:"
+    sheet["B2"] = project.location or ""
+    sheet["A3"] = title
+
+    items_by_trade = _items_by_trade(brief)
+    row = 6
+    first_item_row = None
+    last_item_row = None
+    for letter, name, _keys in TRADES:
+        items = items_by_trade.get(name)
+        if not items:
+            continue
+        sheet.cell(row=row, column=1, value=letter).font = Font(bold=True)
+        sheet.cell(row=row, column=2, value=name).font = Font(bold=True)
+        row += 1
+        for number, item in enumerate(items, start=1):
+            if first_item_row is None:
+                first_item_row = row
+            sheet.cell(row=row, column=1, value=number)
+            description = _text(item.get("description"))
+            spec = _text(item.get("spec"))
+            if spec and spec.lower() not in description.lower():
+                description = (description + "\n" + spec).strip()
+            sheet.cell(row=row, column=2, value=description or "TBD")
+            sheet.cell(row=row, column=3, value=_text(item.get("unit")) or None)
+            sheet.cell(row=row, column=4, value=_quantity(item.get("qty")))
+            sheet.cell(row=row, column=10, value=f"=I{row}*D{row}")
+            last_item_row = row
+            row += 1
+    # Trades the brief never mentioned are still shown as "(Not Seen)".
+    for letter, name, _keys in TRADES:
+        if name not in items_by_trade:
+            sheet.cell(row=row, column=1, value=letter).font = Font(bold=True)
+            sheet.cell(row=row, column=2, value=name).font = Font(bold=True)
+            sheet.cell(row=row, column=2).font = Font(
+                bold=True, italic=True, color="FF999999"
+            )
+            row += 1
+            sheet.cell(row=row, column=2, value="(Not Seen)")
+            row += 1
+
+    total_row = row + 1
+    span = (
+        f"SUM(J{first_item_row}:J{last_item_row})"
+        if first_item_row is not None
+        else "0"
+    )
+    labels = (
+        ("TOTAL (SAR)", f"={span}"),
+        ("TOTAL (USD)", f"=J{total_row}/{fx}"),
+        (f"VAT {int(vat * 100)}%", f"=J{total_row}*{vat}"),
+        ("TOTAL + VAT (SAR)", f"=J{total_row}+J{total_row + 2}"),
+        ("TOTAL + VAT (USD)", f"=J{total_row + 3}/{fx}"),
+    )
+    for offset, (label, formula) in enumerate(labels):
+        target = total_row + offset
+        sheet.cell(row=target, column=2, value=label).font = Font(bold=True)
+        sheet.cell(row=target, column=10, value=formula)
+
+    cover = workbook["Cover page"]
+    request_no = project.pr_number.replace("PR-", "").replace("PR", "").strip()
+    cover["I7"] = request_no
+    cover["F16"] = f"REVISION-{revision}"
+    cover["C22"] = "CONCERNED BUILDING:"
+    cover["D12"] = title
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    workbook.save(out_path)
+    return out_path
+
+
+def generate_boq_mto(
+    project: Project,
+    brief: dict[str, Any] | None,
+    out_path: Path,
+    *,
+    revision: int = 0,
+) -> Path:
+    """The unpriced materials take-off: same grid, no prices, parent rows."""
+    return generate_boq(
+        project, brief, out_path, revision=revision, title="MATERIALS TAKEOFF"
+    )

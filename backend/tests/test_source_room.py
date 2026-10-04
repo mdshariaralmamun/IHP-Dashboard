@@ -122,6 +122,78 @@ def test_analyze_builds_a_brief(client, admin_headers, monkeypatch):
     assert refused.status_code == 409
 
 
+def test_generate_deliverables_from_the_brief(client, admin_headers, monkeypatch):
+    """The four documents are rendered from the templates and attached."""
+    from app.ai import brief as brief_ai
+
+    project = _project(client, admin_headers)
+    pid = project["id"]
+    client.post(
+        f"/api/projects/{pid}/sources",
+        files=[("files", ("row-data.csv", io.BytesIO(b"1.1,Copper pipe,L.M.,18\n"), "text/csv"))],
+        data={"category": "99_Unsorted", "doc_type": "raw_data"},
+        headers=admin_headers,
+    )
+
+    monkeypatch.setattr(
+        brief_ai,
+        "run_brief",
+        lambda project_obj, sources, texts, **kwargs: {
+            "summary": "N2 piping to the fume hood.",
+            "scope_by_trade": [
+                {
+                    "trade": "Plumbing",
+                    "requirement": "Supply and install the 1/2 inch copper N2 line\nPressure test",
+                },
+                {"trade": "Electrical", "requirement": "Supply and install one 13 A socket."},
+            ],
+            "utilities": [{"name": "Nitrogen", "available_at_site": "no"}],
+            "line_items": [
+                {
+                    "ref": "1.1",
+                    "trade": "Plumbing",
+                    "description": "Copper N2 pipe 1/2 inch",
+                    "spec": "Mueller or equal",
+                    "unit": "L.M.",
+                    "qty": "18",
+                },
+                {
+                    "ref": "2.1",
+                    "trade": "Electrical",
+                    "description": "13 A duplex socket",
+                    "unit": "EA",
+                    "qty": "1",
+                },
+            ],
+            "open_questions": [{"question": "Tie-in point?", "blocking": True}],
+        },
+    )
+    started = client.post(f"/api/projects/{pid}/sources/analyze", headers=admin_headers)
+    assert started.status_code == 202, started.text
+
+    generated = client.post(
+        f"/api/projects/{pid}/sources/generate", headers=admin_headers
+    )
+    assert generated.status_code == 200, generated.text
+    body = generated.json()
+    kinds = [doc["kind"] for doc in body["documents"]]
+    assert kinds == ["Project Summary", "Scope of Work", "BOQ", "MTO"], body
+    for doc in body["documents"]:
+        assert doc["size_bytes"] > 5000, doc
+
+    detail = client.get(f"/api/projects/{pid}", headers=admin_headers).json()
+    names = [a["filename"] for a in detail["attachments"]]
+    assert any(n.endswith(".docx") for n in names)
+    assert any(n.endswith(".xlsx") for n in names)
+
+    # Without a ready brief there is nothing to build from.
+    empty = _project(client, admin_headers)
+    refused = client.post(
+        f"/api/projects/{empty['id']}/sources/generate", headers=admin_headers
+    )
+    assert refused.status_code == 409
+
+
 def test_delete_source_removes_the_file(client, admin_headers):
     project = _project(client, admin_headers)
     pid = project["id"]

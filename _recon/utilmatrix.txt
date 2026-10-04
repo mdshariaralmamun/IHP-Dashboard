@@ -1,0 +1,31 @@
+FILE: E:\ENGINEERING_DATA\IHP_Projects\PR 10660 Single photon detector (ASEPC)\01_Initiation\PR\KAUST Equipment Utilities Matrix (4) (1).xlsx
+sheets: ['Utility Matrix', 'Lists']
+
+==========================================================================================
+SHEET: 'Utility Matrix'  dims=A1:AT50  max_row=50 max_col=46
+merged: ['G4:N4', 'A4:E4', 'K1:AJ3', 'O4:W4', 'AJ4:AS4', 'X4:AI4']
+freeze: A6  auto_filter: None
+  A1=Project, Design, Engineering Construction (PDEC) | D1==TODAY() | K1= Equipment Utilities Matrix
+  A2=Lab Equipment & Design (FrontEndDesign)
+  A3=Status: Update after receiving the equipment list from Pr...
+  A4=Equipment Details | F4=Weight | G4=Dimensions (mm) | O4=Power
+  A5=Eq. No. | B5=Equipment Description | C5=Equipment Manufacturer | D5=Equipment Model | E5=Installation | F5=KG | G5=Width | H5=Depth | I5=High | J5=Front Clearance | K5=Back Clearance | L5=Right Clearance | M5=Left Clearance | N5=Top Clearance | O5=Voltage | P5=Amps | Q5=KVA | R5=Freq. / Hz | S5=ϕ | T5=Dedicated Power
+  A6=1 | B6=R&D Tabletop Micro Transfer Printer | C6=X Display Company | D6=MTP-1002 | F6=701 | G6=925 | H6=1052 | I6=1467 | J6=1000 | K6=139 | L6=500 | M6=500 | N6=1500 (from ground) | O6=115-240 VAC | P6=10A max | Q6=360 W | R6=50/60 Hz | T6=None, uses regular wall power outlet
+
+==========================================================================================
+SHEET: 'Lists'  dims=A1:N37  max_row=37 max_col=14
+merged: ['N7:N16', 'M7:M16', 'B3:I3', 'B5:I5', 'B37:I37', 'B1:I1']
+freeze: None  auto_filter: None
+  B1=Prof. Name: / Status: revision 00 / Date of Last Revision...
+  A2=B | D2=CHANGES | F2=ITEMS ON HOLD
+  A3=C | B3=LIST OF EQUIPMENT
+  A4=F | B4=Item ♯ | C4=Description | D4=Manufacturer | E4=Supplier (inside KSA) | F4=Catalogue / model | G4=Quantity | H4=Currency | I4=Cost | J4=Cost in Dollars | K4=Cost in Dollars +shipping | L4=Comments | M4=Checklist  | N4=Matrix
+  A5=U | B5=Big Ticket Items
+  L6=probe arm: 100561 and PTT are included as item 1 (ask why... | M6=Done | N6=No need
+  M7=Done | N7=Done
+  L17=USD8800: the optical table with the cage | M17=not yet
+  L18=USD2060 | M18=no need | N18=no need
+  A19=W | L19=include in the quote: 7078-TRX-GND (4), Model 237-BNC-TRX... | M19=not yet | N19=not yet
+  M20=Yes | N20=no need
+  M21=Yes | N21=no need
+  M22=not yet | N22=not yet

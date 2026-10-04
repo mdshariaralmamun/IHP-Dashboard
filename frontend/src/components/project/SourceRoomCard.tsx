@@ -4,12 +4,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   analyzeSources,
   deleteSource,
+  downloadAttachment,
+  generateDeliverables,
   getSourceBrief,
   getSourceRoom,
   getSourceText,
   uploadSources,
 } from '@/lib/api';
-import type { SourceBrief, SourceDocument, SourceRoom } from '@/lib/api';
+import type {
+  GenerateResult,
+  SourceBrief,
+  SourceDocument,
+  SourceRoom,
+} from '@/lib/api';
 import { KpiCard, VisualCard } from '@/components/powerbi/PowerBI';
 
 const SIZE_UNITS = ['B', 'KB', 'MB', 'GB'];
@@ -58,6 +65,8 @@ export default function SourceRoomCard({
   const [openText, setOpenText] = useState<number | null>(null);
   const [textBody, setTextBody] = useState<string>('');
   const [polling, setPolling] = useState(false);
+  const [generated, setGenerated] = useState<GenerateResult | null>(null);
+  const [generating, setGenerating] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const polls = useRef(0);
 
@@ -138,6 +147,26 @@ export default function SourceRoomCard({
       setNotice(null);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function generate() {
+    setGenerating(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await generateDeliverables(projectId);
+      setGenerated(result);
+      setNotice(
+        result.documents.length +
+          ' document(s) built from brief v' +
+          result.brief_version +
+          ' and attached to the PR.',
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not generate the documents');
+    } finally {
+      setGenerating(false);
     }
   }
 
@@ -316,6 +345,52 @@ export default function SourceRoomCard({
             </div>
           ))}
         </div>
+      )}
+
+      {canEdit && brief?.status === 'ready' && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-semibold text-emerald-800">
+              Build the project documents
+            </div>
+            <p className="mt-0.5 text-[11px] text-emerald-700">
+              Project Summary, Scope of Work, BOQ and MTO filled from your own templates
+              using brief v{brief.version}. Prices stay blank for the QS.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void generate()}
+            disabled={generating}
+            className="rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+          >
+            {generating ? 'Building…' : 'Generate documents'}
+          </button>
+        </div>
+      )}
+
+      {generated && (
+        <ul className="mt-2 space-y-1">
+          {generated.documents.map((doc) => (
+            <li
+              key={doc.attachment_id}
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-apple-border px-2.5 py-1.5 text-xs"
+            >
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
+                {doc.kind}
+              </span>
+              <span className="font-medium text-apple-text">{doc.filename}</span>
+              <span className="text-[10px] text-apple-muted">{size(doc.size_bytes)}</span>
+              <button
+                type="button"
+                onClick={() => void downloadAttachment(projectId, doc.attachment_id, doc.filename)}
+                className="ml-auto text-[10px] font-semibold text-primary hover:underline"
+              >
+                download
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
 
       {brief?.status === 'running' && (

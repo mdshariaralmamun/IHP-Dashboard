@@ -1,0 +1,28 @@
+FILE: E:\ENGINEERING_DATA\IHP_Projects\PR 10801 Assessment and installation of exhaust systems for thermal analyzers EAR 10733\11_Reports\04_MOMs\MOM - PR 10733.docx
+====================================================================================================
+
+### OUTLINE (paragraphs with style Heading 1/2/3 or Title, in order) ###
+
+Heading style counts: {}
+
+### ALL NON-EMPTY PARAGRAPHS WITH STYLE (first 200) ###
+   1 <Body Text> Attendees:
+   2 <Body Text> Agenda:
+
+### TABLES ###
+total tables: 3
+
+--- TABLE 0 : rows=4 cols=4 ---
+  R0: ['Project Number/Title', 'PR-10733 - Assesment and Installation of Exhaust systems for thermal analyzers', 'PR-10733 - Assesment and Installation of Exhaust systems for thermal analyzers', 'PR-10733 - Assesment and Installation of Exhaust systems for thermal analyzers']
+  R1: ['Meeting Title', 'Site assessment', 'Site assessment', 'Site assessment']
+  R2: ['Meeting Location', 'Bldg 3 - Ibn Sina Laboratory – Level 3 – LAB 3930', 'Meeting Number', '01']
+  R3: ['Date', '9-1-2025', 'Time', '2 Pm']
+
+--- TABLE 1 : rows=3 cols=3 ---
+  R0: ['Name', 'Title', 'Email']
+  R1: ['Mustafa Altunkaya', 'End user', 'mustafa.altunkaya@kaust.edu.sa']
+  R2: ['Ahmed Salem', 'HVAC engineer  • In-House Projects', 'ahmed.salem.2@kaust.edu.sa']
+
+--- TABLE 2 : rows=2 cols=4 ---
+  R0: ['#', 'Preliminary Scope of Work', 'Action/Action by', 'ETC']
+  R1: ['1', 'Supply & install of stainless steel exhust out let Qty 2 with 4 to 6 stainless steel tube for each', 'IHP', '-']

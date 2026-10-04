@@ -14,6 +14,8 @@ running brief and the page polls it.
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -44,6 +46,19 @@ sources_router = APIRouter(prefix="/sources", tags=["sources"])
 
 #: Refuse absurd uploads (same ceiling as the attachment endpoint).
 MAX_UPLOAD_BYTES = 60 * 1024 * 1024
+
+#: Content types for the generated deliverables, so the browser handles them
+#: as Word / Excel rather than as an unknown download.
+REPORT_CONTENT_TYPES = {
+    "Project Summary": (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ),
+    "Scope of Work": (
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ),
+    "BOQ": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "MTO": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
 
 
 def _now() -> datetime:
@@ -291,6 +306,123 @@ def _run_analysis(brief_id: int, project_id: int) -> None:
         db.commit()
     finally:
         db.close()
+
+
+
+
+@router.post("/{project_id}/sources/generate")
+def generate_deliverables(
+    project_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_ATTACHMENTS_UPLOAD)),
+):
+    """Build the project documents from the latest AI brief.
+
+    Project Summary, Scope of Work, Bill of Quantities and the materials
+    take-off are rendered from the team's own templates and attached to the PR
+    as deliverables. Prices stay blank: the QS owns them.
+    """
+    from ..models import Attachment
+    from ..services import template_docgen
+
+    project = get_project_or_404(db, project_id)
+    brief = db.scalars(
+        select(SourceBrief)
+        .where(SourceBrief.project_id == project.id)
+        .order_by(SourceBrief.id.desc())
+    ).first()
+    if brief is None or brief.status != "ready" or not brief.payload:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Run Analyze with AI first - the documents are built from it.",
+        )
+    payload = brief.payload
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d")
+    work = Path(tempfile.mkdtemp(prefix="ihp-gen-"))
+    jobs = (
+        (
+            "Project Summary",
+            f"{project.pr_number} Project Summary {stamp}.docx",
+            lambda out: template_docgen.generate_project_summary(project, payload, out),
+        ),
+        (
+            "Scope of Work",
+            f"{project.pr_number} Scope of Work {stamp}.docx",
+            lambda out: template_docgen.generate_sow(project, payload, out),
+        ),
+        (
+            "BOQ",
+            f"{project.pr_number} BOQ {stamp}.xlsx",
+            lambda out: template_docgen.generate_boq(project, payload, out),
+        ),
+        (
+            "MTO",
+            f"{project.pr_number} MTO {stamp}.xlsx",
+            lambda out: template_docgen.generate_boq_mto(project, payload, out),
+        ),
+    )
+    generated = []
+    try:
+        for kind, filename, builder in jobs:
+            try:
+                path = builder(work / filename)
+            except FileNotFoundError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Template missing: {exc}",
+                ) from exc
+            except Exception as exc:  # noqa: BLE001 - reported, never silent
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Could not generate the {kind}: {exc}",
+                ) from exc
+            data = path.read_bytes()
+            stored_path, version = storage.store_upload(
+                project.pr_number, "DELIVERABLE", filename, data
+            )
+            attachment = Attachment(
+                project_id=project.id,
+                stage="DELIVERABLE",
+                filename=filename,
+                stored_path=str(stored_path),
+                content_type=REPORT_CONTENT_TYPES.get(kind),
+                size_bytes=len(data),
+                version=version,
+                uploaded_by_id=user.id,
+            )
+            db.add(attachment)
+            db.flush()
+            generated.append(
+                {
+                    "kind": kind,
+                    "filename": filename,
+                    "attachment_id": attachment.id,
+                    "size_bytes": len(data),
+                    "download_url": (
+                        f"/api/projects/{project.id}/attachments/"
+                        f"{attachment.id}/download"
+                    ),
+                }
+            )
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+
+    workflow.log_action(
+        db,
+        user,
+        "sources:generate",
+        project,
+        {
+            "brief_version": brief.version,
+            "documents": [entry["kind"] for entry in generated],
+        },
+    )
+    db.commit()
+    return {
+        "project_id": project.id,
+        "brief_version": brief.version,
+        "documents": generated,
+    }
 
 
 @sources_router.get("/taxonomy")

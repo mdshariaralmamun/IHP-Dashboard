@@ -1,0 +1,53 @@
+FILE: C:\Users\MOHAMMED MAMUN\IHP Design and Construction\_recon\conv\PDEC-4-005-F2 (Technical Query Form).docx
+====================================================================================================
+
+### OUTLINE (paragraphs with style Heading 1/2/3 or Title, in order) ###
+
+Heading style counts: {}
+
+### ALL NON-EMPTY PARAGRAPHS WITH STYLE (first 200) ###
+   4 <Normal> Contract NO.:
+   9 <Normal> Initiated By:	Approved By:
+  14 <Normal> Reviewed & Replied By:	Concurred By:
+
+### TABLES ###
+total tables: 9
+
+--- TABLE 0 : rows=2 cols=5 ---
+  R0: ['', 'TECHNICAL QUERY', 'TECHNICAL QUERY', 'TECHNICAL QUERY', '']
+  R1: ['', 'Date: OCT.24.2021', 'Version 1', 'PDEC-4-005-F2', '']
+
+--- TABLE 1 : rows=1 cols=5 ---
+  R0: ['Date:', '', '', 'Ref. No.:', '']
+
+--- TABLE 2 : rows=1 cols=5 ---
+  R0: ['Project\t:', 'PR 2866 – Portable Water Tanker Filling Station', '', 'Pages:', '']
+
+--- TABLE 3 : rows=4 cols=5 ---
+  R0: ['from', 'from', '', 'to', 'to']
+  R1: ['', '', '', 'PDEC project', 'PDEC project']
+  R2: ['', 'Contractor Name', '', 'Eyad Hriri', '']
+  R3: ['', 'Project Manager', '', '', '']
+
+--- TABLE 4 : rows=1 cols=2 ---
+  R0: ['Subject:', '']
+
+--- TABLE 5 : rows=5 cols=2 ---
+  R0: ['Part I\tProblem/ Query Description', 'Part I\tProblem/ Query Description']
+  R1: ['Query Code', 'Civil/structural\t    Architectural        mechanical\t   hvac        electrical /  Instrumentation/IT    Low current system      fire protection     others']
+  R2: ['Importance/Priority', 'Urgent (1-5) days']
+  R3: ['Location', '']
+  ... (1 more rows)
+
+--- TABLE 6 : rows=1 cols=7 ---
+  R0: ['Print Name & Sign', '', 'Date / (DD-MM-YYYY)', '', 'Print Name & Sign', '', 'Date / (DD-MM-YYYY) /  /']
+
+--- TABLE 7 : rows=5 cols=2 ---
+  R0: ['Part II\tResponse To Query (kaust Discipline Engineer)', 'Part II\tResponse To Query (kaust Discipline Engineer)']
+  R1: ['', '']
+  R2: ['Response', 'approved                   approved as noted               revise and resubmit                       rejected   for records only']
+  R3: ['Query Implication', 'Costing & Scheduling IMPACT:\tYes   \tNo']
+  ... (1 more rows)
+
+--- TABLE 8 : rows=1 cols=7 ---
+  R0: ['Print Name & Sign', '', 'Date / (DD-MM-YYYY)', '', 'Print Name & Sign', '', 'Date / (DD-MM-YYYY)']
