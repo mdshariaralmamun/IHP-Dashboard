@@ -24,6 +24,7 @@ import type {
 import { PRIORITY_STYLES } from '@/lib/types';
 import type { ConstructionDashboardKpis } from '@/lib/types';
 import { canDo, useUser } from '@/lib/useUser';
+import { KpiCard, PbiCanvas } from '@/components/powerbi/PowerBI';
 
 /** Finish windows, in display order. */
 const WINDOWS: { key: string; label: string; accent: string; dot: string }[] = [
@@ -226,24 +227,21 @@ function ConstructionLiveView() {
         {loading && !live && <p className="text-sm text-apple-muted">Loading the schedule…</p>}
 
         {overview && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-            {[
-              { label: 'Total', value: overview.total, cls: 'text-apple-text' },
-              { label: 'Started', value: overview.started, cls: 'text-blue-700' },
-              { label: 'Finished', value: overview.finished, cls: 'text-emerald-700' },
-              { label: 'Pending', value: overview.pending, cls: 'text-amber-700' },
-              { label: 'Planned hours', value: Math.round(overview.planned_hours).toLocaleString(), cls: 'text-apple-text' },
-              { label: 'Remaining hours', value: Math.round(overview.remaining_hours).toLocaleString(), cls: 'text-apple-text' },
-              { label: 'Over-allocated', value: crew ? crew.totals.over_allocated : 0, cls: 'text-red-700' },
-            ].map((k) => (
-              <div key={k.label} className="rounded-xl border border-apple-border bg-white p-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-apple-muted">
-                  {k.label}
-                </div>
-                <div className={'mt-1 text-xl font-bold tabular-nums ' + k.cls}>{k.value}</div>
-              </div>
-            ))}
-          </div>
+          <PbiCanvas>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+              {[
+                { label: 'Total', value: overview.total, accent: 'navy' },
+                { label: 'Started', value: overview.started, accent: 'blue' },
+                { label: 'Finished', value: overview.finished, accent: 'green' },
+                { label: 'Pending', value: overview.pending, accent: 'gold' },
+                { label: 'Planned hours', value: Math.round(overview.planned_hours).toLocaleString(), accent: 'violet' },
+                { label: 'Remaining hours', value: Math.round(overview.remaining_hours).toLocaleString(), accent: 'teal' },
+                { label: 'Over-allocated', value: crew ? crew.totals.over_allocated : 0, accent: 'red' },
+              ].map((k) => (
+                <KpiCard key={k.label} label={k.label} value={k.value} accent={k.accent} />
+              ))}
+            </div>
+          </PbiCanvas>
         )}
 
         {/* Daily work load: AM 07:00-11:00 + PM 12:00-16:00 = 8 h */}
