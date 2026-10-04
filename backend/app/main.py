@@ -15,6 +15,7 @@ from .api import (  # noqa: F401 (routers registered below)
     admin,
     ai,
     areas,
+    boards,
     auth,
     closeout,
     construction,
@@ -149,6 +150,7 @@ def create_app() -> FastAPI:
     app.include_router(mto.router, prefix="/api")
     app.include_router(reference.router, prefix="/api")
     app.include_router(areas.router, prefix="/api")
+    app.include_router(boards.router, prefix="/api")
     app.include_router(markers.router, prefix="/api")
     app.include_router(data_points.router, prefix="/api")
     # Public (no auth): the read-only dashboard + the access-request form.

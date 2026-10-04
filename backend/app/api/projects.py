@@ -974,6 +974,11 @@ class PromoteToEarInput(BaseModel):
     new_pr_number: str
 
 
+class SummaryStatusInput(BaseModel):
+    """The Project Summary lifecycle, tracked like the MOM's."""
+    status: str
+
+
 class StageUpdateInput(BaseModel):
     """Set a project's workflow stage from the dashboard.
 
@@ -1137,6 +1142,33 @@ def get_public_tracker(token: str, db: Session = Depends(get_db)):
         **derived,
     )
 
+
+
+@router.post("/{project_id}/summary-status", response_model=ProjectDetail)
+def set_summary_status(
+    project_id: int,
+    payload: SummaryStatusInput,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_PROJECTS_EDIT)),
+):
+    """Track the Project Summary exactly like the MOM: draft -> sent ->
+    acknowledged, each move audited, because the boards count on it."""
+    project = get_project_or_404(db, project_id)
+    status_value = (payload.status or "").strip().lower()
+    if status_value not in ("draft", "sent", "acknowledged", "disputed"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Summary status must be draft, sent, acknowledged or disputed.",
+        )
+    previous = project.summary_status
+    project.summary_status = status_value
+    workflow.log_action(
+        db, user, "summary:status", project,
+        {"from": previous, "to": status_value},
+    )
+    db.commit()
+    db.refresh(project)
+    return project
 
 
 @router.get("/{project_id}/ai-review")

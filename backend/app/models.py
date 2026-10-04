@@ -107,6 +107,14 @@ class Project(Base):
         DateTime, default=utcnow, onupdate=utcnow
     )
 
+    #: The Project Summary (EAR) lifecycle, tracked like the MOM: NULL/none,
+    #: draft (being written), sent (with the PI), acknowledged.
+    summary_status: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    #: Who on the IHP side owns this project right now (boards "assign to").
+    owner_username: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    #: The current follow-up note - what the board shows under "what to do".
+    followup_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     plan_markers: Mapped[list["PlanMarker"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )

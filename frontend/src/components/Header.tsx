@@ -40,6 +40,9 @@ const NAV_MENUS: NavMenu[] = [
       { label: 'Project Divisions', href: '/dashboard', hint: 'EAR · Design · Construction · Close-up', group: 'Overview' },
       { label: 'Construction & Materials', href: '/dashboard/construction', hint: 'Execution, permits and materials', group: 'Overview' },
       { label: 'Active PRs (O&M)', href: '/dashboard/active-prs', hint: 'Classified active requests, equipment split out', group: 'Overview' },
+      { label: 'EAR Board', href: '/dashboard/ear', hint: 'MOM & Summary sent/pending, whose court, follow-up', group: 'Overview' },
+      { label: 'Design Board', href: '/dashboard/design', hint: 'SOW/design status, ETC, assignment, follow-up', group: 'Overview' },
+      { label: 'Procore Board', href: '/dashboard/procore', hint: 'Procurement status, follow-up, communication', group: 'Overview' },
       { label: 'Consistency Check', href: '/dashboard/consistency', hint: 'Where the Planner and O&M disagree', group: 'Overview' },
       { label: 'Areas & Labs', href: '/areas', hint: 'By room or area: current and previous PIs, active and finished projects', group: 'Overview' },
 

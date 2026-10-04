@@ -207,6 +207,11 @@ class ProjectUpdate(BaseModel):
     # Tracker metadata editable from the bucket dashboards.
     planner_bucket: str | None = None
     disposition: str | None = None
+    # Board tracking: the Project Summary lifecycle, who owns the project,
+    # and the live follow-up note.
+    summary_status: str | None = None
+    owner_username: str | None = None
+    followup_note: str | None = None
 
 
 class ProjectListItem(BaseModel):

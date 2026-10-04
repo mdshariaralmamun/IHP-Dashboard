@@ -406,6 +406,72 @@ export function getAreaReport(location: string): Promise<AreaReport> {
   );
 }
 
+
+// ---------- Stage boards (EAR / Design / Procore) ----------
+
+export interface BoardDoc {
+  status: string;
+  court: 'IHP' | 'PI' | 'done' | string;
+  action: string | null;
+}
+
+export interface BoardRow {
+  id: number;
+  pr_number: string;
+  title: string;
+  stage: string;
+  pi_name: string | null;
+  pi_email: string | null;
+  location: string | null;
+  owner_username: string | null;
+  followup_note: string | null;
+  mom_status: string | null;
+  summary_status: string | null;
+  start_date: string | null;
+  finish_date: string | null;
+  assigned_to: string | null;
+  mom: BoardDoc;
+  summary: BoardDoc;
+  my_court: boolean;
+  next_action: string | null;
+  waiting_on: string | null;
+  our_moves: string[];
+  their_moves: string[];
+}
+
+export interface BoardCounts {
+  total: number;
+  my_court: number;
+  mom_sent: number;
+  mom_pending_send: number;
+  mom_acknowledged: number;
+  summary_sent: number;
+  summary_pending_send: number;
+  summary_acknowledged: number;
+}
+
+export interface Board {
+  phase: string;
+  title: string;
+  counts: BoardCounts;
+  rows: BoardRow[];
+}
+
+export function getBoard(phase: 'ear' | 'design' | 'procore'): Promise<Board> {
+  return request<Board>('/api/boards/' + phase);
+}
+
+/** Track the Project Summary like the MOM: draft / sent / acknowledged. */
+export function setSummaryStatus(
+  projectId: number,
+  status: 'draft' | 'sent' | 'acknowledged' | 'disputed',
+): Promise<unknown> {
+  return request(
+    '/api/projects/' + projectId + '/summary-status',
+    { method: 'POST' },
+    { status },
+  );
+}
 /** Trade-wise SOW scope suggestions mined from similar archived SOWs. */
 export interface SowSuggestion {
   text: string;
