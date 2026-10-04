@@ -393,6 +393,32 @@ def consistency_report(
     return payload
 
 
+#: Parsing the O&M workbook is the most expensive thing a dashboard page
+#: does, and the file only changes when a new export is published. The parse
+#: is cached on (path, mtime, size) for a few minutes, so a page load re-reads
+#: the workbook only when the workbook actually changed.
+_OM_ROWS_CACHE: dict[str, Any] = {"key": None, "at": 0.0, "rows": []}
+_OM_ROWS_TTL_SECONDS = 300
+
+
+def _om_rows_cached(om_path):
+    import time as _time
+
+    from ..services.tracker_import import parse_om_active_prs
+
+    try:
+        stat = Path(om_path).stat()
+        key = f"{om_path}|{stat.st_mtime_ns}|{stat.st_size}"
+    except OSError:
+        return parse_om_active_prs(om_path)
+    fresh = (_time.time() - float(_OM_ROWS_CACHE["at"] or 0)) < _OM_ROWS_TTL_SECONDS
+    if _OM_ROWS_CACHE["key"] == key and fresh and _OM_ROWS_CACHE["rows"]:
+        return _OM_ROWS_CACHE["rows"]
+    rows = parse_om_active_prs(om_path)
+    _OM_ROWS_CACHE.update({"key": key, "at": _time.time(), "rows": rows})
+    return rows
+
+
 @router.get("/om-active")
 def om_active_prs(
     db: Session = Depends(get_db),
@@ -419,7 +445,7 @@ def om_active_prs(
             "items": [],
         }
 
-    rows = parse_om_active_prs(om_path)
+    rows = _om_rows_cached(om_path)
     summary = summarise_active_prs(rows)
 
     # Which of these PRs already exist in the register at all. Anything the
