@@ -231,6 +231,15 @@ export interface ProjectSummary {
    * reachable through the "Removed from Planner" view for audit.
    */
   planner_removed?: boolean;
+  // ---- Next step / to-do plan (api/planning.py) ----
+  /** The lifecycle stage scheduled to come next. */
+  next_stage?: string | null;
+  /** The follow-up bucket the plan lives in. */
+  next_stage_bucket?: string | null;
+  /** ISO date the next step is due. */
+  next_stage_date?: string | null;
+  /** Who owns the next step. */
+  next_stage_owner?: string | null;
 }
 
 /**
@@ -334,7 +343,123 @@ export interface ProjectDetail extends ProjectSummary {
   construction?: ConstructionOut | null;
   closeout?: CloseoutRecord | null;
   icr_handoffs?: IcrHandoff[];
+  /** Free-text follow-up note shown on the boards. */
+  followup_note?: string | null;
+  summary_status?: string | null;
+  owner_username?: string | null;
+  /** What the next step is for. */
+  next_step_note?: string | null;
+  /** Cancellation record (reason + written justification). */
+  cancel_reason?: string | null;
+  cancel_justification?: string | null;
+  cancel_notified_at?: string | null;
+  /** Open + done to-do rows for this PR. */
+  todos?: Todo[];
 }
+
+// ---------------------------------------------------------------------------
+// Next step + to-do list (api/planning.py)
+// ---------------------------------------------------------------------------
+
+/** One follow-up task on a PR, filed under the bucket it belongs to. */
+export interface Todo {
+  id: number;
+  project_id: number;
+  bucket: string | null;
+  title: string;
+  stage: string | null;
+  assignee_username: string | null;
+  due_date: string | null;
+  note: string | null;
+  status: 'open' | 'done' | string;
+  created_by_id: number;
+  created_at: string;
+  completed_at: string | null;
+  completed_by_id: number | null;
+}
+
+/** A to-do row carrying its project context, for the global list. */
+export interface TodoRow extends Todo {
+  pr_number: string;
+  project_title: string;
+  project_stage: string;
+  project_disposition: string | null;
+  project_next_stage: string | null;
+}
+
+export interface TodoListResponse {
+  rows: TodoRow[];
+  buckets: string[];
+  counts: {
+    total: number;
+    open: number;
+    done: number;
+    overdue: number;
+    mine: number;
+    by_bucket: Record<string, number>;
+    by_assignee: Record<string, number>;
+  };
+}
+
+export interface NextStepInput {
+  next_stage?: string | null;
+  next_stage_bucket?: string | null;
+  next_stage_date?: string | null;
+  next_stage_owner?: string | null;
+  next_step_note?: string | null;
+  move_now?: boolean;
+  justification?: string | null;
+}
+
+export interface NextStepResponse {
+  project_id: number;
+  pr_number: string;
+  stage: string;
+  next_stage: string | null;
+  next_stage_bucket: string | null;
+  next_stage_date: string | null;
+  next_stage_owner: string | null;
+  next_step_note: string | null;
+  cancel_reason: string | null;
+  cancel_justification: string | null;
+  cancel_notified_at: string | null;
+  todos: Todo[];
+}
+
+export interface CancelInput {
+  reason: string;
+  justification: string;
+  send_email?: boolean;
+  notify_email?: string | null;
+}
+
+export interface CancelResult {
+  project_id: number;
+  pr_number: string;
+  stage: string;
+  cancel_reason: string | null;
+  cancel_justification: string | null;
+  cancel_notified_at: string | null;
+  emailed: boolean;
+  email_to: string | null;
+  email_subject: string | null;
+  email_body: string | null;
+}
+
+/** The follow-up buckets the to-do list groups by, in lifecycle order. */
+export const FOLLOWUP_BUCKETS: string[] = [
+  'MTO',
+  'EAR',
+  'DESIGN',
+  'PROCORE',
+  'PTW/WICF',
+  'CONSTRUCTION',
+  'SHUTDOWN',
+  'QUALITY INSPECTION',
+  'WCC',
+  'WCH',
+  'ICR',
+];
 
 export interface CreateProjectInput {
   pr_number: string;

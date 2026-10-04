@@ -37,6 +37,7 @@ const NAV_MENUS: NavMenu[] = [
     wide: true,
     items: [
       { label: 'Executive Dashboard', href: '/', hint: 'KPIs: totals, disposition and lifecycle counts', group: 'Overview' },
+      { label: 'To-do List (all PRs)', href: '/todo', hint: 'Next step per PR, tasks by bucket, assignee and due date', group: 'Overview' },
       { label: 'Project Divisions', href: '/dashboard', hint: 'EAR · Design · Construction · Close-up', group: 'Overview' },
       { label: 'Construction & Materials', href: '/dashboard/construction', hint: 'Execution, permits and materials', group: 'Overview' },
       { label: 'Active PRs (O&M)', href: '/dashboard/active-prs', hint: 'Classified active requests, equipment split out', group: 'Overview' },

@@ -25,6 +25,12 @@ import type {
   MomRecord,
   MomStatusUpdate,
   PrFormParseResult,
+  CancelInput,
+  CancelResult,
+  NextStepInput,
+  NextStepResponse,
+  Todo,
+  TodoListResponse,
   ProjectDetail,
   ProjectFilters,
   ProjectSummary,
@@ -810,6 +816,80 @@ export interface OmActiveResponse {
 
 export function getOmActivePrs(): Promise<OmActiveResponse> {
   return request<OmActiveResponse>('/api/projects/om-active');
+}
+
+// ---------------------------------------------------------------------------
+// Next step, to-do list and cancellation
+// ---------------------------------------------------------------------------
+
+/** The PR's next-step plan plus every to-do row filed under it. */
+export function getNextStep(projectId: number): Promise<NextStepResponse> {
+  return request<NextStepResponse>('/api/projects/' + projectId + '/next-step');
+}
+
+/** Schedule (or, with move_now, execute) the PR's next step. */
+export function setNextStep(
+  projectId: number,
+  body: NextStepInput,
+): Promise<NextStepResponse> {
+  return request<NextStepResponse>(
+    '/api/projects/' + projectId + '/next-step',
+    { method: 'PUT' },
+    body,
+  );
+}
+
+/** Cancel a PR: reason + justification, optionally emailing the PI. */
+export function cancelProject(projectId: number, body: CancelInput): Promise<CancelResult> {
+  return request<CancelResult>(
+    '/api/projects/' + projectId + '/cancel',
+    { method: 'POST' },
+    body,
+  );
+}
+
+export interface TodoInput {
+  title?: string;
+  bucket?: string | null;
+  stage?: string | null;
+  assignee_username?: string | null;
+  due_date?: string | null;
+  note?: string | null;
+  status?: 'open' | 'done';
+}
+
+export function createTodo(projectId: number, body: TodoInput): Promise<Todo> {
+  return request<Todo>('/api/projects/' + projectId + '/todos', { method: 'POST' }, body);
+}
+
+export function updateTodo(todoId: number, body: TodoInput): Promise<Todo> {
+  return request<Todo>('/api/todos/' + todoId, { method: 'PATCH' }, body);
+}
+
+export function deleteTodo(todoId: number): Promise<void> {
+  return request<void>('/api/todos/' + todoId, { method: 'DELETE' });
+}
+
+export interface TodoQuery {
+  assignee?: string;
+  bucket?: string;
+  status?: 'open' | 'done' | 'all';
+  mine?: boolean;
+  project_id?: number;
+  q?: string;
+}
+
+/** The full-picture to-do list across every PR. */
+export function listTodos(query: TodoQuery = {}): Promise<TodoListResponse> {
+  const params = new URLSearchParams();
+  if (query.assignee) params.set('assignee', query.assignee);
+  if (query.bucket) params.set('bucket', query.bucket);
+  if (query.status) params.set('status', query.status);
+  if (query.mine) params.set('mine', 'true');
+  if (query.project_id) params.set('project_id', String(query.project_id));
+  if (query.q) params.set('q', query.q);
+  const qs = params.toString();
+  return request<TodoListResponse>('/api/todos' + (qs ? '?' + qs : ''));
 }
 
 /** One PR pulled from the O&M equipment tab into the register as ICR. */

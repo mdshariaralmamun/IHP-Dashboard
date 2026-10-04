@@ -115,6 +115,29 @@ class Project(Base):
     #: The current follow-up note - what the board shows under "what to do".
     followup_note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    #: The single "next step" plan for this PR: which lifecycle stage comes
+    #: next, in which Planner bucket it is followed up, who owns it and when
+    #: it is due. One row per project (not per stage) so the whole picture is
+    #: readable at a glance; the sub-tasks live in ProjectTodo.
+    next_stage: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    next_stage_bucket: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    next_stage_date: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    next_stage_owner: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    next_step_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    #: Cancellation record. Cancelling is terminal: the PI re-initiates under
+    #: a NEW PR, so the reason, the written justification and the date the PI
+    #: was told are the only things that keep the decision auditable.
+    cancel_reason: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    cancel_justification: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cancel_notified_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True
+    )
+
+    todos: Mapped[list["ProjectTodo"]] = relationship(
+        back_populates="project", order_by="ProjectTodo.id",
+        cascade="all, delete-orphan",
+    )
     plan_markers: Mapped[list["PlanMarker"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )
@@ -853,4 +876,42 @@ class AccessRequest(Base):
     source_ip: Mapped[str | None] = mapped_column(String(64), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(String(300), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, index=True)
+
+class ProjectTodo(Base):
+    """One follow-up task on a PR, filed under the bucket it belongs to.
+
+    A project has exactly one *next step* (see Project.next_stage) and any
+    number of tasks that get it there. The bucket is the Planner bucket the
+    task is followed up in (EAR, DESIGN, PROCORE, PTW/WICF, CONSTRUCTION,
+    SHUTDOWN, QUALITY INSPECTION, WCC, WCH, MTO/ICR, ...), so the global
+    to-do list can show the whole picture grouped the way the team works.
+    """
+
+    __tablename__ = "project_todos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    #: Planner bucket for follow-up (free text, kept uppercase).
+    bucket: Mapped[str | None] = mapped_column(String(32), nullable=True, index=True)
+    title: Mapped[str] = mapped_column(String(300))
+    #: Optional target workflow stage for this task.
+    stage: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    assignee_username: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, index=True
+    )
+    due_date: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: open | done
+    status: Mapped[str] = mapped_column(String(16), default="open", index=True)
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utcnow, onupdate=utcnow
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+
+    project: Mapped[Project] = relationship(back_populates="todos")
 

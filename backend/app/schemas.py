@@ -269,6 +269,12 @@ class ProjectListItem(BaseModel):
     #: in_latest_planner=False for a PR that was never tracker-managed at all
     #: (intake/manual), which must never be treated as removed.
     planner_removed: bool = False
+    #: The next-step plan for this PR (api/planning.py): which stage comes
+    #: next, the bucket it is followed up in, who owns it and when it is due.
+    next_stage: str | None = None
+    next_stage_bucket: str | None = None
+    next_stage_date: str | None = None
+    next_stage_owner: str | None = None
 
 
 class AttachmentOut(BaseModel):
@@ -324,6 +330,115 @@ class ProjectDetail(ProjectListItem):
     construction: "ConstructionOut | None" = None
     closeout: "CloseoutOut | None" = None
     icr_handoffs: list["IcrHandoffOut"] = []
+    #: The single next-step plan (see api/planning.py) and the cancellation
+    #: record when the PR was stopped.
+    next_stage: str | None = None
+    next_stage_bucket: str | None = None
+    next_stage_date: str | None = None
+    next_stage_owner: str | None = None
+    next_step_note: str | None = None
+    cancel_reason: str | None = None
+    cancel_justification: str | None = None
+    cancel_notified_at: datetime | None = None
+    todos: list["TodoOut"] = []
+
+
+# ---------- Next step + to-do list ----------
+class TodoCreate(BaseModel):
+    title: str
+    bucket: str | None = None
+    stage: str | None = None
+    assignee_username: str | None = None
+    due_date: str | None = None
+    note: str | None = None
+
+
+class TodoUpdate(BaseModel):
+    """Only the provided fields are applied."""
+
+    title: str | None = None
+    bucket: str | None = None
+    stage: str | None = None
+    assignee_username: str | None = None
+    due_date: str | None = None
+    note: str | None = None
+    status: Literal["open", "done"] | None = None
+
+
+class TodoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    project_id: int
+    bucket: str | None = None
+    title: str
+    stage: str | None = None
+    assignee_username: str | None = None
+    due_date: str | None = None
+    note: str | None = None
+    status: str
+    created_by_id: int
+    created_at: datetime
+    completed_at: datetime | None = None
+    completed_by_id: int | None = None
+
+
+class TodoRowOut(TodoOut):
+    """A to-do row with enough project context for the global list."""
+
+    pr_number: str
+    project_title: str
+    project_stage: str
+    project_disposition: str | None = None
+    project_next_stage: str | None = None
+
+
+class NextStepInput(BaseModel):
+    next_stage: str | None = None
+    next_stage_bucket: str | None = None
+    next_stage_date: str | None = None
+    next_stage_owner: str | None = None
+    next_step_note: str | None = None
+    #: Move the project into next_stage now instead of only scheduling it.
+    move_now: bool = False
+    justification: str | None = None
+
+
+class NextStepOut(BaseModel):
+    project_id: int
+    pr_number: str
+    stage: str
+    next_stage: str | None = None
+    next_stage_bucket: str | None = None
+    next_stage_date: str | None = None
+    next_stage_owner: str | None = None
+    next_step_note: str | None = None
+    cancel_reason: str | None = None
+    cancel_justification: str | None = None
+    cancel_notified_at: datetime | None = None
+    todos: list[TodoOut] = []
+
+
+class CancelInput(BaseModel):
+    reason: str
+    justification: str
+    #: Email the PI the cancellation (and the reason) as part of the record.
+    send_email: bool = True
+    notify_email: str | None = None
+
+
+class CancelResult(BaseModel):
+    project_id: int
+    pr_number: str
+    stage: str
+    cancel_reason: str | None = None
+    cancel_justification: str | None = None
+    cancel_notified_at: datetime | None = None
+    emailed: bool = False
+    email_to: str | None = None
+    #: The email that was sent - or the draft to send, when SMTP is off.
+    email_subject: str | None = None
+    email_body: str | None = None
 
 
 # ---------- MOM status ----------

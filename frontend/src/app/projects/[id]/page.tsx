@@ -21,6 +21,7 @@ import PromoteToEarModal from '@/components/project/PromoteToEarModal';
 import TrackerStepper, { stageLabel } from '@/components/TrackerStepper';
 import TrackingShare from '@/components/TrackingShare';
 import StageChangePanel from '@/components/project/StageChangePanel';
+import NextStepCard from '@/components/project/NextStepCard';
 import AiReviewCard from '@/components/project/AiReviewCard';
 import PlanMarkersCard from '@/components/project/PlanMarkersCard';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
@@ -238,6 +239,16 @@ function ProjectDetailView() {
                 projectId={project.id}
                 attachmentCount={project.attachments.length}
                 canRun={canEditProject}
+              />
+            </div>
+
+            {/* What happens next: the one next step, the to-do list, and the
+                cancellation record. Always visible, whatever the stage. */}
+            <div className="mb-6">
+              <NextStepCard
+                project={project}
+                canEdit={canEditProject}
+                onChanged={load}
               />
             </div>
 

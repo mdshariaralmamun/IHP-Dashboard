@@ -30,6 +30,7 @@ from .api import (  # noqa: F401 (routers registered below)
     imports,
     intake,
     mom,
+    planning,
     projects,
     public,
     roles,
@@ -153,6 +154,10 @@ def create_app() -> FastAPI:
     app.include_router(boards.router, prefix="/api")
     app.include_router(markers.router, prefix="/api")
     app.include_router(data_points.router, prefix="/api")
+    # Next step / to-do list / cancellation: registered before the project
+    # detail catch-all so /api/projects/{id}/next-step resolves here.
+    app.include_router(planning.router, prefix="/api")
+    app.include_router(planning.todos_router, prefix="/api")
     # Public (no auth): the read-only dashboard + the access-request form.
     app.include_router(public.router, prefix="/api")
     # Admin inbox for those requests (users.manage capability).
