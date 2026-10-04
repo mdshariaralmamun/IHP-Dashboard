@@ -165,12 +165,19 @@ def scan_archive(
     embed: bool = True,
     progress: Any = None,
     should_stop: Any = None,
+    source: str = "archive",
 ) -> dict[str, Any]:
     """Walk `root` and ingest supported documents into the corpus.
 
     `embed=True` also stores a vector per chunk (batched), which is what makes
     semantic retrieval work; it needs the AI provider to be reachable.
     `progress` is an optional callback receiving the running counters.
+
+    `source` names the collection the files belong to ("archive" for the
+    ENGINEERING_DATA tree, "library:KAUST-MSS" for a reference library). It is
+    stored on every CorpusDocument - so retrieval can be scoped to the MSS or
+    the specifications - and used to key the resume state, so two collections
+    never overwrite each other's progress.
     """
     root = Path(root)
     if not root.is_dir():
@@ -210,8 +217,9 @@ def scan_archive(
             break
 
         stat = path.stat()
+        key = f"{source}|{rel}"
         fingerprint = {"size": stat.st_size, "mtime": stat.st_mtime}
-        prior = files_state.get(rel)
+        prior = files_state.get(key)
         if prior and prior.get("size") == fingerprint["size"] and prior.get("mtime") == fingerprint["mtime"]:
             skipped_unchanged += 1
             continue
@@ -235,8 +243,8 @@ def scan_archive(
             db.execute(delete(CorpusDocument).where(CorpusDocument.id == prior["doc_id"]))
 
         doc = CorpusDocument(
-            filename=f"archive/{rel}"[:300],
-            source="archive",
+            filename=f"{source}/{rel}"[:300],
+            source=source,
             chunk_count=len(chunks),
             uploaded_by_id=user.id,
         )
@@ -260,7 +268,7 @@ def scan_archive(
         db.commit()
 
         chunks_total += len(chunks)
-        files_state[rel] = {**fingerprint, "doc_id": doc.id}
+        files_state[key] = {**fingerprint, "doc_id": doc.id}
         ingested += 1
         bytes_total += stat.st_size
         by_type[ext] = by_type.get(ext, 0) + 1
