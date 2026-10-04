@@ -1,7 +1,7 @@
 """Custom (free-text) roles and trades: normalization, defaults, enforcement."""
 
 from app.api.mom import trade_agenda_label
-from tests.conftest import TEST_PASSWORD, login
+from conftest import TEST_PASSWORD, login
 
 
 def test_trade_agenda_label_fallback():

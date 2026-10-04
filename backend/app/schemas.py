@@ -308,6 +308,11 @@ class ProjectDetail(ProjectListItem):
     pi_email: str | None
     created_by_id: int
     updated_at: datetime
+    #: Board tracking (also written by the O&M ICR pull): the Project Summary
+    #: lifecycle, who on the IHP side owns the project, and the live note.
+    summary_status: str | None = None
+    owner_username: str | None = None
+    followup_note: str | None = None
     attachments: list[AttachmentOut] = []
     mom: MomOut | None = None
     #: Stage 2-7 deliverables inlined into the project detail so panels can

@@ -782,6 +782,11 @@ export interface OmActivePr {
   category: string;
   remarks: string | null;
   request_date: string | null;
+  /** Present in the app register (Planner may still have missed it). */
+  in_app?: boolean;
+  /** The register's disposition when the PR already exists. */
+  app_disposition?: string | null;
+  tag?: string;
 }
 
 export interface OmActiveResponse {
@@ -805,6 +810,35 @@ export interface OmActiveResponse {
 
 export function getOmActivePrs(): Promise<OmActiveResponse> {
   return request<OmActiveResponse>('/api/projects/om-active');
+}
+
+/** One PR pulled from the O&M equipment tab into the register as ICR. */
+export interface PullIcrItem {
+  pr_key: string;
+  title: string | null;
+  classification: string | null;
+  status: string | null;
+  remarks: string | null;
+  location: string | null;
+  project_id: number;
+  action: 'created' | 'updated' | 'unchanged';
+  changes: string[];
+}
+
+export interface PullIcrResponse {
+  ok: boolean;
+  error?: string;
+  source?: string;
+  created: number;
+  updated: number;
+  unchanged: number;
+  total: number;
+  items: PullIcrItem[];
+}
+
+/** Mirror the O&M ICR rows (Construction Project classification) into the register. */
+export function pullIcrProjects(): Promise<PullIcrResponse> {
+  return request<PullIcrResponse>('/api/projects/om-active/pull-icr', { method: 'POST' });
 }
 
 export function promoteToEar(id: number, new_pr_number: string): Promise<ProjectDetail> {

@@ -404,7 +404,10 @@ def om_active_prs(
     # Planner has not picked up yet is tagged: assessment-stage requests
     # become "Upcoming EAR"; equipment work stays in its own branch.
     known = {
-        pr for (pr,) in db.execute(select(Project.pr_number)).all()
+        pr: disp
+        for (pr, disp) in db.execute(
+            select(Project.pr_number, Project.disposition)
+        ).all()
     }
     equipment = {"EQUIPMENT_INSTALLATION", "EQUIPMENT_ASSESSMENT", "ICR"}
     items = []
@@ -412,6 +415,11 @@ def om_active_prs(
     for r in rows:
         d = r.to_dict()
         d["in_planner"] = d["pr_key"] in known
+        # The register already holds this PR (the Planner may not have it:
+        # O&M-only ICR rows are pulled in directly). The disposition tells
+        # the page whether it is the ICR branch or the project branch.
+        d["in_app"] = d["pr_key"] in known
+        d["app_disposition"] = known.get(d["pr_key"])
         if d["category"] in equipment:
             d["tag"] = "Equipment installation"
         elif d["category"] == "ASEPC_PROPOSAL":
@@ -435,6 +443,178 @@ def om_active_prs(
         "source": info["file"],
         "source_date": info["date"],
         "summary": summary,
+        "items": items,
+    }
+
+
+    info = tracker_sources.describe(om_path)
+    return {
+        "ok": True,
+        "source": info["file"],
+        "source_date": info["date"],
+        "summary": summary,
+        "items": items,
+    }
+
+
+#: Stages before the ICR branch starts. A pulled ICR project sitting in one
+#: of these is moved to MTO_DRAFT (the ICR branch entry); anything already at
+#: or past MTO_DRAFT is left exactly where the IHP team put it.
+_PRE_ICR_STAGES: frozenset[str] = frozenset(
+    {"INTAKE", "MOM_SENT", "MOM_CONFIRMED", "DISPOSITION"}
+)
+
+
+@router.post("/om-active/pull-icr")
+def pull_icr_projects(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_PROJECTS_CREATE)),
+):
+    """Pull the O&M ICR rows into the register (idempotent).
+
+    The O&M workbook keeps the equipment/ICR stream on its own tab. Rows
+    whose **IHP Classification of Request** is a construction project (the
+    source also misspells it "Contruction Project") are construction work
+    routed to the ICR branch - they belong in this app, classified ICR, and
+    the tracker never creates them by itself.
+
+    Rules:
+      * one row = one project, matched on the PR number;
+      * an existing PR is re-classified **in place** - never duplicated;
+      * a PR sitting before the ICR branch is moved to MTO_DRAFT;
+      * the IHP status/remarks land in the follow-up note (only when we own
+        it, so a hand-written note is never clobbered).
+    """
+    from ..services import tracker_sources
+    from ..services.tracker_import import parse_om_active_prs
+
+    om_path = tracker_sources.om_path()
+    if not om_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No O&M tracker found in the trackers folder.",
+        )
+
+    rows = [
+        r
+        for r in parse_om_active_prs(om_path, tabs=("Active Equipment PRs",))
+        if r.category == "CONSTRUCTION"
+    ]
+    if not rows:
+        return {
+            "ok": False,
+            "error": (
+                "No Construction Project rows on the O&M Active Equipment PRs tab."
+            ),
+            "source": tracker_sources.describe(om_path)["file"],
+            "created": 0,
+            "updated": 0,
+            "unchanged": 0,
+            "total": 0,
+            "items": [],
+        }
+
+    register = {p.pr_number: p for p in db.scalars(select(Project)).all()}
+    created = updated = unchanged = 0
+    items: list[dict[str, Any]] = []
+
+    for r in rows:
+        note = "O&M tracker: " + (r.status or "in progress")
+        if r.remarks and r.remarks.strip().lower() not in ("", "none", "n/a"):
+            note += " - " + r.remarks.strip()
+
+        project = register.get(r.pr_key)
+        changes: list[str] = []
+        if project is None:
+            project = Project(
+                pr_number=r.pr_key,
+                tracking_token=uuid.uuid4().hex,
+                title=(r.title or f"ICR project {r.pr_key}")[:300],
+                description=r.remarks or r.title or "",
+                location=r.location,
+                pi_name=r.requestor,
+                stage=workflow.MTO_DRAFT,
+                disposition="ICR",
+                followup_note=note,
+                created_by_id=user.id,
+            )
+            db.add(project)
+            db.flush()
+            register[r.pr_key] = project
+            workflow.log_action(
+                db,
+                user,
+                "icr:pull:create",
+                project,
+                {
+                    "pr_number": project.pr_number,
+                    "classification": r.classification_raw,
+                    "status": r.status,
+                },
+            )
+            created += 1
+            action = "created"
+            changes = ["created"]
+        else:
+            if project.disposition != "ICR":
+                project.disposition = "ICR"
+                changes.append("disposition")
+            if project.stage in _PRE_ICR_STAGES:
+                project.stage = workflow.MTO_DRAFT
+                changes.append("stage")
+            if r.title and not (project.title or "").strip():
+                project.title = r.title[:300]
+                changes.append("title")
+            if r.remarks and not (project.description or "").strip():
+                project.description = r.remarks
+                changes.append("description")
+            if r.location and not (project.location or "").strip():
+                project.location = r.location
+                changes.append("location")
+            if not (project.followup_note or "").strip() or (
+                project.followup_note or ""
+            ).startswith("O&M tracker:"):
+                if project.followup_note != note:
+                    project.followup_note = note
+                    changes.append("followup_note")
+            if changes:
+                workflow.log_action(
+                    db,
+                    user,
+                    "icr:pull:update",
+                    project,
+                    {
+                        "pr_number": project.pr_number,
+                        "fields": changes,
+                        "status": r.status,
+                    },
+                )
+                updated += 1
+                action = "updated"
+            else:
+                unchanged += 1
+                action = "unchanged"
+
+        items.append({
+            "pr_key": r.pr_key,
+            "title": r.title,
+            "classification": r.classification_raw,
+            "status": r.status,
+            "remarks": r.remarks,
+            "location": r.location,
+            "project_id": project.id,
+            "action": action,
+            "changes": changes,
+        })
+
+    db.commit()
+    return {
+        "ok": True,
+        "source": tracker_sources.describe(om_path)["file"],
+        "created": created,
+        "updated": updated,
+        "unchanged": unchanged,
+        "total": len(rows),
         "items": items,
     }
 

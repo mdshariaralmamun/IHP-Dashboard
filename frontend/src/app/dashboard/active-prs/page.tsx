@@ -5,8 +5,8 @@ import Link from 'next/link';
 import AuthGuard from '@/components/AuthGuard';
 import ErrorBox from '@/components/ErrorBox';
 import Header from '@/components/Header';
-import { getOmActivePrs } from '@/lib/api';
-import type { OmActiveResponse, OmActivePr } from '@/lib/api';
+import { getOmActivePrs, pullIcrProjects } from '@/lib/api';
+import type { OmActiveResponse, OmActivePr, PullIcrResponse } from '@/lib/api';
 import { useUser } from '@/lib/useUser';
 
 /** Category -> label + colours. Equipment work is NOT part of IHP counts. */
@@ -48,12 +48,33 @@ function ActivePrs() {
   const [data, setData] = useState<OmActiveResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('');
+  const [pulling, setPulling] = useState(false);
+  const [pullResult, setPullResult] = useState<PullIcrResponse | null>(null);
+  const [pullError, setPullError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = () =>
     getOmActivePrs()
       .then(setData)
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load'));
+
+  useEffect(() => {
+    load();
   }, []);
+
+  const onPull = async () => {
+    setPulling(true);
+    setPullError(null);
+    try {
+      const result = await pullIcrProjects();
+      setPullResult(result);
+      if (!result.ok && result.error) setPullError(result.error);
+      await load();
+    } catch (e) {
+      setPullError(e instanceof Error ? e.message : 'Pull failed');
+    } finally {
+      setPulling(false);
+    }
+  };
 
   const groups = useMemo(() => {
     const g: Record<string, OmActivePr[]> = {};
@@ -88,6 +109,73 @@ function ActivePrs() {
             </p>
           )}
         </div>
+
+        {/* ICR pull: the equipment tab is the ICR stream. */}
+        {(groups.CONSTRUCTION?.length ?? 0) > 0 && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="max-w-2xl">
+                <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  ICR pull &mdash; from the O&amp;M equipment tab
+                </div>
+                <p className="mt-1 text-[11px] text-emerald-800">
+                  Every <strong>Construction Project</strong> row above is ICR work that the app
+                  does not hold yet. Pulling in classifies each PR as <strong>ICR</strong> and
+                  routes it to MTO &rarr; Project Control &rarr; Equipment Assessment. Re-running
+                  updates the existing PR in place &mdash; it never duplicates.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onPull}
+                disabled={pulling}
+                className="rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 disabled:opacity-60"
+              >
+                {pulling ? 'Pulling...' : 'Pull ICR projects'}
+              </button>
+            </div>
+
+            {pullError && (
+              <p className="mt-3 rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-800">
+                {pullError}
+              </p>
+            )}
+
+            {pullResult?.ok && (
+              <div className="mt-3 space-y-2">
+                <div className="flex flex-wrap gap-3 text-xs font-semibold">
+                  <span className="rounded-full bg-white px-3 py-1 text-emerald-800 ring-1 ring-inset ring-emerald-300">
+                    Created {pullResult.created}
+                  </span>
+                  <span className="rounded-full bg-white px-3 py-1 text-blue-800 ring-1 ring-inset ring-blue-300">
+                    Updated {pullResult.updated}
+                  </span>
+                  <span className="rounded-full bg-white px-3 py-1 text-apple-muted ring-1 ring-inset ring-apple-border">
+                    Already in place {pullResult.unchanged}
+                  </span>
+                  <span className="rounded-full bg-white px-3 py-1 text-apple-muted ring-1 ring-inset ring-apple-border">
+                    {pullResult.total} construction rows
+                  </span>
+                </div>
+                <ul className="space-y-1">
+                  {pullResult.items.map((it) => (
+                    <li
+                      key={it.pr_key}
+                      className="flex flex-wrap items-center gap-2 rounded-lg bg-white/70 px-3 py-1.5 text-[11px] text-emerald-900"
+                    >
+                      <span className="font-mono font-semibold">{it.pr_key}</span>
+                      <span className="font-semibold uppercase tracking-wide">{it.action}</span>
+                      <span className="min-w-0 flex-1 truncate">{it.title}</span>
+                      <Link href={'/projects/' + it.project_id} className="font-semibold text-emerald-700 underline">
+                        open
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         {error && <ErrorBox message={error} />}
         {!data && !error && <p className="text-sm text-apple-muted">Loading…</p>}
@@ -182,6 +270,17 @@ function ActivePrs() {
                           <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">
                             {r.source_tab}
                           </span>
+                          {r.in_app && (
+                            <span
+                              className={
+                                r.app_disposition === 'ICR'
+                                  ? 'rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-800'
+                                  : 'rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-700'
+                              }
+                            >
+                              In app &middot; {r.app_disposition ?? 'PROJECT'}
+                            </span>
+                          )}
                           {r.request_date && <span>{r.request_date.slice(0, 10)}</span>}
                           {(r as { tag?: string }).tag && (
                             <span
