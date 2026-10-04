@@ -147,7 +147,29 @@ def list_projects(
     return out
 
 
+#: Parsing a project's tracker notes is the same work on every request, and
+#: the list endpoint plus all four dashboards do it for every row. The result
+#: is memoised on the inputs that decide it, so a page load re-parses only the
+#: rows that actually changed. Callers get a copy: nothing can mutate the
+#: cached dict, and the cache is dropped wholesale when it grows too far.
+_DERIVE_CACHE: dict[tuple, dict] = {}
+_DERIVE_CACHE_LIMIT = 4096
+
+
 def _derive_tracker_fields(p) -> dict:
+    key = (p.description or "", p.planner_bucket, p.stage)
+    cached = _DERIVE_CACHE.get(key)
+    if cached is None:
+        cached = _derive_tracker_fields_uncached(p)
+        if len(_DERIVE_CACHE) >= _DERIVE_CACHE_LIMIT:
+            _DERIVE_CACHE.clear()
+        _DERIVE_CACHE[key] = cached
+    # Lists are copied so a caller that sorts or appends cannot poison the
+    # cached entry for every later request.
+    return {k: (list(v) if isinstance(v, list) else v) for k, v in cached.items()}
+
+
+def _derive_tracker_fields_uncached(p) -> dict:
     """Parse tracker-imported fields out of p.description.
 
     Returns a dict matching the new ProjectListItem fields.
