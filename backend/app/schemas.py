@@ -427,6 +427,49 @@ class CancelInput(BaseModel):
     notify_email: str | None = None
 
 
+# ---------- PR data room (raw sources + the AI brief) ----------
+class SourceDocumentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    project_id: int
+    category: str
+    doc_type: str
+    filename: str
+    content_type: str | None = None
+    size_bytes: int
+    text_chars: int
+    text_excerpt: str | None = None
+    extraction_note: str | None = None
+    uploaded_by_id: int
+    created_at: datetime
+
+
+class SourceBriefOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    project_id: int
+    version: int
+    status: str
+    model: str | None = None
+    payload: dict | None = None
+    error: str | None = None
+    created_at: datetime
+    finished_at: datetime | None = None
+
+
+class SourceRoomOut(BaseModel):
+    project_id: int
+    pr_number: str
+    taxonomy: list[dict[str, str]] = []
+    doc_types: list[str] = []
+    documents: list[SourceDocumentOut] = []
+    brief: SourceBriefOut | None = None
+    readable_documents: int = 0
+    total_bytes: int = 0
+
+
 class CancelResult(BaseModel):
     project_id: int
     pr_number: str

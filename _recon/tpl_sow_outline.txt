@@ -1,0 +1,37 @@
+FILE: E:\ENGINEERING_DATA\IHP_Projects\General Template- internal\Template\DD Tamplate\PR XXXX SCOPE -.docx
+====================================================================================================
+
+### OUTLINE (paragraphs with style Heading 1/2/3 or Title, in order) ###
+[Heading 2] Introduction
+[Heading 1] Civil/Architectural
+[Heading 2] 3.  General, Codes, and Standards
+[Heading 2]        4. Documentation
+
+Heading style counts: {'Heading 2': 3, 'Heading 1': 1}
+
+### ALL NON-EMPTY PARAGRAPHS WITH STYLE (first 200) ###
+   0 <Heading 2> Introduction
+   1 <List Paragraph> King Abdullah University of Science & Technology (KAUST) intends to avail the services for Installation of 3 phase 32A socket and exhaust connection for oven EAR 9399 Building 4, Level 3, Rm# 4-3750.
+   3 <List Paragraph> Scope of Work
+   4 <Heading 1> Civil/Architectural
+   5 <List Paragraph> Works under this section include but not limited to modification of the  existing  gypsum  board  wall, reworks, repairs, and repainting affected wall to match existing finish. Any penetration on the fire rated wall, to be sealed with fire rated sealant.
+   7 <Normal> ELECTRICAL
+   8 <List Paragraph> Supply and install 15 Amp 3-phase circuit breaker (Eaton GHB) including bus bar link and all required accessories. Any modification required in the Panel (UN2600-PL-311),
+   9 <List Paragraph> The New circuit breaker shall match with existing frame size, short circuit value.
+  10 <List Paragraph> Supply and install 1C X4mm² THHN/THWN.
+  11 <List Paragraph> Supply and install 1-inch EMT conduit complete with support and accessories.
+  12 <List Paragraph> Supply and install 1-inch flexible conduit complete with support and accessories.
+  13 <List Paragraph> Supply and install 16-Amps 3-ph special socket (male and female).
+  14 <List Paragraph> Testing and commissioning: Perform Continuity test, IR test for new wires, testing, functional test of socket and CB Tagging for electrical points (wires & color coding/conduits). Updated panel drawings reflecting all new termination.
+  16 <Heading 2> 3.  General, Codes, and Standards
+  17 <List Paragraph> All work shall be carried out in accordance with applicable standard and comply with KAUST standard/specification.
+  18 <List Paragraph> The work shall comply with the latest edition of the international codes and standards as a minimum requirement.
+  19 <List Paragraph> All work shall comply with KAUST Work Permit and other HSE related policies and procedures.
+  20 <List Paragraph> All work shall follow KAUST quality procedures,
+  21 <List Paragraph> Submit material specification submittals, MRI(s), RFI(s) for approval.
+  22 <List Paragraph> Submit shop drawings for approval prior to any project execution.
+  24 <Heading 2> 4. Documentation
+  25 <No Spacing> Upon project completion, IHP shall submit project documentation included but not limited to material selection, specification, RFI, Testing and Commissioning documents, and as-built drawings as per KAUST Technical Library standard.
+
+### TABLES ###
+total tables: 0

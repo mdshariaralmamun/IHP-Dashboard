@@ -1,0 +1,101 @@
+FILE: E:\ENGINEERING_DATA\IHP_Projects\General Template- internal\Template\Project Summary\Project Summary (PR ----).docx
+
+### ALL LOCKED/SDT CONTENT CONTROLS (w:sdt elements incl. nested) ###
+  #1 alias=None tag=None type=None
+      ctrl text: BESE |  -  | Pau | l | a Garcia Martinez
+      preceding text: To | : |  
+  #2 alias=None tag=None type=None
+      ctrl text:   | Pau | la |  Garcia Martinez
+      preceding text: Customer / Proponent:
+  #3 alias=None tag=None type='text'
+      ctrl text: </w:sdtPr><w:sdtEndPr/><w:sdtContent><w:r w:rsidR="0053166D" w:rsidRPr="0053166D"><w:rPr><w:b/><w:bCs/><w:color w:val="000000"/></w:rPr><w:t>$ |  4,000
+      preceding text:   | COST:
+total <w:sdt> blocks: 3
+
+### customXml item*.xml CONTENT ###
+--- customXml/item4.xml ---
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><b:Sources SelectedStyle="\APASixthEditionOfficeOnline.xsl" StyleName="APA" Version="6" xmlns:b="http://schemas.openxmlformats.org/officeDocument/2006/bibliography" xmlns="http://schemas.openxmlformats.org/officeDocument/2006/bibliography"></b:Sources>
+--- customXml/item1.xml ---
+<?xml version="1.0" encoding="utf-8"?><p:properties xmlns:p="http://schemas.microsoft.com/office/2006/metadata/properties" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pc="http://schemas.microsoft.com/office/infopath/2007/PartnerControls"><documentManagement/></p:properties>
+--- customXml/item2.xml ---
+<?xml version="1.0" encoding="utf-8"?><ct:contentTypeSchema ct:_="" ma:_="" ma:contentTypeName="Document" ma:contentTypeID="0x01010044F93960F2D1C748A804800755168615" ma:contentTypeVersion="10" ma:contentTypeDescription="Create a new document." ma:contentTypeScope="" ma:versionID="9670e09a1930afb5e00174299dc0c076" xmlns:ct="http://schemas.microsoft.com/office/2006/metadata/contentType" xmlns:ma="http://schemas.microsoft.com/office/2006/metadata/properties/metaAttributes">
+<xsd:schema targetNamespace="http://schemas.microsoft.com/office/2006/metadata/properties" ma:root="true" ma:fieldsID="8e2a875a69f31fd28b56dd88accac0f9" ns3:_="" ns4:_="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:p="http://schemas.microsoft.com/office/2006/metadata/properties" xmlns:ns3="57126497-f5f8-4609-9b37-6d323ea1f8b2" xmlns:ns4="0d0dd40c-05bf-432a-87bb-e1a7e1f1cd81">
+<xsd:import namespace="57126497-f5f8-4609-9b37-6d323ea1f8b2"/>
+<xsd:import namespace="0d0dd40c-05bf-432a-87bb-e1a7e1f1cd81"/>
+<xsd:element name="properties">
+<xsd:complexType>
+<xsd:sequence>
+<xsd:element name="documentManagement">
+<xsd:complexType>
+<xsd:all>
+<xsd:element ref="ns3:MediaServiceMetadata" minOccurs="0"/>
+<xsd:element ref="ns3:MediaServiceFastMetadata" minOccurs="0"/>
+<xsd:element ref="ns4:SharedWithUsers" minOccurs="0"/>
+<xsd:element ref="ns4:SharedWithDetails" minOccurs="0"/>
+<xsd:element ref="ns4:SharingHintHash" minOccurs="0"/>
+<xsd:element ref="ns3:MediaServiceAutoTags" minOccurs="0"/>
+<xsd:element ref="ns3:MediaServiceGenerationTime" minOccurs="0"/>
+<xsd:element ref="ns3:MediaServiceEventHashCode" minOccurs="0"/>
+<xsd:element ref="ns3:MediaServiceObjectDetectorVersions" minOccurs="0"/>
+<xsd:element ref="ns3:MediaServiceSearchProperties" minOccurs="0"/>
+</xsd:all>
+</xsd:complexType>
+</xsd:element>
+</xsd:sequence>
+</xsd:complexType>
+</xsd:element>
+</xsd:schema>
+<xsd:schema targetNamespace="57126497-f5f8-4609-9b37-6d323ea1f8b2" elementFormDefault="qualified" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dms="http://schemas.microsoft.com/office/2006/documentManagement/types" xmlns:pc="http://schemas.microsoft.com/office/infopath/2007/PartnerControls">
+<xsd:import namespace="http://schemas.microsoft.com/office/2006/documentManagement/types"/>
+<xsd:import namespace="http://schemas.microsoft.com/office/infopath/2007/PartnerControls"/>
+<xsd:element name="MediaServiceMetadata" ma:i
+--- customXml/item3.xml ---
+<?mso-contentType?><FormTemplates xmlns="http://schemas.microsoft.com/sharepoint/v3/contenttype/forms"><Display>DocumentLibraryForm</Display><Edit>DocumentLibraryForm</Edit><New>DocumentLibraryForm</New></FormTemplates>
+
+### glossary (AutoText) document.xml TEXT ###
+texts: <w:type w:val="bbPlcHdr"/></w:types><w:behaviors><w:behavior w:val="content"/></w:behaviors><w:guid w:val="{A233E2AC-4C04-4F70-AEC1-73DE9CA364B7}"/></w:docPartPr><w:docPartBody><w:p w:rsidR="000C3E8B" w:rsidRDefault="00E4331E" w:rsidP="00E4331E"><w:pPr><w:pStyle w:val="14175312416243ECB4BA9789143357CB"/></w:pPr><w:r w:rsidRPr="00577275"><w:rPr><w:rStyle w:val="PlaceholderText"/></w:rPr><w:t>Click here to enter text. | <w:type w:val="bbPlcHdr"/></w:types><w:behaviors><w:behavior w:val="content"/></w:behaviors><w:guid w:val="{59E850F7-480B-432C-ADC4-E7B610028E1F}"/></w:docPartPr><w:docPartBody><w:p w:rsidR="009E1ACA" w:rsidRDefault="007D3713" w:rsidP="007D3713"><w:pPr><w:pStyle w:val="677836F112454841996E5B861EF6D3EE"/></w:pPr><w:r w:rsidRPr="00577275"><w:rPr><w:rStyle w:val="PlaceholderText"/></w:rPr><w:t>Click here to enter text. | <w:type w:val="bbPlcHdr"/></w:types><w:behaviors><w:behavior w:val="content"/></w:behaviors><w:guid w:val="{DED7C9D0-4B1A-463A-AD81-BA5860EC4EDA}"/></w:docPartPr><w:docPartBody><w:p w:rsidR="00F27EDC" w:rsidRDefault="007E7AF1" w:rsidP="007E7AF1"><w:pPr><w:pStyle w:val="378B8875FA50426CAEAC9603D2C6B964"/></w:pPr><w:r><w:rPr><w:rStyle w:val="PlaceholderText"/></w:rPr><w:t>Enter the Budget Estimation Value in USD
+
+### HEADER/FOOTER FULL PARAGRAPH DUMPS ###
+--- word/header1.xml ---
+   p0: text=In-House Projects  fields=[]  image=True
+   p1: text=Facilities |   | Management  fields=[]  image=False
+   p2: text=  fields=[]  image=False
+--- word/footer1.xml ---
+   p0: text=     | PR 29271  | Gas Station in FLOC 2-4640 for anaerobic microbial cultivation  fields=[]  image=False
+
+### STYLES: default docDefaults + Normal + heading styles ###
+docDefaults:
+<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:asciiTheme="minorHAnsi" w:eastAsiaTheme="minorHAnsi" w:hAnsiTheme="minorHAnsi" w:cstheme="minorBidi"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:widowControl w:val="0"/><w:autoSpaceDE w:val="0"/><w:autoSpaceDN w:val="0"/></w:pPr></w:pPrDefault></w:docDefaults>
+
+--- style definitions (name, font ascii, sz, spacing) ---
+  styleId=Normal name='Normal' fonts=['Times New Roman'] sz=['24'] spacing=[] ind=[]
+  styleId=Heading1 name='heading 1' fonts=[] sz=[] spacing=[' w:before="101"'] ind=[' w:left="346"']
+  styleId=Heading2 name='heading 2' fonts=[] sz=['26'] spacing=[' w:before="40"'] ind=[]
+  styleId=Heading3 name='heading 3' fonts=[] sz=[] spacing=[' w:before="40"'] ind=[]
+  styleId=BodyText name='Body Text' fonts=[] sz=['20'] spacing=[] ind=[]
+  styleId=ListParagraph name='List Paragraph' fonts=[] sz=[] spacing=[] ind=[' w:left="660" w:hanging="327"']
+  styleId=Default name='Default' fonts=['Times New Roman'] sz=['24'] spacing=[] ind=[]
+  styleId=HeaderChar name='Header Char' fonts=['Calibri'] sz=[] spacing=[] ind=[]
+  styleId=FooterChar name='Footer Char' fonts=['Calibri'] sz=[] spacing=[] ind=[]
+  styleId=Heading2Char name='Heading 2 Char' fonts=[] sz=['26'] spacing=[] ind=[]
+  styleId=Calendar4 name='Calendar 4' fonts=[] sz=['16', '8', '72', '16', '40', '8'] spacing=[] ind=[' w:right="144"']
+  styleId=Heading3Char name='Heading 3 Char' fonts=[] sz=['24'] spacing=[] ind=[]
+  styleId=ListParagraphChar name='List Paragraph Char' fonts=['Times New Roman'] sz=['24'] spacing=[] ind=[]
+  styleId=TableGridLight name='Grid Table Light' fonts=['Calibri'] sz=['20'] spacing=[] ind=[]
+  styleId=s17 name='s17' fonts=['Calibri'] sz=['22'] spacing=[' w:before="100" w:beforeAutospacing="1" w:after="100" w:afterAutospacing="1"'] ind=[]
+  styleId=cf01 name='cf01' fonts=['Segoe UI'] sz=['21'] spacing=[] ind=[]
+  styleId=CommentReference name='annotation reference' fonts=[] sz=['16'] spacing=[] ind=[]
+  styleId=CommentText name='annotation text' fonts=[] sz=['20'] spacing=[] ind=[]
+  styleId=CommentTextChar name='Comment Text Char' fonts=['Times New Roman'] sz=['20'] spacing=[] ind=[]
+  styleId=CommentSubjectChar name='Comment Subject Char' fonts=['Times New Roman'] sz=['20'] spacing=[] ind=[]
+  styleId=BalloonText name='Balloon Text' fonts=['Segoe UI'] sz=['18'] spacing=[] ind=[]
+  styleId=BalloonTextChar name='Balloon Text Char' fonts=['Segoe UI'] sz=['18'] spacing=[] ind=[]
+  styleId=font-bold name='font-bold' fonts=[] sz=[] spacing=[' w:before="100" w:beforeAutospacing="1" w:after="100" w:afterAutospacing="1"'] ind=[]
+
+### docProps/core.xml ###
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title></dc:title><dc:creator>Vimal Divakaram</dc:creator><cp:lastModifiedBy>Assam Hmshw</cp:lastModifiedBy><cp:revision>39</cp:revision><cp:lastPrinted>2024-08-06T11:14:00Z</cp:lastPrinted><dcterms:created xsi:type="dcterms:W3CDTF">2024-08-21T05:32:00Z</dcterms:created><dcterms:modified xsi:type="dcterms:W3CDTF">2024-09-16T05:18:00Z</dcterms:modified></cp:coreProperties>
+
+### docProps/custom.xml ###
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Created"><vt:filetime>2021-05-06T00:00:00Z</vt:filetime></property><property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="3" name="Creator"><vt:lpwstr>Adobe Acrobat Pro DC (32-bit) 21.1.20150</vt:lpwstr></property><property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="4" name="LastSaved"><vt:filetime>2021-05-11T00:00:00Z</vt:filetime></property><property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="5" name="GrammarlyDocumentId"><vt:lpwstr>c269f733e6c6eee36e7d0dba1d69fe9e2422a4e46147206b4267aa02befa1a67</vt:lpwstr></property><property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="6" name="ContentTypeId"><vt:lpwstr>0x01010044F93960F2D1C748A804800755168615</vt:lpwstr></property></Properties>

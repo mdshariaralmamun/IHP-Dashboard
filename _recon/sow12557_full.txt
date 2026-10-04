@@ -1,0 +1,1799 @@
+FILE: E:\ENGINEERING_DATA\IHP Project Format\PR-12557 Scope of Work Draft-Rev.-1.pdf
+pages: 19
+metadata: {'/Author': 'MohammedShariar Mamun', '/CreationDate': "D:20260817170240+03'00'", '/Creator': 'Adobe Acrobat (64-bit) 26.1.21771', '/ModDate': "D:20260827085627+03'00'", '/Producer': 'Adobe Acrobat (64-bit) 26.1.21771', '/Title': ''}
+
+==========================================================================================
+### PAGE 1 TEXT ###
+In House Projects 
+ 
+PROJECT SCOPE OF WORK 
+ 
+ 
+PR # 12557 
+EAR# 12518 
+Rev.-1 
+ 
+CT X-ray room modification (ASEPC) 
+Building  3 Level 0 Area 3 Rm#3-0132 
+ 
+ 
+1. Introduction 
+• King Abdullah University of Science & Technology (KAUST) intends to avail the 
+services CT X-ray room modification (ASEPC) at Building  3 Level 0 Area 3 Rm#3-
+0132. 
+2. Scope of Work 
+ Civil/Architectural 
+• Works under this section include but not limited to modification of the existing lab 
+caseworks, reworks, repairs, and repainting affected wall to match existing finish. Any 
+penetration on the fire rated wall, to be sealed with fire rated sealant. 
+Ceiling works: 
+• Supply and install acoustic ceiling tiles (Armstrong or any equivalent) 600mm x 
+600mmx 16mm with wet format mineral fiber, washable paint finish, white color, 75% 
+light reflectance or more, square-cut lay-in trimmed edges, NRC range 0.5-0.6, STC 
+range 35-39, surface burning class A per ASTM E1264 and fed. Spec. SS-S-
+characteristics 118B. Flame spread 25 or under UL labeled, with suspension system T 
+bar system, including all necessary galvanized steel main runners, cross runners, 
+hangers, U-shape slots/ UNISTRUT channels, splice plate, and all required 
+accessories, or any available and approved from KAUST. 
+ 
+Electrical 
+Power outlets: 
+• Relocate 2 duplex socket no. UN2400-PR-009-CKT-04 to be behind the PC. 
+• Supply and install 12 AWG - THHN/THWN wires as required.  
+• Supply and install Belden-9841and Belden-5341fe for the VAVs and the thermostats. 
+• Supply and install 1-inch EMT conduit with required accessories. 
+• Supply and install 1-inch flexible EMT conduit with required accessories. 
+• Testing & commissioning (Continuity/Insulation Test, Volt metering Test), tagging for 
+all electrical points (for cables & color coding/conduits/panel board &conduits 
+grounding) shall be provided with Panel board updated termination schedule as per 
+KAUST procedure. 
+ 
+ 
+
+==========================================================================================
+### PAGE 2 TEXT ###
+In House Projects 
+ 
+PROJECT SCOPE OF WORK 
+ 
+ 
+PR # 12557 
+EAR# 12518 
+Rev.-1 
+ 
+CT X-ray room modification (ASEPC) 
+Building  3 Level 0 Area 3 Rm#3-0132 
+ 
+ 
+Lighting: 
+• Dismantle the existing lighting fixtures and Supply and install (15) lighting fixtures 
+60cmx60cm to be connected to the same lighting circuits. 
+• Testing & commissioning (Continuity/Insulation Test, Volt metering Test), tagging for 
+all electrical points (for cables & color coding/conduits/panel board &conduits 
+grounding) shall be provided with Panel board updated termination schedule as per 
+KAUST procedure. 
+ 
+Low Current / Telecommunication 
+• (Not Seen) 
+ 
+Plumbing 
+• (Not Seen) 
+ 
+HVAC 
+• Relocate the existing VAV box (11-19), including all necessary modifications and 
+extensions to the associated ductwork as per drawings . 
+• Relocate the existing VAV room thermostat to the CT X-Ray Room (011-019). 
+• Supply and install GI circular ductwork (Ø300 mm to Ø500 mm), complete with all 
+fittings, supports, hangers, sealants, and accessories required for a complete 
+installation. 
+• Supply and install of fiberglass insulation 24k.g/m3 , 50mm thickness  
+• Supply and install six (6) ceiling-mounted supply air diffusers, size 600 × 600 mm, 
+complete with volume control dampers (VCDs) and plenum box . 
+• Supply and install three (3) ceiling-mounted return air diffusers, size 600 × 600 mm. 
+• Supply and install four (4) additional volume control dampers (VCDs) as required for 
+air balancing. 
+• Supply and install two (2) transfer grilles, size 400 × 400 mm, complete with all 
+required accessories. 
+• Modify, configure, and integrate the HVAC control system with the existing IKAS 
+Building system  
+• Perform Testing, Adjusting, and Balancing (TAB) to achieve the specified airflow 
+rates and design conditions. 
+
+==========================================================================================
+### PAGE 3 TEXT ###
+In House Projects 
+ 
+PROJECT SCOPE OF WORK 
+ 
+ 
+PR # 12557 
+EAR# 12518 
+Rev.-1 
+ 
+CT X-ray room modification (ASEPC) 
+Building  3 Level 0 Area 3 Rm#3-0132 
+ 
+ 
+Fire Sprinkler System 
+• Supply and install new fire sprinkler system to be installed to accommodate new 
+ceiling and wall configurations per the construction documents. 
+• Supply and install new piping to be added for new sprinkler system as necessary fire 
+sprinkler heads to accommodate modifications adequate fire protection as per 
+standard. 
+• Supply and install fire sprinkler heads to be located per NFPA 13 for Ordinary Hazard 
+Occupancy. Fire sprinkler heads are not to exceed 130 Sq. Ft. (12.1 sqm); maximum 
+distance between sprinklers is 15' (4.5m); minimum distance between sprinklers is 6' 
+(1.8m); maximum distance of any sprinkler from a wall is 7'6" (2.3m). 
+• Supply and install of Victaulic Style 920 Mechanical Tee, painted ductile iron body, 
+100mm run x 50mm female threaded outlet with EPDM gasket. Core hole and install 
+100mm x 50mm female threaded Victaulic Style 920 mechanical tee on the 100mm 
+wet sprinkler main pipeline. 
+• Prepare shop drawings in accordance with NFPA 13 and the information provided as 
+part of this scope and accompanying drawing. Shop drawings to show reflected ceiling 
+plan, dimensions, pipe sizes and hanger locations. Provide sprinkler legend, hanger 
+details and pipe schedule to adequately portray work being done as part of this 
+remodel. 
+• Supply and installation of wet pipe sprinkler system (automatic sprinkler system) with 
+threaded ends, standard weight steel pipe for 50mm dia. and smaller and grooved ends 
+for pipes larger than 50mm dia. ASTM A 53/A 53M, ASTM A 135, ASTM A 795 
+including fittings and pipe supports. Work shall also include application of paint in 
+accordance with International Color Standards. For other work, refer to the related 
+specifications. 
+3. General, Codes, and Standards 
+• All work shall be carried out in accordance with applicable standard and comply with 
+KAUST standard/specification. 
+• The work shall comply with the latest edition of the international codes and standards 
+as a minimum requirement. 
+• All work shall comply with KAUST Work Permit and other HSE related policies and 
+procedures. 
+• All work shall follow KAUST quality procedures,  
+
+==========================================================================================
+### PAGE 4 TEXT ###
+In House Projects 
+ 
+PROJECT SCOPE OF WORK 
+ 
+ 
+PR # 12557 
+EAR# 12518 
+Rev.-1 
+ 
+CT X-ray room modification (ASEPC) 
+Building  3 Level 0 Area 3 Rm#3-0132 
+ 
+ 
+• Submit material specification submittals, MRI(s), RFI(s) for approval. 
+• Submit shop drawings for approval prior to any project execution. 
+4. Documentation 
+• Upon project completion, IHP shall submit project documentation included but not 
+limited to material selection, specification, RFI, Testing and Commissioning 
+documents, and as-built drawings as per KAUST Technical Library standard.
+ 
+
+==========================================================================================
+### PAGE 5 TEXT ###
+12557
+●
+SUPPLY AND INSTALLATIONS
+CONCERNED BUILDING:
+Requestor:
+Established on:
+Prepared by: Verified by: Approved by:
+Date received:
+Building  3 Level 0 Area 3 Rm#3-0132
+CT X-ray room modification (ASEPC)
+August 17, 2026
+Contact No.
+KAUST
+FM Project Request #
+REVISION-1
+TENDER DOCUMENTS:
+BILL OF QUANTITIES
+
+==========================================================================================
+### PAGE 6 TEXT ###
+PR # 12557
+EAR# 12518 CT X-ray room modification (ASEPC)
+LOCATION: Building  3 Level 0 Area 3 Rm#3-0132
+SUPPLY INSTALLATION S. + I.
+U.P. TOTAL U.P. TOTALUNIT PRICE TOTAL
+A Civil/Architectural
+1
+Supply and install acoustic ceiling tiles 600mm x 600mmx 16mm with wet format mineral fiber, washable paint finish, white 
+color, 75% light reflectance or more, square-cut lay-in trimmed edges, NRC range 0.5-0.6, STC range 35-39, surface burning 
+class A per ASTM E1264 and fed. spec. SS-S-characterstics 118B. flame spread 25 or under UL labeled, with suspension 
+system T bar system, or any available and approved from KAUST.
+EA 250
+2 Supply and install galvanized U-shape slot channel 40mm x 40mm x 3mm, L:6000 mm. EA 12
+3 supply and install 2.8mm (12GA) vertical hanger wire with minimum 3 tight turns in 38mm both of ends wire. EA 70
+4
+Supply and install 24 mm x 24 mm x 0.40–0.45 mm, L: 3600mm, galvanized steel main runner (main T) for exposed T-bar 
+suspended ceiling system, including all required connectors, clips, suspension hangers, and accessories, complete as per 
+approved shop drawings, manufacturer’s recommendations, and project specifications.
+EA 45
+5
+Supply and install 24 mm x 24 mm x 0.40–0.45 mm thick galvanized steel cross runner (cross T), 600 mm long, for exposed T-
+bar suspended acoustic ceiling system, including all required connectors and accessories, complete in accordance with 
+approved shop drawings, manufacturer’s recommendations, and project specifications.
+EA 240
+6
+Supply and install galvanized steel hanger rods with 10mm diameter and 3000mm length for suspension of ceiling, including 
+approved ceiling anchors, threaded ends, nuts, washers and all necessary fixing accessories, complete as per approved shop 
+drawings, project specifications and manufacturer’s recommendations.
+EA 25
+7 Supply and install Unistrut Channel Splice Plate with dimensions of 200mm length x 40mm width x 3-5mm thickness. EA 40
+8 Supply galvanized steel bolts 10mm. EA 60
+9 Galvanized steel flat washers M10, suitable for the specified threaded hanger rods and concrete anchoring system. EA 120
+10 Galvanized steel hexagonal nuts M10, suitable for the specified threaded hanger rods. EA 120
+11 Supply and install  12 × 12 mm MET Perimeter Moulding (wall angle). LM 40
+12 Supply self-tapping screw 6mm x 50mm. Box 1
+13 Supply HILTI FS-ONE MAX Firestop intumescent sealant Pack 5
+14 Supply and apply paint the walls by SW7005 (Sherwin-Williams Sher-Lux Premium), Jotun materials, or any approved 
+equivalent in compliance with KAUST standards. Litre 2
+15 Putty-Filler/Sealer-Ready Mixed Joint Compound SHEETROCK, Jotun or any equivalent and accepted from KAUST. KG 2
+B Electrical
+1 Supply lighting fixtures 60cmx60cm, 40W,6500K. LEDVANCE Unit 15
+2 Supply Belden cable -9841. Rol 1
+3 Supply  Belden cable -5341fe. Rol 1
+BILL OF QUANTITIES
+Date:
+QTY
+August 17, 2026
+Rev.-1
+REF DESCRIPTION Unit
+
+==========================================================================================
+### PAGE 7 TEXT ###
+PR # 12557
+EAR# 12518 CT X-ray room modification (ASEPC)
+LOCATION: Building  3 Level 0 Area 3 Rm#3-0132
+SUPPLY INSTALLATION S. + I.
+U.P. TOTAL U.P. TOTALUNIT PRICE TOTAL
+BILL OF QUANTITIES
+Date:
+QTY
+August 17, 2026
+Rev.-1
+REF DESCRIPTION Unit
+4 Supply 1-inch EMT conduits and accessories as required.ITCC Lm 30
+5 Supply 1-inch EMT screw connector. (Panasonic, ITCC) Unit 15
+6 Supply 10x10 EMT Junction box with 1-inch knock out. (Panasonic, ITCC) Unit 10
+7 Supply 10x10 junction box cover. (Panasonic, ITCC) Unit 15
+8 Supply 1-inch EMT coupling. (Panasonic, ITCC) Unit 15
+9 Supply 1-inch EMT Squeeze connector. (Panasonic, ITCC) Unit 10
+10 Electrical insulation tape. Unit 5
+11 Supply 1-inch single hole strap. (Panasonic, ITCC) Unit 35
+12 Supply 1-inch Flexible EMT conduits and accessories as required Rol 1
+13 Supply 12 AWG - THHN/THWN wires, Brown, Black, Y/G.Bahra(Gray,black,2blue,2Y/G) Rol 6
+14 Testing & commissioning (Continuity/Insulation Test, Volt metering Test Trip test and polarity test), tagging for all electrical 
+points (for cables & color coding/conduits/panel board &conduits grounding) shall be provided with Panel board updated 
+termination schedule as per KAUST procedure
+Lot 1
+C HVAC
+1 Relocate the existing VAV box (11-19 ) as per drawings . Lot 1
+2 Relocate the existing VAV room thermostat to the CT X-Ray Room (011-019) Lot 1
+3 Supply and install GI 90 circular ductwork As per SMACNA 3''
+3.1 500 mm LM 9
+3.2 400 mm LM 14
+3.3 300 mm LM 20
+4 supply & install of fiberglass insulation 24 k.g / m3 and 50 mm thickness Roll 4
+5 Supply and install  ceiling-mounted supply air diffusers, size 600 × 600 mm, complete with volume control dampers and 
+li  
+Nos 6
+6 Supply and install of ceiling-mounted return air diffusers, size 600 × 600 mm Nos 3
+7 Supply and install four (4) additional volume control dampers (VCDs)
+7.1 300 mm Nos 2
+7.2 400 mm Nos 2
+8 Supply and install two (2) transfer grilles, size 400 × 400 mm, complete with all required accessories. Nos 2
+9  Modify, configure, and integrate the HVAC control system with the existing IKAS Building system Lot 1
+10 Perform Testing, Adjusting, and Balancing (TAB) Lot 1
+D Fire Protection System
+1 Supply and Installation of Wet Pipe Sprinkler System (Automatic Sprinkler System) in Threaded end, standard weight Steel 
+Pipe for 50 dia and Smaller and Grooved end for Pipes Larger Than 50 dia.ASTM A 53/A 53M, ASTM A 135, ASTM A 795 
+Including Fittings and Pipe Supports
+1.1 25 mm diameter lm 45
+
+==========================================================================================
+### PAGE 8 TEXT ###
+PR # 12557
+EAR# 12518 CT X-ray room modification (ASEPC)
+LOCATION: Building  3 Level 0 Area 3 Rm#3-0132
+SUPPLY INSTALLATION S. + I.
+U.P. TOTAL U.P. TOTALUNIT PRICE TOTAL
+BILL OF QUANTITIES
+Date:
+QTY
+August 17, 2026
+Rev.-1
+REF DESCRIPTION Unit
+1.2 32 mm diameter lm 6
+1.3 50 mm diameter lm 30
+2
+Supply and install of Victaulic Style 920 Mechanical Tee, painted ductile iron body, 100mm run x 50mm female threaded 
+outlet with EPDM gasket. Core hole and install 100mm x 50mm female threaded Victaulic Style 920 mechanical tee on the 
+100mm wet sprinkler main pipeline.
+ea 1
+SPRINKLERS
+3 Supply and installation of Sprinklers should be UL or FMG approved with 12 Bar min. pressure rating. Nominal 12.7mm 
+orifice  for 'ordinary' temp.
+3.1 Pendent Sprinklers Concealed u 9
+4 IHP shall coordinate with fire and safety department the modification installation requires above. lot 1
+TOTAL (SAR)
+TOTAL (USD)
+VAT 15%
+TOTAL + VAT (SAR)
+TOTAL + VAT (USD)
+
+==========================================================================================
+### PAGE 9 TEXT ###
+1
+KEY NOTES:
+NEW X-RAY MACHINE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KAUST IN HOUSE PROJECTS, IHP
+PLAN NORTHTRUE NORTH PLAN NORTHTRUE NORTH
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+BUILDING 03
+EQUIPMENT LAYOUT PLAN
+ LEVEL 0 - AREA 3
+(PR 12557)
+PR12557
+XXXXXEQU
+0851
+030
+UN24001000-
+13-08-2026
+1:50
+HABEEB AHMED
+HAZEM ELSOBIEHY
+HAZEM ELSOBIEHY
+FLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREA
+KAUST IN HOUSE PROJECTS, IHP
+
+==========================================================================================
+### PAGE 10 TEXT ###
+KEY NOTES:
+STEEL STRUCTURE FOR
+FALSE CEILING
+LATERAL BRACE FASTENER:
+MIN 10mm EB , MIN 50mm
+EMBEDMENT, EQUIVALENT TO
+UL COMPLYING FASTENER
+(HILTI KB-II, OR EQ)
+MIN 2.6mm LATERAL
+BRACING WIRE,
+FASTEN W / MIN (4)
+TIGHT TURNS W / IN
+40mm DISTANCE
+STEEL CLIP, MIN
+25x50x2.8mm x25mmL
+16MAX
+VERTICAL HANGER WIRE
+COMPRESSION STRUT FASTENER:
+MIN 3mm PDF , MIN 30mm
+EMBEDMENT,  EQUIVALENT TO
+UL COMPLYING FASTENER
+(HILTI CC27, OR EQ)
+CONCRETE
+STRUCTURE
+45°STEEL CLIP, MIN
+25x50x2.8 x25mmL
+MIN 2.6mm VERT
+HANGER WIRE,
+FASTEN W / MIN (3)
+TIGHT TURNS W / IN
+40mm DISTANCE
+COMPRESSION STRUT,
+AS SCHEDULED
+PROVIDE FASTENERS EQUIVALENT TO W / UL EX-2258
+(TEST 1 OF 10 VERT CLIPS @ 90KG ,TEST 1 OF 2
+LATERAL CLIPS @ 200 KG)
+NOTE
+TYP. UPPER STRUCTURE CONNECTIONS
+LEGEND:
+NEW ACOUSTIC CEILING TILE (600MM X
+600MM)- ON ALUMINUM RUNNERS, PROVIDED
+WITH G.I. HANGERS ABOVE ATTACHED TO THE
+STRUCTURE ABOVE.
+Type I:
+Conforming to the following:
+Material: Wet format mineral fiber
+Surface Finish: Factory-applied washable paint
+finish.
+Color: White (unless otherwise shown on the
+drawing)
+Light Reflectance: 75% or more
+Size: 24” x 24” x 5/8” thick or 24” x 48” x 5/8”
+thick, unless otherwise shown on the drawings.
+Edge Detail: Square-cut lay-in trimmed edges.
+Suspension System: Exposed T-Bar System.
+NRC Range: 0.50 - 0.60.
+STC Range: 35-39.
+Surface Burning: Class A per ASTM E 1264 and
+Fed. Spec. SS-S-Characteristics 118B. Flame
+Spread 25 or under: UL Labeled
+1617
+C
+D
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KAUST IN HOUSE PROJECTS, IHP
+PLAN NORTHTRUE NORTH PLAN NORTHTRUE NORTH
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+BUILDING 03
+FALSE CEILING STRUCTURE
+ LEVEL 0 - AREA 3
+(PR 12557)
+PR12557
+XXXXXARC
+0000
+030
+UN24001000-
+13-08-2026
+1:50
+H.E
+HAZEM ELSOBIEHY
+FLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:  HAZEM ELSOBIEHY
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREA
+KAUST IN HOUSE PROJECTS, IHP
+1
+
+==========================================================================================
+### PAGE 11 TEXT ###
+1
+KEY NOTES:
+FALSE CEILING / TILES
+2.8mm (12GA) BRACING WIRE
+WITH MINIMUM 4 TIGHT
+TURNS IN 38MM BOTH
+ENDS OF WIRE-TYP.
+DISTANCE FROM BRACING
+WIRES TO CROSS RUNNERS
+CROSS RUNNERS
+MAIN RUNNER 
+45  MAX
+       TYP.
+ TYP.
+2.8mm (12GA) VERTICAL HANGER WIRE
+AT 1200MM EACH WAY WITH MINIMUM
+3 TIGHT TURNS IN 38MM BOTH
+ENDS OF WIRE
+50
+45
+ MAX  TYP
+24MM X 24MM X 0.4-0.45MM
+24MM X 24MM X 0.3MM
+STEEL STRUCTURE DETAILS
+140100 100
+2.6mm VERT HANGER WIRE @
+1200mm OC, CONT UP TO STRUC
+PARTN
+TYPE AS
+SCHED
+APC MET MAIN RUNNER
+APC MET CROSS RUNNER
+APC CEILING TILE
+12 X 12mm  MET
+PERIMETER MOULDING
+200  MAX
+PARTN
+TYPE AS
+SCHED
+10 MIN
+13MAX
+B
+C
+D
+F
+E
+A.3
+E.6
+1415161718
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KAUST IN HOUSE PROJECTS, IHP
+PLAN NORTHTRUE NORTH PLAN NORTHTRUE NORTH
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+BUILDING 03
+FALSE CEILING DETAILS
+ LEVEL 0 - AREA 3
+(PR 12557)
+PR12557
+XXXXXARC
+0000
+030
+UN24001000-
+10-08-2026
+1:50
+H.E
+HAZEM ELSOBIEHY
+FLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:  HAZEM ELSOBIEHY
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREA
+KAUST IN HOUSE PROJECTS, IHP
+LEGEND:
+NEW ACOUSTIC CEILING TILE (600MM X
+600MM)- ON ALUMINUM RUNNERS, PROVIDED
+WITH G.I. HANGERS ABOVE ATTACHED TO THE
+STRUCTURE ABOVE.
+Type I:
+Conforming to the following:
+Material: Wet format mineral fiber
+Surface Finish: Factory-applied washable paint
+finish.
+Color: White (unless otherwise shown on the
+drawing)
+Light Reflectance: 75% or more
+Size: 24” x 24” x 5/8” thick or 24” x 48” x 5/8”
+thick, unless otherwise shown on the drawings.
+Edge Detail: Square-cut lay-in trimmed edges.
+Suspension System: Exposed T-Bar System.
+NRC Range: 0.50 - 0.60.
+STC Range: 35-39.
+Surface Burning: Class A per ASTM E 1264 and
+Fed. Spec. SS-S-Characteristics 118B. Flame
+Spread 25 or under: UL Labeled
+
+==========================================================================================
+### PAGE 12 TEXT ###
+KEY NOTES:
+CREATE WALL OPENING
+OF 400MM X 400MM
+1415161718
+B
+C
+D
+F
+E
+E.6
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KAUST IN HOUSE PROJECTS, IHP
+PLAN NORTHTRUE NORTH PLAN NORTHTRUE NORTH
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+BUILDING 03
+WALL OPENING
+ LEVEL 0 - AREA 3
+(PR 12557)
+PR12557
+XXXXXARC
+0000
+030
+UN24001000-
+13-08-2026
+1:50
+H.E
+HAZEM ELSOBIEHY
+FLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:  HAZEM ELSOBIEHY
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREA
+KAUST IN HOUSE PROJECTS, IHP
+1
+1
+
+==========================================================================================
+### PAGE 13 TEXT ###
+B
+C
+D
+E
+121314151617
+ELEC
+0136
+TER
+0107
+UNIT
+SUBSTATION
+0126
+MTER
+0125
+UNIT
+SUBSTATION
+0127
+UNIT
+SUBSTATION
+0128
+PLUMBING
+0131
+PV
+EQUIPMENT
+ROOM
+0144
+FUTURE
+MECHANICAL0145
+0132
+X-Ray
+PLAN NORTHTRUE NORTH PLAN NORTHTRUE NORTH
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+BUILDING 03
+SOUTH RESEARCH LAB 1
+FLOOR PLAN - LEVEL 0
+AREA  6- LIGHTING
+PR12557
+xxxxxxxxHCU
+2450
+0600
+UN24003006-
+12/08/2026
+N/S
+HABEEB
+AGAMY
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+ACADEMIC & ADMINISTRATION CAMPUS
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KEY NOTES:
+DISMANTLE THE EXISTING LIGHTING FIXTURES AND SUPPLY AND INSTALL (15) LIGHTING FIXTURES 60CMX60CM TO BE CONNECTED TO THE SAME
+LIGHTING CIRCUITS.
+DESIGNER:
+IN HOUSE PROJECTS FM
+TESTING & COMMISSIONING (CONTINUITY/INSULATION TEST, VOLT METERING TEST), TAGGING FOR ALL ELECTRICAL POINTS (FOR CABLES & COLOR
+CODING/CONDUITS/PANEL BOARD &CONDUITS GROUNDING) SHALL BE PROVIDED WITH PANEL BOARD UPDATED TERMINATION SCHEDULE AS PER
+KAUST PROCEDURE.
+
+==========================================================================================
+### PAGE 14 TEXT ###
+PLAN NORTHTRUE NORTH PLAN NORTHTRUE NORTH
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+BUILDING 03
+SOUTH RESEARCH LAB 1
+FLOOR PLAN - LEVEL 0
+AREA  6- PANEL.S
+PR12557
+xxxxxxxxHCU
+2450
+0600
+UN24003006-
+12/08/2026
+N/S
+HABEEB
+AGAMY
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+ACADEMIC & ADMINISTRATION CAMPUS
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+DESIGNER:
+IN HOUSE PROJECTS FM
+
+==========================================================================================
+### PAGE 15 TEXT ###
+Project
+Building 1 · Storey 1 · Room 1 (Light scene 1)
+Calculation objects
+1
+
+==========================================================================================
+### PAGE 16 TEXT ###
+Project
+Building 1 · Storey 1 · Room 1 (Light scene 1)
+Calculation objects
+2
+Working planes
+Properties Ē
+(Target)
+Emin Emax Ē/Emin
+(Target)
+Emax/Emin Index
+Working plane (Room 1)
+Perpendicular illuminance (adaptive)
+Height: 0.915 m, Wall zone: 0.500 m
+595 lx
+(≥ 500 lx)
+425 lx 691 lx 1.40
+(≤ 3.00)
+1.63 WP1
+Utilisation profile: 27 - LIGHTING FOR HEALTH CARE (Radiology; Therapy, Isotope Kitchen, Benches)
+
+==========================================================================================
+### PAGE 17 TEXT ###
+PANELUN2400- PR- 009SHORT CIRCUIT MIN. 15000 A.I.C. SYMVOLTAGE380Y/220V, 3PH, 4 WIRES
+MOUNTINGSURFACEMAIN BREAKER100 AMPERE
+LOCATION
+WIRE SIZESCCT
+NO.
+KVA
+DESCRIPTION
+CCT BRKPHASECCT BRK
+DESCRIPTION
+KVACCT
+NO.WIRE SIZES ABCPOLETRIP
+AMPSA    B    CTRIP
+AMPSABC
+12
+34
+56
+78
+910
+1112
+1314
+1516
+1718
+1920
+2122
+2324
+2526
+2728
+2930
+3132
+3334
+3536
+3738
+TOTAL
+TOTAL LOAD
+(KVA)
+PHASE
+ABC
+FED FROM UN2400-DP-001
+3.00
+UNIT SUBSTATION 01284x 50mm²  +  1x16mm² GROUNDCABLE SIZE
+3.33
+39
+41
+40
+42
+POLE
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+FED FROM
+SPARE
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+X-RAY
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+SOCKET-01- X- RAY ROOM
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+SPARE
+3.001.5
+6.336.334.83
+10AWG
+3.33
+3.33
+3.33
+12AWG
+12AWG
+12AWG
+12AWG
+12AWG
+SOCKET-02- X- RAY ROOM
+SOCKET-03- X- RAY ROOM
+SOCKET-04- X- RAY ROOM
+SOCKET -05-X- RAY ROOM
+1.5
+1.5
+1.5
+1.5
+1.5
+3.333.33
+17.49
+A.3
+B
+C
+D
+E
+14151617
+SUBSTATION
+UNIT
+SUBSTATION
+0128
+PLUMBING
+0131
+PUMPS
+0120
+PLUMBING
+0122
+PV
+EQUIPMENT
+ROOM
+0144
+OPERATION ROOM
+X-RAY
+MACHINE
+PLAN NORTHTRUE NORTH PLAN NORTHTRUE NORTH
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+BUILDING 03
+SOUTH RESEARCH LAB 1
+INTERSTITIAL PLAN - LEVEL 0
+AREA  6- POWER
+PR12557
+xxxxxxxxHCU
+2450
+0600
+UN24002015-
+13/08/2026
+N/S
+HABEEB
+AGAMY
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+ACADEMIC & ADMINISTRATION CAMPUS
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KAUST IN HOUSE PROJECTS, FM
+KEY NOTES:
+RELOCATE 2 DUPLEX SOCKET NO. UN2400-PR-009-CKT-04 TO BE BEHIND THE PC.
+SUPPLY AND INSTALL 12 AWG - THHN/THWN WIRES AS REQUIRED.
+TESTING & COMMISSIONING (CONTINUITY/INSULATION TEST, VOLT METERING TEST), TAGGING FOR ALL ELECTRICAL POINTS (FOR CABLES & COLOR
+CODING/CONDUITS/PANEL BOARD &CONDUITS GROUNDING) SHALL BE PROVIDED WITH PANEL BOARD UPDATED TERMINATION SCHEDULE AS PER
+KAUST PROCEDURE.
+
+==========================================================================================
+### PAGE 18 TEXT ###
+0157
+CORRIDOR
+0132
+X-RAY
+DN 340 L/S
+Ø300mm
+340 L/S
+Ø300mm
+DN 340 L/S
+Ø300mm
+660 L/S
+Ø400mm
+DN 340 L/S
+Ø300mm
+400 L/S
+Ø300mm
+1000 L/S
+Ø400mm
+1400 L/S
+Ø500mm
+DN 340 L/S
+Ø300mm
+DN 340 L/S
+Ø300mm
+DN 340 L/S
+Ø300mm
+660 L/S
+Ø400mm
+340 L/S
+Ø300mm
+1400 L/S
+Ø500mm
+400 L/S
+Ø300mm
+D
+C
+1617
+D
+C
+1617
+1  N.T.S.
+DIFFUSER INSTALLATION DETAIL
+D11A
+D5
+D1
+DUCT ACCESS PANEL
+OPENING IN WALL ABOVE CEILING
+FIRE DAMPER
+BACKDRAFT DAMPER (COUNTERBALANCED)
+COMBINATION FIRE/SMOKE DAMPER
+ROUND DUCT WITH SIZE IN MILLIMETERS
+EXHAUST RECTANGULAR DUCT UP & DN
+NEGATIVE PRESSURE RECTANGULAR DUCT UP & DN
+POSITIVE PRESSURE RECTANGULAR DUCT UP & DN
+RETURN OR EXHAUST AIRFLOW
+SUPPLY AIRFLOW
+ACCESS DOOR
+SYMBOL
+RECTANGULAR TO ROUND TRANSITION
+SOUND ATTENUATOR EXHAUSTSAE
+RETURN AIR DUCTRAD
+EXHAUST AIR DUCTEAD
+ROUND DUCT UP & DOWN
+ISOLATING GATE VALVEIGV
+SCHWR
+SCHWS
+SUPPLEMENYTAL CHILLED WATER RETURN
+SUPPLEMENYTAL CHILLED WATER SUPPLY
+VARIABLE AIR VOLUMEVAV
+SASSOUND ATTENUATOR SUPPLY
+SADSUPLY AIR DUCT
+LITRES PER SECONDL/S
+HWSFALSE CEILING HEIGHT
+BOTTOM SLABHSD
+MFSCOMBINATION FIRE/SMOKE DAMPER
+HWSHOT WATER SUPPLY
+HOT WATER RETURNHWR
+EXHEXHAUST
+FCUFAN COIL UNIT
+EXHAUST FANEF
+CHWCHILLED WATER
+CHWSCHILLED WATER SUPPLY
+CHWRCHILLED WATER RETURN
+CHILLED WATER PUMPCHWP
+BOEBOTTOM OF EQUIPMENT
+BOTTOM OF DUCT
+ACCESS DOOR
+BOTTOM OF PIPE
+BACK DRAFT DAMPER
+AIR HANDLING UNIT
+AIR VENT
+ABOVE FINISHED FLOOR
+AIR CONDITIONING
+AV
+BOD
+BOP
+BDD
+AD
+AHU
+AFF
+A/C
+DESIGNATION 
+OVAL DUCT WITH SIZE IN MILLIMETERS FIRST
+DIMENSION = SIDE SHOWN
+RECTANGULAR DUCT WITH SIZE IN MILLIMETERS
+(FIRST DEMENSION = SIDE SHOWN)
+FACE, ADJUSTABLE PATTERN CONTROLLER IN CORE
+PERFORATED FACE, 600 MM x 600MM NOMINAL
+SQUARE FACE, MULTIPLE CONICAL SHAPED CONES,
+ADJUSTABLE DISCHARGE PATTERN
+ADJUSTABLE 15 MM LINEAR SLOT, PATTERN
+CONTROLLER, SHEETMETAL PLENUM
+SCOPE OF PR-12257
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+ACADEMIC & ADMINISTRATION CAMPUS
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+REV.
+REFERENCE  DRAWINGS
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+DRAWING NO. DRAWING TITLEITEM
+DESIGNER:
+IN-HOUSE PROJECTS FM
+BUILDING 03
+ HVAC  LAYOUT  PARTIAL 
+ FLOOR PLAN 
+LEVEL 00, AREA 03
+PR-12257
+XXXXXAC
+2400
+0300
+UN240000230
+18-08-2026
+N.T.S
+MOHAMMAD IMRAN
+A.S
+A.S
+KEY PLAN
+AREA-1AREA-2
+AREA-3
+AREA-4AREA-5AREA-6
+PLAN NORTHTRUE NORTH
+SCALE : N.T.S1
+DISMANTLE HVAC PARTIAL PLAN LEVEL 00 - AREA 03
+SCALE : N.T.S.2
+MODIFICATION HVAC PARTIAL PLAN LEVEL 00 - AREA 03.
+KEY NOTES:
+Relocate VAV-11-19 and associated ductwork as per drawings.
+Relocate the thermostat to CT X-Ray Room (011-019).
+Supply and install GI ductwork (Ø300-Ø400 mm).
+Supply and install 50 mm thick fiberglass insulation (24 kg/m³ density).
+Supply and install 6 supply diffusers (600×600 mm) with plenum boxes and VCDs.
+Supply and install 3 return air diffusers (600×600 mm).
+Supply and install 4 VCDs and 2 transfer grilles (400×400 mm).
+Modify and integrate controls with the IKAS system.Perform TAB, testing, and commissioning.
+
+==========================================================================================
+### PAGE 19 TEXT ###
+PLUMBING
+0131
+PV
+EQUIPMENT
+ROOM
+0144
+PFE-3
+0132
+X-Ray
+17 1617 16
+C
+D
+E
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KAUST IN HOUSE PROJECTS, IHP
+PLAN NORTHTRUE NORTH PLAN NORTHTRUE NORTH
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+BUILDING 03
+FIRE SPRINKLER LAYOUT PLAN
+ LEVEL 0 - AREA 3
+(PR 12557)
+PR12557
+XXXXXFIR
+0490
+030
+UN240010001
+13-08-2026
+1:50
+HABEEB AHMED
+M.M
+P.M
+FLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+APPROVED BY:
+TITLE
+P
+5SCHEMATIC DESIGN
+KEY PLAN
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+PROJECT CODE
+CONTRACTOR'S CODE
+LOTBUILDING
+AREA
+KAUST IN HOUSE PROJECTS, IHP

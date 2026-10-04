@@ -1,0 +1,398 @@
+FILE: E:\ENGINEERING_DATA\IHP Project Format\PR-12444 Scope of Work Draft_Rev.-1.pdf
+pages: 6
+metadata: {'/Author': 'MohammedShariar Mamun', '/CreationDate': "D:20260730144931+03'00'", '/Creator': 'Adobe Acrobat (64-bit) 26.1.21691', '/ModDate': "D:20260903112127+03'00'", '/Producer': 'Adobe Acrobat (64-bit) 26.1.21691', '/Title': ''}
+
+==========================================================================================
+### PAGE 1 TEXT ###
+In House Projects 
+ 
+PROJECT SCOPE OF WORK 
+ 
+ 
+PR # 12444 
+EAR# 12364 
+Rev.-1 
+ 
+Installation of additional shading within the turtle 
+clinic. 
+Building 26 & 27 Seaside area 
+ 
+ 
+1. Introduction 
+• King Abdullah University of Science & Technology (KAUST) intends to avail the 
+services Installation of additional shading within the turtle clinic. at Building 26 & 27 
+Seaside area. 
+2. Scope of Work 
+ Civil/Architectural 
+• Works under this section include, but are not limited to, the modification of the 
+existing Turtle Clinic area, including all associated alterations and the repair of 
+affected surfaces to match the existing finishes. Any penetrations through the concrete 
+floor slab shall be properly repaired and reinstated in accordance with KAUST 
+standards. 
+• Design, supply, and installation of an additional 230 m² shading system within the 
+Turtle Clinic area with height of 4180mm, as indicated on the drawings, including the 
+complete steel support structure, PVC-coated polyester tensile membrane, all 
+associated materials, fittings, anchorage systems, utility detection/scanning services 
+prior to any excavation, drilling, or concrete cutting works, and all installation and 
+commissioning works required for a complete and fully functional system. 
+o The design scope shall include a complete structural analysis and the 
+submission of a comprehensive structural design package, including but not 
+limited to: 
+- Structural design calculation sheets. 
+- Three-dimensional structural model of the steel support system. 
+- Design load assumptions and load combinations in accordance with the related 
+codes (SBC) and KAUST standards. 
+- Analysis of lateral deflections, internal forces (including shear forces and 
+bending moments), and overall structural stability. 
+- Design and verification of all steel connections, base plates, anchor bolts, and 
+fixings. 
+- Calculation of column reactions. 
+
+==========================================================================================
+### PAGE 2 TEXT ###
+In House Projects 
+ 
+PROJECT SCOPE OF WORK 
+ 
+ 
+PR # 12444 
+EAR# 12364 
+Rev.-1 
+ 
+Installation of additional shading within the turtle 
+clinic. 
+Building 26 & 27 Seaside area 
+ 
+ 
+- Structural assessment and verification of the existing concrete slab and 
+supporting structural elements to confirm their adequacy for the proposed 
+additional loads, including the design of any required strengthening measures. 
+- Preparation and submission of detailed fabrication drawings and shop drawings 
+for review and approval prior to fabrication and installation. 
+ 
+Electrical 
+• (Not Seen) 
+ 
+Low Current / Telecommunication 
+• (Not Seen) 
+ 
+Plumbing 
+• (Not Seen) 
+ 
+HVAC 
+• (Not Seen) 
+ 
+Fire Sprinkler System 
+• (Not Seen) 
+3. General, Codes, and Standards 
+• All work shall be carried out in accordance with applicable standard and comply with 
+KAUST standard/specification. 
+• The work shall comply with the latest edition of the international codes and standards 
+as a minimum requirement. 
+• All work shall comply with KAUST Work Permit and other HSE related policies and 
+procedures. 
+• All work shall follow KAUST quality procedures,  
+• Submit material specification submittals, MRI(s), RFI(s) for approval. 
+• Submit shop drawings for approval prior to any project execution. 
+ 
+ 
+
+==========================================================================================
+### PAGE 3 TEXT ###
+12444
+●
+SUPPLY AND INSTALLATIONS
+CONCERNED BUILDING:
+Requestor:
+Established on:
+Prepared by: Verified by: Approved by:
+Date received:
+Building 26 & 27 Seaside area
+Installation of additional shading within the turtle clinic.
+September 3, 2026
+Contact No.
+KAUST
+FM Project Request #
+REVISION-1
+TENDER DOCUMENTS:
+BILL OF QUANTITIES
+
+==========================================================================================
+### PAGE 4 TEXT ###
+PR # 12444
+EAR# 12364 Installation of additional shading within the turtle clinic.
+LOCATION: Building 26 & 27 Seaside area
+SUPPLY INSTALLATION S. + I.
+U.P. TOTAL U.P. TOTAL UNIT PRICE TOTAL
+A Civil/Architectural
+1
+Design, supply, and installation of an additional 230 m² shading system within the Turtle Clinic area with height of 4180mm, as indicated
+on the drawings, including the complete steel support structure, PVC-coated polyester tensile membrane, all associated materials, fittings,
+anchorage systems, utility detection/scanning services prior to any excavation, drilling, or concrete cutting works, and all installation and
+commissioning works required for a complete and fully functional system.
+- The design scope shall include a complete structural analysis and the submission of a comprehensive structural design package,
+including but not limited to:
+ Structural design calculation sheets.
+ Three-dimensional structural model of the steel support system.
+ Design load assumptions and load combinations in accordance with the related codes (SBC) and KAUST standards.
+ Analysis of lateral deflections, internal forces (including shear forces and bending moments), and overall structural stability.
+ Design and verification of all steel connections, base plates, anchor bolts, and fixings.
+ Calculation of column reactions.
+ Structural assessment and verification of the existing concrete slab and supporting structural elements to confirm their adequacy for the
+proposed additional loads, including the design of any required strengthening measures. Preparation and submission of
+detailed fabrication drawings and shop drawings for review and approval prior to fabrication and installation.
+Lot 1
+TOTAL (SAR)
+TOTAL (USD)
+VAT 15%
+TOTAL + VAT (SAR)
+TOTAL + VAT (USD)
+BILL OF QUANTITIES
+Date:
+QTY
+September 3, 2026
+Rev.-1
+REF DESCRIPTION Unit
+
+==========================================================================================
+### PAGE 5 TEXT ###
+WATER TANK
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+023
+022
+020
+019
+018
+017
+016
+015
+014
+013
+012
+011
+010
+09
+08
+07
+06
+05
+04
+03
+02
+01
+RLP1
+EL 1
+ WATER TANK
+FLOOR LEVEL
+FLOOR LEVEL
+SIDE VIEW-LONG SIDESIDE VIEW-SHORT SIDE
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+FLOOR LEVEL
+SIDE VIEW-SHORT SIDE
+SEC. C-C SEC. B-B
+SEC. A-A
+FLOOR LEVEL
+SIDE VIEW-SHORT SIDE
+SEC. D-D
+EXISTING
+SHADE
+KEY NOTES:
+NEW SHADE FOR
+TURTLE CLINIC
+PROJECT CODE
+CONTRACT #
+DIVBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+P
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+CBPROVED BY:
+TITLE
+5SCHEMATIC DESIGN
+REV.
+REFERENCE  DRAWINGS
+DRAWING NO. DRAWING TITLEITEM
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+KAUST IN HOUSE PROJECTS, FM
+PLAN NORTHTRUE NORTH
+BUILDING 26
+TURLE CLINIC SHADE
+(PR12444 )
+PR12444 
+XXXXXXCIVIL
+2049
+MR00
+MR1010101001
+30-08-2026
+N.T.S.
+H.E
+H.E
+H.E
+-30-08-2026
+PR-12444 H.E
+H.E
+H.E
+  
+  
+  
+  
+  
+  
+  
+  
+
+==========================================================================================
+### PAGE 6 TEXT ###
+FLOOR LEVEL
+FLOOR LEVEL
+SIDE VIEW-LONG SIDESIDE VIEW-SHORT SIDE
+FLOOR LEVEL
+SIDE VIEW-SHORT SIDE
+SEC. C-C SEC. B-B
+SEC. A-A
+FLOOR LEVEL
+SIDE VIEW-SHORT SIDE
+SEC. D-D
+EXISTING
+SHADE
+023
+022
+020
+019
+018
+017
+016
+015
+014
+013
+012
+011
+010
+09
+08
+07
+06
+05
+04
+03
+02
+01
+RLP1
+EL 1 MR1010\P1
+MR1010\P4
+WATER TANK
+FLOOR LEVEL
+FLOOR LEVEL
+SIDE VIEW-LONG SIDESIDE VIEW-SHORT SIDE
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+FLOOR LEVEL
+SIDE VIEW-SHORT SIDE
+SEC. C-C SEC. B-B
+SEC. A-A
+FLOOR LEVEL
+SIDE VIEW-SHORT SIDE
+SEC. D-D
+EXISTING
+SHADE
+PROJECT CODE
+CONTRACT #
+DIVBUILDING
+AREAFLOOR
+DRWG NBREV
+TRADE
+DATE :
+SCALE :
+P
+3CONSTRUCTION DOCUMENTS
+2
+1
+0
+SHOP DRAWING
+ISSUED FOR CONSTRUCTION
+AS BUILT DRAWING
+PHASES (P)
+4DEVELOPMENT DESIGN
+DATE & VISA:
+DRAWN BY:
+DATE & VISA:
+CHECKED BY:
+DATE & VISA:
+CBPROVED BY:
+TITLE
+5SCHEMATIC DESIGN
+REV.
+REFERENCE  DRAWINGS
+DRAWING NO. DRAWING TITLEITEM
+KING ABDULLAH UNIVERSITY OF
+SCIENCE & TECHNOLOGY
+KAUST IN HOUSE PROJECTS, FM
+PLAN NORTHTRUE NORTH
+BUILDING 26
+TURLE CLINIC SHADE PROFILE
+(PR12444 )
+PR12444 
+XXXXXXCIVIL
+2049
+MR00
+MR1010101001
+30-08-2026
+N.T.S.
+H.E
+H.E
+H.E
+-30-08-2026
+PR-12444 H.E
+H.E
+H.E
+  
+  
+  
+  
+  
+  
+  
+  

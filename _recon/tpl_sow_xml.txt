@@ -1,0 +1,44 @@
+FILE: E:\ENGINEERING_DATA\IHP_Projects\General Template- internal\Template\DD Tamplate\PR XXXX SCOPE -.docx
+====================================================================================================
+
+### ZIP PARTS ###
+  [Content_Types].xml  (2014 bytes)
+  _rels/.rels  (737 bytes)
+  word/document.xml  (20015 bytes)
+  word/_rels/document.xml.rels  (1342 bytes)
+  word/footnotes.xml  (2881 bytes)
+  word/endnotes.xml  (2875 bytes)
+  word/header1.xml  (11225 bytes)
+  word/_rels/header1.xml.rels  (290 bytes)
+  word/media/image1.jpeg  (3574 bytes)
+  word/theme/theme1.xml  (6992 bytes)
+  word/settings.xml  (7695 bytes)
+  word/numbering.xml  (86744 bytes)
+  word/styles.xml  (33529 bytes)
+  word/webSettings.xml  (1301 bytes)
+  word/fontTable.xml  (2716 bytes)
+  docProps/core.xml  (665 bytes)
+  docProps/app.xml  (716 bytes)
+  docProps/custom.xml  (505 bytes)
+
+### FIELD / MERGE MARKERS in document.xml ###
+  MERGEFIELD: 0 occurrence(s)
+  fldSimple: 0 occurrence(s)
+  w:sdt: 0 occurrence(s)
+  w:sdtPr: 0 occurrence(s)
+  w:instrText: 0 occurrence(s)
+  fldChar: 0 occurrence(s)
+  w:dataBinding: 0 occurrence(s)
+  SHAPE: 0 occurrence(s)
+  w:fldChar: 0 occurrence(s)
+
+### instrText CONTENTS (document.xml) ###
+
+### MERGEFIELD names in document order ###
+
+### sdt blocks (content controls) ###
+
+### HEADERS / FOOTERS ###
+  -- word/header1.xml --
+     text: <w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="310" w:type="dxa"/><w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="01E0" w:firstRow="1" w:lastRow="1" w:firstColumn="1" w:lastColumn="1" w:noHBand="0" w:noVBand="0"/></w:tblPr><w:tblGrid><w:gridCol w:w="1964"/><w:gridCol w:w="6137"/><w:gridCol w:w="2075"/></w:tblGrid><w:tr w:rsidR="00586DCC" w14:paraId="5AD6F34A" w14:textId="77777777" w:rsidTr="00CA1775"><w:trPr><w:trHeight w:val="801"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="10176" w:type="dxa"/><w:gridSpan w:val="3"/></w:tcPr><w:p w14:paraId="284ADB97" w14:textId="6002A77E" w:rsidR="00586DCC" w:rsidRDefault="00A95E7D" w:rsidP="00EE479A"><w:pPr><w:pStyle w:val="TableParagraph"/><w:spacing w:before="123"/><w:ind w:right="164"/><w:jc w:val="center"/><w:rPr><w:b/><w:sz w:val="48"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="48"/></w:rPr><w:t>I | n |   | House |   | Projects | <w:trPr><w:trHeight w:val="642"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1964" w:type="dxa"/><w:vMerge w:val="restart"/></w:tcPr><w:p w14:paraId="03404A02" w14:textId="77777777" w:rsidR="00586DCC" w:rsidRDefault="00586DCC" w:rsidP="00586DCC"><w:pPr><w:pStyle w:val="TableParagraph"/><w:ind w:left="190"/><w:rPr><w:sz w:val="20"/></w:rPr></w:pPr><w:r><w:rPr><w:noProof/><w:sz w:val="20"/></w:rPr><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0" wp14:anchorId="67A5014E" wp14:editId="402FF928"><wp:extent cx="1030553" cy="628650"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="73461115" name="Image 1" descr="A logo with colorful circles  Description automatically generated"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="1" name="Image 1" descr="A logo with colorful circles  Description automatically generated"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rId1" cstate="print"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1030553" cy="628650"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="6137" w:type="dxa"/></w:tcPr><w:p w14:paraId="5463E653" w14:textId="603B97BA" w:rsidR="00586DCC" w:rsidRPr="00EE479A" w:rsidRDefault="00B1222E" w:rsidP="00EE479A"><w:pPr><w:pStyle w:val="TableParagraph"/><w:tabs><w:tab w:val="left" w:pos="1857"/></w:tabs><w:spacing w:before="240" w:line="360" w:lineRule="auto"/><w:ind w:left="128"/><w:jc w:val="center"/><w:rPr><w:rFonts w:asciiTheme="minorBidi" w:hAnsiTheme="minorBidi" w:cstheme="minorBidi"/><w:sz w:val="28"/></w:rPr></w:pPr><w:r w:rsidRPr="00B1222E"><w:rPr><w:rFonts w:asciiTheme="minorBidi" w:hAnsiTheme="minorBidi" w:cstheme="minorBidi"/><w:sz w:val="28"/></w:rPr><w:t>PROJECT SCOPE OF WORK | <w:tcPr><w:tcW w:w="2075" w:type="dxa"/><w:vMerge w:val="restart"/></w:tcPr><w:p w14:paraId="1787CF74" w14:textId="77777777" w:rsidR="00586DCC" w:rsidRDefault="00586DCC" w:rsidP="00586DCC"><w:pPr><w:pStyle w:val="TableParagraph"/><w:rPr><w:sz w:val="24"/></w:rPr></w:pPr></w:p><w:p w14:paraId="502E62B1" w14:textId="77777777" w:rsidR="00586DCC" w:rsidRDefault="00586DCC" w:rsidP="00586DCC"><w:pPr><w:pStyle w:val="TableParagraph"/><w:spacing w:before="82"/><w:rPr><w:sz w:val="24"/></w:rPr></w:pPr></w:p><w:p w14:paraId="3EE07DC5" w14:textId="440E750E" w:rsidR="00586DCC" w:rsidRDefault="00586DCC" w:rsidP="00586DCC"><w:pPr><w:pStyle w:val="TableParagraph"/><w:spacing w:before="1"/><w:ind w:left="494"/><w:rPr><w:spacing w:val="-2"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:pPr><w:r w:rsidRPr="00387932"><w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t>PR |   | # |   | 94 | 42 | EAR#9399 | <w:trPr><w:trHeight w:val="638"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1964" w:type="dxa"/><w:vMerge/><w:tcBorders><w:top w:val="nil"/></w:tcBorders></w:tcPr><w:p w14:paraId="4DC71D40" w14:textId="77777777" w:rsidR="00586DCC" w:rsidRDefault="00586DCC" w:rsidP="00586DCC"><w:pPr><w:rPr><w:sz w:val="2"/><w:szCs w:val="2"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="6137" w:type="dxa"/></w:tcPr><w:p w14:paraId="77977CA4" w14:textId="77777777" w:rsidR="005C48A7" w:rsidRDefault="005C48A7" w:rsidP="00EE479A"><w:pPr><w:pStyle w:val="TableParagraph"/><w:spacing w:line="237" w:lineRule="auto"/><w:ind w:left="4" w:right="450" w:firstLine="62"/><w:jc w:val="center"/><w:rPr><w:sz w:val="24"/></w:rPr></w:pPr></w:p><w:p w14:paraId="63E47A7F" w14:textId="77777777" w:rsidR="005C48A7" w:rsidRDefault="00C71AF3" w:rsidP="00D650EC"><w:pPr><w:pStyle w:val="TableParagraph"/><w:spacing w:line="237" w:lineRule="auto"/><w:ind w:left="4" w:right="450" w:firstLine="62"/><w:jc w:val="center"/><w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:pPr><w:r w:rsidRPr="00C71AF3"><w:rPr><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t xml:space="preserve">Installation of 3 phase 32A socket and exhaust connection for oven  | Building 4, Level 3, Rm# 4-3750.
+     PAGE field: False, NUMPAGES: False, MERGEFIELD: False

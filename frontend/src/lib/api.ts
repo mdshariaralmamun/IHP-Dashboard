@@ -870,6 +870,136 @@ export function deleteTodo(todoId: number): Promise<void> {
   return request<void>('/api/todos/' + todoId, { method: 'DELETE' });
 }
 
+// ---------------------------------------------------------------------------
+// PR data room: raw source files + the AI brief
+// ---------------------------------------------------------------------------
+
+export interface SourceDocument {
+  id: number;
+  project_id: number;
+  category: string;
+  doc_type: string;
+  filename: string;
+  content_type: string | null;
+  size_bytes: number;
+  text_chars: number;
+  text_excerpt: string | null;
+  extraction_note: string | null;
+  uploaded_by_id: number;
+  created_at: string;
+}
+
+export interface SourceBrief {
+  id: number;
+  project_id: number;
+  version: number;
+  status: 'running' | 'ready' | 'failed';
+  model: string | null;
+  payload: SourceBriefPayload | null;
+  error: string | null;
+  created_at: string;
+  finished_at: string | null;
+}
+
+export interface SourceBriefPayload {
+  summary?: string;
+  scope_by_trade?: {
+    trade: string;
+    requirement?: string;
+    site_check?: string;
+    existing_utilities?: string[];
+    excluded?: string[];
+    assumptions?: string[];
+    source_files?: string[];
+  }[];
+  utilities?: {
+    name: string;
+    required?: string;
+    available_at_site?: string;
+    evidence?: string;
+    action?: string;
+  }[];
+  line_items?: {
+    ref?: string;
+    trade?: string;
+    description?: string;
+    spec?: string;
+    unit?: string;
+    qty?: string;
+    supplier?: string;
+    source_file?: string;
+  }[];
+  open_questions?: {
+    question: string;
+    why?: string;
+    who_can_answer?: string;
+    blocking?: boolean;
+  }[];
+  documents_seen?: { file: string; kind?: string; gist?: string }[];
+  missing_documents?: string[];
+  risks?: string[];
+  confidence?: string;
+}
+
+export interface SourceRoom {
+  project_id: number;
+  pr_number: string;
+  taxonomy: { key: string; label: string }[];
+  doc_types: string[];
+  documents: SourceDocument[];
+  brief: SourceBrief | null;
+  readable_documents: number;
+  total_bytes: number;
+}
+
+export function getSourceRoom(projectId: number): Promise<SourceRoom> {
+  return request<SourceRoom>('/api/projects/' + projectId + '/sources');
+}
+
+/** Upload raw files (any format) into the PR's data room. */
+export function uploadSources(
+  projectId: number,
+  files: File[],
+  category: string,
+  docType: string,
+): Promise<SourceRoom> {
+  const form = new FormData();
+  files.forEach((f) => form.append('files', f));
+  form.append('category', category);
+  form.append('doc_type', docType);
+  return request<SourceRoom>(
+    '/api/projects/' + projectId + '/sources',
+    { method: 'POST', body: form },
+  );
+}
+
+/** Start the background AI read of the whole data room. */
+export function analyzeSources(projectId: number): Promise<SourceBrief> {
+  return request<SourceBrief>(
+    '/api/projects/' + projectId + '/sources/analyze',
+    { method: 'POST' },
+  );
+}
+
+export function getSourceBrief(projectId: number): Promise<SourceBrief | null> {
+  return request<SourceBrief | null>('/api/projects/' + projectId + '/sources/brief');
+}
+
+export function getSourceText(sourceId: number): Promise<{
+  id: number;
+  filename: string;
+  doc_type: string;
+  category: string;
+  text: string;
+  note: string | null;
+}> {
+  return request('/api/sources/' + sourceId + '/text');
+}
+
+export function deleteSource(sourceId: number): Promise<void> {
+  return request<void>('/api/sources/' + sourceId, { method: 'DELETE' });
+}
+
 export interface TodoQuery {
   assignee?: string;
   bucket?: string;

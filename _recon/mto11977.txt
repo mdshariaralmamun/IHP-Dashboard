@@ -1,0 +1,26 @@
+FILE: E:\ENGINEERING_DATA\IHP Project Format\MTO - PR-11977_Plumbing.xlsx
+sheets: ['Sheet1']
+
+==========================================================================================
+SHEET: 'Sheet1'  dims=A1:J108  max_row=108 max_col=10
+merged: ['G4:H4', 'E4:F4', 'H5:J5', 'I1:J1']
+freeze: None  auto_filter: None
+  A1=PR # 11977 / EAR# 11614 | B1=Pulsenics Electrochemical Impedance Spectrocopy & Compres... | C1= | D1= | E1= | F1= | G1= | H1=Date: | I1=2026-08-30 00:00:00
+  A2=LOCATION: | B2=Building 7 Yard | C2= | D2= | E2= | F2= | G2= | H2= | J2=
+  A3= | B3=MATERIALS TAKEOFF | C3= | D3= | E3= | F3= | G3= | H3= | I3= | J3=
+  A4=REF | B4=DESCRIPTION | C4=Unit | D4=QTY | E4=SUPPLY | G4=INSTALLATION | I4= | J4=S. + I.
+  A5= | B5= | C5= | D5= | E5=U.P. | F5=TOTAL | G5=U.P. | H5=TOTALUNIT PRICE TOTAL
+  A6=A | B6=Civil/Architectural | C6= | D6= | E6= | F6= | G6= | H6= | I6= | J6=
+  A8=C | B8=Plumbing | C8= | D8= | E8= | F8= | G8= | H8= | I8= | J8=
+  A9=1 | B9=Supply a new 1/2" Compressed Air (CDA) network... Tie int... | C9=— | D9=—
+  A10=1.1 | B10=Tube 12.70mm (0.500") X 1.24mm (0.049") - Seamless - 1.44... | C10=lm | D10=36
+  A11=1.2 | B11=T-Reducing d1=50.80mm to d2=12.70mm, Wall Thickness s1=1.... | C11=ea | D11=1
+  A12=1.3 | B12=Stainless Steel Swagelok Tube Fitting, Union, 1/2 in. Tub... | C12=ea | D12=6
+  A13=1.4 | B13=Stainless Steel Swagelok Tube Fitting, Male Connector, 1/... | C13=ea | D13=3
+  A14=2 | B14=Supply a new Compressed Air (CDA) Point of Use (1) with r... | C14=— | D14=—
+  A15=2.1 | B15=Point of Use — GCE Group Model: PSLH0FT0EXD200BTN14FN14F0... | C15=ea | D15=1
+  A16=4.2 | B16=Pressure gauge | C16=ec | D16=2
+  A17=3 | B17=Supply a new ½" Nitrogen (N2) network... Tie into the exi... | C17=— | D17=—
+  A18=3.1 | B18=Tube 12.70mm (0.500") X 1.24mm (0.049") - Seamless - 1.44... | C18=lm | D18=30
+  A19=3.2 | B19=T-Reducing d1=19.05mm to d2=12.70mm, Wall Thickness s1=1.... | C19=— | D19=—
+  A20=3.3 | B20=Stainless Steel Swagelok Tube Fitting, Union, 1/2 in. Tub... | C20=ea | D20=6

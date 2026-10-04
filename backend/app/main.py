@@ -36,6 +36,7 @@ from .api import (  # noqa: F401 (routers registered below)
     roles,
     settings,
     sow_boq,
+    sources,
     mto,
     user_roles,
 )
@@ -158,6 +159,9 @@ def create_app() -> FastAPI:
     # detail catch-all so /api/projects/{id}/next-step resolves here.
     app.include_router(planning.router, prefix="/api")
     app.include_router(planning.todos_router, prefix="/api")
+    # The PR data room: raw source files, their extracted text and the AI brief.
+    app.include_router(sources.router, prefix="/api")
+    app.include_router(sources.sources_router, prefix="/api")
     # Public (no auth): the read-only dashboard + the access-request form.
     app.include_router(public.router, prefix="/api")
     # Admin inbox for those requests (users.manage capability).

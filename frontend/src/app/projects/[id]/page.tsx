@@ -22,6 +22,7 @@ import TrackerStepper, { stageLabel } from '@/components/TrackerStepper';
 import TrackingShare from '@/components/TrackingShare';
 import StageChangePanel from '@/components/project/StageChangePanel';
 import NextStepCard from '@/components/project/NextStepCard';
+import SourceRoomCard from '@/components/project/SourceRoomCard';
 import AiReviewCard from '@/components/project/AiReviewCard';
 import PlanMarkersCard from '@/components/project/PlanMarkersCard';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
@@ -250,6 +251,12 @@ function ProjectDetailView() {
                 canEdit={canEditProject}
                 onChanged={load}
               />
+            </div>
+
+            {/* The raw data room: everything the engineer / PI / suppliers sent,
+                reduced to text and read by the AI into a structured brief. */}
+            <div className="mb-6">
+              <SourceRoomCard projectId={project.id} canEdit={canEditProject} />
             </div>
 
             {/* The plan and its pins: the drawing the project is really about. */}

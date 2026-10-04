@@ -1,0 +1,93 @@
+FILE: E:\ENGINEERING_DATA\IHP_Projects\PR 10208 Multifunctional Industrial-Scale Electrolyzer Testing Platform - Huabin Zhang EAR 9980\07_Construction_Data\TQ\PR10208-TQ-C-001.0.pdf
+pages: 19
+metadata: {'/CreationDate': 'D:20250918095931Z', '/ModDate': 'D:20250918095931Z', '/Producer': 'PDFTron PDFNet, V11.6086\n'}
+
+==========================================================================================
+### PAGE 1 TEXT ###
+  Project: 10208 INDUSTRIAL SCALE ELECTROLYZER
+ 
+ 
+ 
+Submittal #PR10208-TQ-C-001.0 - TQ for Relocation of Concrete Foundation Due
+to Utilities Identified During GPR Test. 
+ 
+Revision 0 Submittal Manager Mohamed Hussien Ali (Senyarsa)
+Status Open Date Created Sep 16, 2025
+Issue Date   Spec Section
+Responsible
+Contractor
+Senyarsa Received From Mohamed Hussien Ali (Senyarsa)
+Received Date Sep 16, 2025 Submit By Sep 16, 2025
+Final Due Date Sep 18, 2025 Lead Time
+Cost Code
+Location NEO - New Energy Oasis Type T echnical Queries (TQ)
+Submittal Package  
+Approvers Hazem Elsobiehy (In-House Projects), Mohammed Hajiali (In-House Projects), Assam Hamshou (In-House Projects), Prabhu
+Murugesan (In-House Projects), Atiqur Rehman Khan (In-House Projects)
+Ball in Court Mohamed Hussien Ali (Senyarsa)
+Distribution Abdul Rahim (In-House Projects), Atiqur Rehman Khan (In-House Projects), Hazem Elsobiehy (In-House Projects), Moawya Ezet
+Masry (In-House Projects), Mohamed Aboalhadid (In-House Projects), Mohammed Hajiali (In-House Projects)
+Description
+ 
+ 
+ADDITIONAL FIELDS
+Submittal Discipline CIVIL Work Discipline
+ 
+ 
+Submittal Workflow
+Name Sent Date Due Date Returned Date Response Attachments
+General Information
+Attachments
+       
+PR10208-TQ-C-001.pdf 
+Hazem Elsobiehy Sep 16, 2025 Sep 18, 2025 Sep 16, 2025 Approved
+Mohammed Hajiali Sep 16, 2025 Sep 18, 2025 Sep 17, 2025 Approved as Noted
+  Comment • Contractor to ensure proper coordination and no impact to other services.
+Assam Hamshou Sep 17, 2025 Sep 18, 2025 Sep 17, 2025 For Record Only
+Prabhu Murugesan Sep 17, 2025 Sep 18, 2025 Sep 18, 2025 For Record Only
+Atiqur Rehman Khan Sep 18, 2025 Sep 18, 2025 Sep 18, 2025 For Record Only
+ 
+ 
+Page 1 of 1 Printed On: Sep 18, 2025 12:59 PM +03
+   
+
+==========================================================================================
+### PAGE 2 TEXT ###
+TECHNICAL QUERY 
+Date: May.04.2025 Version 1 PDEC-4-005-F2 
+Date : 16-Sep-2025 Ref. No. : PR10208-TQ-C-001
+ INDUSTRIAL SCALE ELECTROLYZER   PAGES:  PROJECT : 
+CONTRACT NO. : PR-10208  
+FROM TO 
+ D&E Name M. Hamed Name 
+Project Manager 
+Subject : TQ for Relocation of Concrete Foundation Due to Utilities Identified During GPR Test .
+PART I PROBLEM/ QUERY DESCRIPTION 
+QUERY CODE CIVIL/STRUCTURAL     ARCHITECTURAL        MECHANICAL    HVAC        ELECTRICAL
+ INSTRUMENTATION/IT    LOW CURRENT SYSTEM      FIRE PROTECTION     OTHERS
+IMPORTANCE/PRIORITY URGENT (1-5) DAYS
+LOCATION NEO - New Energy Oasis
+QUERY DESCRIPTION 
+During the Ground Penetrating Radar (GPR) test conducted at the location of the 
+concrete foundation, existing underground utilities were identified within the foundation 
+footprint. Proceeding with the foundation construction at the current location poses a 
+risk of damaging these utilities and may cause service  disruptions and safety concerns.
+We propose to to relocate the concrete foundation to a suitable loca tion clear of the 
+identified utilities. A new location and coordination's were provided for consideration.
+INITIATED BY: APPROVED BY: 
+Mohamed Hamed 16-Sep-2025
+PRINT NAME & SIGN DATE 
+(DD-MM-YYYY) 
+PRINT NAME & SIGN DATE 
+(DD-MM-YYYY) 
+PART II RESPONSE TO QUERY (KAUST DISCIPLINE ENGINEER) 
+RESPONSE APPROVED  APPROVED AS NOTED REVISE AND RESUBMIT REJECTED
+FOR RECORDS ONLY
+QUERY IMPLICATION COSTING & SCHEDULING IMPACT : YES    NO    
+INCORPORATION OF CHANGES REQUIRED  : YES    NO    EFFECT TO  AS-BUILT ONLY      
+REVIEWED & REPLIED BY: CONCURRED BY: 
+PRINT NAME & SIGN DATE 
+(DD-MM-YYYY) 
+PRINT NAME & SIGN DATE 
+(DD-MM-YYYY) 
+

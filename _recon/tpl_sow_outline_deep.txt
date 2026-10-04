@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "C:\Users\MOHAMMED MAMUN\IHP Design and Construction\_recon\docx_deep.py", line 36, in <module>
+    g = z.read("word/glossary/document.xml").decode("utf-8","replace")
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\zipfile.py", line 1526, in read
+    with self.open(name, "r", pwd) as fp:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\zipfile.py", line 1563, in open
+    zinfo = self.getinfo(name)
+            ^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python311\Lib\zipfile.py", line 1492, in getinfo
+    raise KeyError(
+KeyError: "There is no item named 'word/glossary/document.xml' in the archive"

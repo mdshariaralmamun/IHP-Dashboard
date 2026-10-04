@@ -1,0 +1,57 @@
+FILE: E:\ENGINEERING_DATA\IHP Project Format\PR-12601 Cost Estmate.xlsx
+sheets: ['Cover page', 'COST ESTIMATE', 'take-off trade (2)']
+
+==========================================================================================
+SHEET: 'Cover page'  dims=C1:K38  max_row=38 max_col=11
+merged: ['F36:H36', 'E26:K26', 'F33:H33', 'J38:K38', 'C22:E22', 'J37:K37', 'E5:I5', 'C2:K2', 'I33:K33', 'C36:E36', 'C29:D29', 'G38:H38', 'C10:G10', 'F22:K24', 'G37:H37', 'C31:D31', 'C7:H7', 'E25:J25', 'D37:E37', 'E29:K29', 'C3:K3', 'D12:J15', 'I34:K34', 'C34:E34', 'F34:H34', 'E28:K28', 'F16:H16', 'C33:E33', 'E31:H31', 'I36:K36', 'D38:E38', 'H19:K19', 'E27:K27']
+freeze: None  auto_filter: None
+  C3=KAUST
+  C7=FM Project Request # | I7=12601
+  C10=TENDER DOCUMENTS:
+  D12=EAR COST ESTIMATE
+  F16=REVISION-0
+  H19=SUPPLY AND INSTALLATIONS
+
+==========================================================================================
+SHEET: 'COST ESTIMATE'  dims=A1:IV764  max_row=764 max_col=256
+merged: ['B4:B5', 'C4:C5', 'A4:A5', 'G1:H1', 'I2:J2', 'D4:D5', 'A3:J3', 'I1:J1']
+freeze: A7  auto_filter: None
+  A1=PR 12601  | B1=Installation of single phase 32A socket | G1=Date: | I1=2026-08-27 00:00:00
+  A2=LOCATION: | B2=Building 4, Level 3, Area 6, Rm# 4-3930
+  A3=EAR COST ESTIMATE
+  A4=REF | B4=DESCRIPTION | C4=Unit | D4=QTY | E4=SUPPLY | G4=INSTALLATION | I4=S. + I.
+  E5=U.P. | F5=TOTAL | G5=U.P. | H5=TOTAL | I5=UNIT PRICE | J5=TOTAL
+  A7=A | B7=Civil/Architectural
+  A8=1 | B8=Works under this section include but not limited to modif... | C8=ls | D8=1 | I8=0
+  A10=B | B10=Electrical
+  A11=1 | B11=Supply one (1) 63 A single-phase special socket outlet  w... | C11=Unit | D11=1 | E11= | F11= | G11= | H11= | I11=600 | J11==I11*D11
+  A12=2 | B12=Supply 40 A single phase circuit breaker. (GHB type) | C12=Unit | D12=1 | I12=1000 | J12==I12*D12
+  A13=3 | B13=Supply 8 AWG - THHN/THWN.Bahra - Black, Yellow-Green,  Blue | C13=Rol  | D13=3 | I13=1000 | J13==I13*D13
+  A14=4 | B14=Supply 1-inch EMT conduit with all required accessories. | C14=lot | D14=1 | E14= | F14= | G14= | H14= | I14=1500 | J14==I14*D14
+  A15=5 | B15=Supply 1-inch  EMT flexible conduit with all required acc... | C15=lot | D15=1 | I15=400 | J15==I15*D15
+  A16=6 | B16=Supply 40x40 unistrut channel.(Hilti) | C16=Unit | D16=1 | I16=550 | J16==I16*D16
+  A17=7 | B17=Supply 40x40 unistrut channel end cap.(Hilti) | C17=Pcs | D17=20 | I17=10 | J17==I17*D17
+
+==========================================================================================
+SHEET: 'take-off trade (2)'  dims=A1:AB1326  max_row=1326 max_col=28
+merged: ['A5:A6', 'N3:X3', 'N2:X2', 'C5:C6', 'E5:F6', 'B5:B6', 'D5:D6']
+freeze: None  auto_filter: None
+  A1=SAUDI OGER | T1=DATE:
+  A2=='COST ESTIMATE'!A2 | N2=QTY. SURVEYOR - D. DOMINGUEZ
+  A3=='COST ESTIMATE'!A3 | N3=TAKE-OFF QUANTITIES
+  A5=Ref. | B5=Description | C5=U | D5=Total | E5=DETAILS | G5=COMPUTATION | K5=Col
+  G6=Nb | H6=Length | I6=Width | J6=High | K6=N° | L6=COL1 | M6=COL2 | N6=COL3 | O6=COL4 | P6=COL5 | Q6=COL6 | R6=COL 1 | S6=COL 2 | T6=COL 3
+  L7==+IF($K7=1,PRODUCT($G7,$H7,$I7,$J7)," ") | M7==+IF($K7=2,PRODUCT($G7,$H7,$I7,$J7)," ") | N7==+IF($K7=3,PRODUCT($G7,$H7,$I7,$J7)," ") | O7==+IF($K7=4,PRODUCT($G7,$H7,$I7,$J7)," ") | P7==+IF($K7=5,PRODUCT($G7,$H7,$I7,$J7)," ") | Q7==+IF($K7=6,PRODUCT($G7,$H7,$I7,$J7)," ") | R7==+L7 | S7==+M7 | T7==+N7
+  K8=3 | L8==+IF($K8=1,PRODUCT($G8,$H8,$I8,$J8)," ") | M8==+IF($K8=2,PRODUCT($G8,$H8,$I8,$J8)," ") | N8==+IF($K8=3,PRODUCT($G8,$H8,$I8,$J8)," ") | O8==+IF($K8=4,PRODUCT($G8,$H8,$I8,$J8)," ") | P8==+IF($K8=5,PRODUCT($G8,$H8,$I8,$J8)," ") | Q8==+IF($K8=6,PRODUCT($G8,$H8,$I8,$J8)," ") | R8==+L8 | S8==+M8 | T8==+N8
+  K9=3 | L9==+IF($K9=1,PRODUCT($G9,$H9,$I9,$J9)," ") | M9==+IF($K9=2,PRODUCT($G9,$H9,$I9,$J9)," ") | N9==+IF($K9=3,PRODUCT($G9,$H9,$I9,$J9)," ") | O9==+IF($K9=4,PRODUCT($G9,$H9,$I9,$J9)," ") | P9==+IF($K9=5,PRODUCT($G9,$H9,$I9,$J9)," ") | Q9==+IF($K9=6,PRODUCT($G9,$H9,$I9,$J9)," ") | R9==+L9 | S9==+M9 | T9==+N9
+  K10=3 | L10==+IF($K10=1,PRODUCT($G10,$H10,$I10,$J10)," ") | M10==+IF($K10=2,PRODUCT($G10,$H10,$I10,$J10)," ") | N10==+IF($K10=3,PRODUCT($G10,$H10,$I10,$J10)," ") | O10==+IF($K10=4,PRODUCT($G10,$H10,$I10,$J10)," ") | P10==+IF($K10=5,PRODUCT($G10,$H10,$I10,$J10)," ") | Q10==+IF($K10=6,PRODUCT($G10,$H10,$I10,$J10)," ") | R10==+L10 | S10==+M10 | T10==+N10
+  K11=3 | L11==+IF($K11=1,PRODUCT($G11,$H11,$I11,$J11)," ") | M11==+IF($K11=2,PRODUCT($G11,$H11,$I11,$J11)," ") | N11==+IF($K11=3,PRODUCT($G11,$H11,$I11,$J11)," ") | O11==+IF($K11=4,PRODUCT($G11,$H11,$I11,$J11)," ") | P11==+IF($K11=5,PRODUCT($G11,$H11,$I11,$J11)," ") | Q11==+IF($K11=6,PRODUCT($G11,$H11,$I11,$J11)," ") | R11==+L11 | S11==+M11 | T11==+N11
+  K12=3 | L12==+IF($K12=1,PRODUCT($G12,$H12,$I12,$J12)," ") | M12==+IF($K12=2,PRODUCT($G12,$H12,$I12,$J12)," ") | N12==+IF($K12=3,PRODUCT($G12,$H12,$I12,$J12)," ") | O12==+IF($K12=4,PRODUCT($G12,$H12,$I12,$J12)," ") | P12==+IF($K12=5,PRODUCT($G12,$H12,$I12,$J12)," ") | Q12==+IF($K12=6,PRODUCT($G12,$H12,$I12,$J12)," ") | R12==+L12 | S12==+M12 | T12==+N12
+  K13=3 | L13==+IF($K13=1,PRODUCT($G13,$H13,$I13,$J13)," ") | M13==+IF($K13=2,PRODUCT($G13,$H13,$I13,$J13)," ") | N13==+IF($K13=3,PRODUCT($G13,$H13,$I13,$J13)," ") | O13==+IF($K13=4,PRODUCT($G13,$H13,$I13,$J13)," ") | P13==+IF($K13=5,PRODUCT($G13,$H13,$I13,$J13)," ") | Q13==+IF($K13=6,PRODUCT($G13,$H13,$I13,$J13)," ") | R13==+L13 | S13==+M13 | T13==+N13
+  K14=3 | L14==+IF($K14=1,PRODUCT($G14,$H14,$I14,$J14)," ") | M14==+IF($K14=2,PRODUCT($G14,$H14,$I14,$J14)," ") | N14==+IF($K14=3,PRODUCT($G14,$H14,$I14,$J14)," ") | O14==+IF($K14=4,PRODUCT($G14,$H14,$I14,$J14)," ") | P14==+IF($K14=5,PRODUCT($G14,$H14,$I14,$J14)," ") | Q14==+IF($K14=6,PRODUCT($G14,$H14,$I14,$J14)," ") | R14==+L14 | S14==+M14 | T14==+N14
+  K15=3 | L15==+IF($K15=1,PRODUCT($G15,$H15,$I15,$J15)," ") | M15==+IF($K15=2,PRODUCT($G15,$H15,$I15,$J15)," ") | N15==+IF($K15=3,PRODUCT($G15,$H15,$I15,$J15)," ") | O15==+IF($K15=4,PRODUCT($G15,$H15,$I15,$J15)," ") | P15==+IF($K15=5,PRODUCT($G15,$H15,$I15,$J15)," ") | Q15==+IF($K15=6,PRODUCT($G15,$H15,$I15,$J15)," ") | R15==+L15 | S15==+M15 | T15==+N15
+  K16=3 | L16==+IF($K16=1,PRODUCT($G16,$H16,$I16,$J16)," ") | M16==+IF($K16=2,PRODUCT($G16,$H16,$I16,$J16)," ") | N16==+IF($K16=3,PRODUCT($G16,$H16,$I16,$J16)," ") | O16==+IF($K16=4,PRODUCT($G16,$H16,$I16,$J16)," ") | P16==+IF($K16=5,PRODUCT($G16,$H16,$I16,$J16)," ") | Q16==+IF($K16=6,PRODUCT($G16,$H16,$I16,$J16)," ") | R16==+L16 | S16==+M16 | T16==+N16
+  K17=3 | L17==+IF($K17=1,PRODUCT($G17,$H17,$I17,$J17)," ") | M17==+IF($K17=2,PRODUCT($G17,$H17,$I17,$J17)," ") | N17==+IF($K17=3,PRODUCT($G17,$H17,$I17,$J17)," ") | O17==+IF($K17=4,PRODUCT($G17,$H17,$I17,$J17)," ") | P17==+IF($K17=5,PRODUCT($G17,$H17,$I17,$J17)," ") | Q17==+IF($K17=6,PRODUCT($G17,$H17,$I17,$J17)," ") | R17==+L17 | S17==+M17 | T17==+N17
+  K18=3 | L18==+IF($K18=1,PRODUCT($G18,$H18,$I18,$J18)," ") | M18==+IF($K18=2,PRODUCT($G18,$H18,$I18,$J18)," ") | N18==+IF($K18=3,PRODUCT($G18,$H18,$I18,$J18)," ") | O18==+IF($K18=4,PRODUCT($G18,$H18,$I18,$J18)," ") | P18==+IF($K18=5,PRODUCT($G18,$H18,$I18,$J18)," ") | Q18==+IF($K18=6,PRODUCT($G18,$H18,$I18,$J18)," ") | R18==+L18 | S18==+M18 | T18==+N18
+  K19=3 | L19==+IF($K19=1,PRODUCT($G19,$H19,$I19,$J19)," ") | M19==+IF($K19=2,PRODUCT($G19,$H19,$I19,$J19)," ") | N19==+IF($K19=3,PRODUCT($G19,$H19,$I19,$J19)," ") | O19==+IF($K19=4,PRODUCT($G19,$H19,$I19,$J19)," ") | P19==+IF($K19=5,PRODUCT($G19,$H19,$I19,$J19)," ") | Q19==+IF($K19=6,PRODUCT($G19,$H19,$I19,$J19)," ") | R19==+L19 | S19==+M19 | T19==+N19
+  K20=3 | L20==+IF($K20=1,PRODUCT($G20,$H20,$I20,$J20)," ") | M20==+IF($K20=2,PRODUCT($G20,$H20,$I20,$J20)," ") | N20==+IF($K20=3,PRODUCT($G20,$H20,$I20,$J20)," ") | O20==+IF($K20=4,PRODUCT($G20,$H20,$I20,$J20)," ") | P20==+IF($K20=5,PRODUCT($G20,$H20,$I20,$J20)," ") | Q20==+IF($K20=6,PRODUCT($G20,$H20,$I20,$J20)," ") | R20==+L20 | S20==+M20 | T20==+N20

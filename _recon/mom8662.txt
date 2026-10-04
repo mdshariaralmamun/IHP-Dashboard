@@ -1,0 +1,81 @@
+FILE: E:\ENGINEERING_DATA\IHP Project Format\MOM-PR8662 New Lab Space Modification, Building 4, Level 3, Area 3.pdf
+pages: 2
+metadata: {'/Author': 'hmshwa', '/CreationDate': "D:20240521113702+03'00'", '/ModDate': "D:20240521113702+03'00'", '/Producer': 'Microsoft: Print To PDF', '/Title': 'Microsoft Word - PR8662 New Lab Space Modification Building 4 Level 3 Area 3(MOM) (002)'}
+
+==========================================================================================
+### PAGE 1 TEXT ###
+ 
+ 
+ 
+KING ABDULLAH UNIVERSITY OF SCIENCE AND TECHNOLOGY  
+ FACILITIES MANAGEMENT KA-HBRP-G-MOM CLIENT / PROJECT 
+Minutes of Meeting Revision No.: 00 
+Project Number/Title   PR8662 New Lab Space Modification, Building 4, Level 3, Area 3 
+Meeting Title Site assessment   
+Meeting Location Building 4, Level 3, Area 3 Meeting Number 01 
+Date May 19 , 2024        Time 10 am to 11 am                                      
+ 
+Attendees: 
+Name Title Email 
+Moawya Ezet Masry Head Lab Equipment Projects • In-House Projects  moawya.masry@kaust.edu.sa 
+Assem Hamshou  Project planner, In-House Projects Assam.hmshw@kaust.edu.sa 
+Ahmed Eltaly Research Infrastructure Lead • Research Inf Strategy & 
+Planning ahmed.taly@kaust.edu.sa 
+Rizwana Inayat Research Project Coordinator • Biological & 
+Environmental Sc. and Eng rizwana.inayat@kaust.edu.sa 
+Pooja Thakur Research Assistant • Biological & Environmental Sc. 
+and Eng. pooja.thakur@kaust.edu.sa 
+Abdulkader rokaya Project Supervisor -MACC abdulkader.rokaya@macc-fm.com 
+Saju Thomas Lab Equipment Technician • In-House Projects saju.thomas@kaust.edu.sa 
+MohammedShariar 
+Mamun Mechanical Draft man In-House Projects mohammed.mamun@kaust.edu.sa 
+Chris Asis Lab Equipment Technician • In-House Projects chrisanto.asis@kaust.edu.sa 
+Agenda: 
+ 
+# Preliminary Scope of Work Action/Action by ETC 
+1 Supply and install the Clestra door and supporting panel 
+RISP to provide 
+the door and 
+supporting panel 
+           - 
+2 Remove the exhaust air cabinets. Maintain connected existing exhaust ducts Info - 
+3 
+Provide Power outlets electrical raceway 
+-Freezer 5 nos. (single phase 5 A) 
+-Refrigerant 2 nos. (single phase 5 A) 
+-Autoclave 1 nos.  (3 phase 20 A) 
+ 
+Constant climate chambers 1 nos. (single phase 16 A) 
+ 
+Provide Circuit breakers  
+-3ph 20 amp GHB type  1 no (Autoclave) 
+-1ph 20 amp GHB type 1 no(Constant climate chambers) 
+Info - 
+
+==========================================================================================
+### PAGE 2 TEXT ###
+ 
+ 
+ 
+KING ABDULLAH UNIVERSITY OF SCIENCE AND TECHNOLOGY  
+ FACILITIES MANAGEMENT KA-HBRP-G-MOM CLIENT / PROJECT 
+Minutes of Meeting Revision No.: 00 
+# Preliminary Scope of Work Action/Action by ETC 
+4  Lighting switch relocation  2 nos.  
+2 lighting circuits need to be provided for the new room Info - 
+5 
+Supply and install Floor Drain (FD10) for autoclave. 
+Supply and install CDA for Autoclave  
+Supply and install ROS/ROR for Autoclave  
+Supply and install CW for Autoclave and ice machine.  
+Supply and install ROS/ROR for ice machine. 
+flexible drain Connection for ice machine 
+FD10 connect to existing Lab Waste system in level 2 interstitial. 
+Info - 
+6 
+-Supply and installation of EX air valve in order to Make separate HVAC zone for dirty 
+lab. 
+-Air balancing  
+-LCS Programing  
+Info   
+ 

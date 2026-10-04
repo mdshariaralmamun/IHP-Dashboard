@@ -1,0 +1,76 @@
+FILE: E:\ENGINEERING_DATA\IHP_Projects\PR 10305 -  PGCL-PSI-Compressor-install condensation drain - John Rahmer EAR 10121\08_Handover_Docs\04_Tech_Library\TQ\PR10305-TQ-PL-001.0.pdf
+pages: 9
+metadata: {'/CreationDate': 'D:20251117073146Z', '/ModDate': 'D:20251117073146Z', '/Producer': 'PDFTron PDFNet, V11.8186\n'}
+
+==========================================================================================
+### PAGE 1 TEXT ###
+  Project: 10305 Installation of the Automatic
+condensation drain for PGCL-PSI-Compressor
+ 
+ 
+ 
+Submittal #PR10135-TQ-PL-001.0 - TQ for PR number to be updated and changed
+to 10305 instead of 10135 
+ 
+ 
+Distribution Summary
+Distributed by Atiqur Rehman Khan (In-House Projects) on Jul 30, 2025
+ 
+To Moawya Ezet Masry (In-House Projects), Mohammed Shariar AlMamun (In-House Projects), Assam Hamshou (In-House
+Projects), Mohammed Hajiali (In-House Projects), Prabhu Murugesan (In-House Projects),  Saju Thomas (In-House Projects),
+Abdullah Alnamnakani (In-House Projects), Atiqur Rehman Khan (In-House Projects), Pathan Gouse Karim Khan (In-House
+Projects), Mohamed Aboalhadid (In-House Projects), Hazem Elsobiehy (In-House Projects), Abdul Rahim (In-House Projects)
+Message None
+Attachments PR10135-TQ-PL-001.pdf 
+ 
+Name Response Attachments Comments
+Prabhu Murugesan (In-House Projects) Approved  
+Assam Hamshou (In-House Projects) Approved  
+ 
+Revision 0 Submittal Manager Atiqur Rehman Khan (In-House Projects)
+Status Closed Date Created Jul 29, 2025
+Issue Date Jul 29, 2025 Spec Section
+Responsible
+Contractor
+In-House Projects Received From Assam Hamshou (In-House Projects)
+Received Date Jul 29, 2025 Submit By Jul 29, 2025
+Final Due Date Jul 31, 2025 Lead Time
+Cost Code
+Location Building 2, Level 0, Area 4, LFO-132, Rm# 2-0730 Type T echnical Queries (TQ)
+Submittal Package  
+Approvers Assam Hamshou (In-House Projects), Prabhu Murugesan (In-House Projects)
+Ball in Court
+Distribution Abdul Rahim (In-House Projects), Abdullah Alnamnakani (In-House Projects), Assam Hamshou (In-House Projects), Atiqur
+Rehman Khan (In-House Projects), Hazem Elsobiehy (In-House Projects), Moawya Ezet Masry (In-House Projects), Mohamed
+Aboalhadid (In-House Projects), Mohammed Hajiali (In-House Projects), Mohammed Shariar AlMamun (In-House Projects),
+Pathan Gouse Karim Khan (In-House Projects), Prabhu Murugesan (In-House Projects),  Saju Thomas (In-House Projects)
+Description TQ for PR number to be updated and changed to 10305 instead of 10135.
+ 
+ 
+ADDITIONAL FIELDS
+Submittal Discipline PLUMBING Work Discipline
+ 
+ 
+ 
+ 
+Page 1 of 2 Printed On: Nov 17, 2025 10:31 AM +03
+   
+
+==========================================================================================
+### PAGE 2 TEXT ###
+Submittal Workflow
+Name Sent Date Due Date Returned Date Response Attachments
+General Information
+Attachments
+       
+PR10135-TQ-PL-001.pdf 
+Assam Hamshou Jul 29, 2025 Jul 31, 2025 Jul 29, 2025 Approved
+Prabhu Murugesan Jul 29, 2025 Jul 31, 2025 Jul 29, 2025 Approved
+Submittal #PR10135-TQ-PL-001.0 - TQ for PR number to be updated
+and changed to 10305 instead of 10135
+Project: 10305 Installation of the Automatic condensation drain for
+PGCL-PSI-Compressor
+ 
+ 
+Page 2 of 2 Printed On: Nov 17, 2025 10:31 AM +03
+   

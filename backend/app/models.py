@@ -138,6 +138,16 @@ class Project(Base):
         back_populates="project", order_by="ProjectTodo.id",
         cascade="all, delete-orphan",
     )
+    #: The PR data room: every raw file the engineer / PI / supplier sent.
+    sources: Mapped[list["SourceDocument"]] = relationship(
+        back_populates="project", order_by="SourceDocument.id",
+        cascade="all, delete-orphan",
+    )
+    #: Versioned AI readings of that data room.
+    source_briefs: Mapped[list["SourceBrief"]] = relationship(
+        back_populates="project", order_by="SourceBrief.id",
+        cascade="all, delete-orphan",
+    )
     plan_markers: Mapped[list["PlanMarker"]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
     )
@@ -914,4 +924,62 @@ class ProjectTodo(Base):
     )
 
     project: Mapped[Project] = relationship(back_populates="todos")
+
+class SourceDocument(Base):
+    """One raw file in a PR data room.
+
+    The engineer's raw data arrives in any format: the PR form, a utility
+    matrix, the technical specification, drawings, supplier quotations, PI
+    emails, costing sheets. The file is stored verbatim and its text is
+    cached next to it, so the AI can read it and the reviewer can see which
+    file said what. `category` mirrors the archive taxonomy the team already
+    files by (01_Initiation ... 11_Reports); `doc_type` is what the document
+    is.
+    """
+
+    __tablename__ = "source_documents"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    category: Mapped[str] = mapped_column(String(32), default="99_Unsorted", index=True)
+    doc_type: Mapped[str] = mapped_column(String(32), default="other", index=True)
+    filename: Mapped[str] = mapped_column(String(300))
+    stored_path: Mapped[str] = mapped_column(String(600))
+    #: Where the extracted plain text is cached (None when there is none).
+    text_path: Mapped[str | None] = mapped_column(String(600), nullable=True)
+    content_type: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    text_chars: Mapped[int] = mapped_column(Integer, default=0)
+    text_excerpt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    extraction_note: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    uploaded_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+    project: Mapped[Project] = relationship(back_populates="sources")
+
+
+class SourceBrief(Base):
+    """The AI's structured reading of a PR data room (one row per run).
+
+    Versioned: every analysis is kept, so a brief that contradicts the
+    previous one is visible instead of silently overwriting it. `payload`
+    holds scope-by-trade, the utility matrix, the line items, the open
+    technical questions and the documents the model actually saw.
+    """
+
+    __tablename__ = "source_briefs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    #: running | ready | failed
+    status: Mapped[str] = mapped_column(String(16), default="running", index=True)
+    model: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    project: Mapped[Project] = relationship(back_populates="source_briefs")
 

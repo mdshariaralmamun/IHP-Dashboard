@@ -1,0 +1,100 @@
+FILE: E:\ENGINEERING_DATA\IHP Project Format\PR-12557 Scope of Work Draft-Rev.-1.pdf
+pages: 19
+metadata: {'/Author': 'MohammedShariar Mamun', '/CreationDate': "D:20260817170240+03'00'", '/Creator': 'Adobe Acrobat (64-bit) 26.1.21771', '/ModDate': "D:20260827085627+03'00'", '/Producer': 'Adobe Acrobat (64-bit) 26.1.21771', '/Title': ''}
+
+==========================================================================================
+### PAGE 1 TEXT ###
+In House Projects 
+ 
+PROJECT SCOPE OF WORK 
+ 
+ 
+PR # 12557 
+EAR# 12518 
+Rev.-1 
+ 
+CT X-ray room modification (ASEPC) 
+Building  3 Level 0 Area 3 Rm#3-0132 
+ 
+ 
+1. Introduction 
+• King Abdullah University of Science & Technology (KAUST) intends to avail the 
+services CT X-ray room modification (ASEPC) at Building  3 Level 0 Area 3 Rm#3-
+0132. 
+2. Scope of Work 
+ Civil/Architectural 
+• Works under this section include but not limited to modification of the existing lab 
+caseworks, reworks, repairs, and repainting affected wall to match existing finish. Any 
+penetration on the fire rated wall, to be sealed with fire rated sealant. 
+Ceiling works: 
+• Supply and install acoustic ceiling tiles (Armstrong or any equivalent) 600mm x 
+600mmx 16mm with wet format mineral fiber, washable paint finish, white color, 75% 
+light reflectance or more, square-cut lay-in trimmed edges, NRC range 0.5-0.6, STC 
+range 35-39, surface burning class A per ASTM E1264 and fed. Spec. SS-S-
+characteristics 118B. Flame spread 25 or under UL labeled, with suspension system T 
+bar system, including all necessary galvanized steel main runners, cross runners, 
+hangers, U-shape slots/ UNISTRUT channels, splice plate, and all required 
+accessories, or any available and approved from KAUST. 
+ 
+Electrical 
+Power outlets: 
+• Relocate 2 duplex socket no. UN2400-PR-009-CKT-04 to be behind the PC. 
+• Supply and install 12 AWG - THHN/THWN wires as required.  
+• Supply and install Belden-9841and Belden-5341fe for the VAVs and the thermostats. 
+• Supply and install 1-inch EMT conduit with required accessories. 
+• Supply and install 1-inch flexible EMT conduit with required accessories. 
+• Testing & commissioning (Continuity/Insulation Test, Volt metering Test), tagging for 
+all electrical points (for cables & color coding/conduits/panel board &conduits 
+grounding) shall be provided with Panel board updated termination schedule as per 
+KAUST procedure. 
+ 
+ 
+
+==========================================================================================
+### PAGE 2 TEXT ###
+In House Projects 
+ 
+PROJECT SCOPE OF WORK 
+ 
+ 
+PR # 12557 
+EAR# 12518 
+Rev.-1 
+ 
+CT X-ray room modification (ASEPC) 
+Building  3 Level 0 Area 3 Rm#3-0132 
+ 
+ 
+Lighting: 
+• Dismantle the existing lighting fixtures and Supply and install (15) lighting fixtures 
+60cmx60cm to be connected to the same lighting circuits. 
+• Testing & commissioning (Continuity/Insulation Test, Volt metering Test), tagging for 
+all electrical points (for cables & color coding/conduits/panel board &conduits 
+grounding) shall be provided with Panel board updated termination schedule as per 
+KAUST procedure. 
+ 
+Low Current / Telecommunication 
+• (Not Seen) 
+ 
+Plumbing 
+• (Not Seen) 
+ 
+HVAC 
+• Relocate the existing VAV box (11-19), including all necessary modifications and 
+extensions to the associated ductwork as per drawings . 
+• Relocate the existing VAV room thermostat to the CT X-Ray Room (011-019). 
+• Supply and install GI circular ductwork (Ø300 mm to Ø500 mm), complete with all 
+fittings, supports, hangers, sealants, and accessories required for a complete 
+installation. 
+• Supply and install of fiberglass insulation 24k.g/m3 , 50mm thickness  
+• Supply and install six (6) ceiling-mounted supply air diffusers, size 600 × 600 mm, 
+complete with volume control dampers (VCDs) and plenum box . 
+• Supply and install three (3) ceiling-mounted return air diffusers, size 600 × 600 mm. 
+• Supply and install four (4) additional volume control dampers (VCDs) as required for 
+air balancing. 
+• Supply and install two (2) transfer grilles, size 400 × 400 mm, complete with all 
+required accessories. 
+• Modify, configure, and integrate the HVAC control system with the existing IKAS 
+Building system  
+• Perform Testing, Adjusting, and Balancing (TAB) to achieve the specified airflow 
+rates and design conditions. 

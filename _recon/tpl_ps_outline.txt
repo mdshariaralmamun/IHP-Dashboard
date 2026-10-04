@@ -1,0 +1,55 @@
+FILE: E:\ENGINEERING_DATA\IHP_Projects\General Template- internal\Template\Project Summary\Project Summary (PR ----).docx
+====================================================================================================
+
+### OUTLINE (paragraphs with style Heading 1/2/3 or Title, in order) ###
+[Heading 3] To: 
+
+Heading style counts: {'Heading 3': 1}
+
+### ALL NON-EMPTY PARAGRAPHS WITH STYLE (first 200) ###
+   0 <Normal> Date 16-9-2024.
+   1 <Heading 3> To:
+   2 <List Paragraph> Introduction
+   4 <Default> King Abdullah University of Science & Technology (KAUST) intends to avail of the Gas Station in FLOC 2-4640 for anaerobic microbial cultivation Building 2 Level 4 Area 1 RM#2-4640.
+   6 <Default> General Scope of Work
+   7 <Default> Architectural / Civil
+   8 <List Paragraph> Works under this section include but not limited to modification of the existing gypsum board wall, reworks, repairs, and repainting affected wall to match existing finish. Any penetration on the fire rated wall, to be sealed with fire rated sealant.
+  10 <Default> Plumbing
+  11 <List Paragraph> Supply and install stainless Steel 1-Piece 40G Series Vented Ball Valve, 1.4 Cv, 1/4 in. Swagelok Tube Fitting (Part #: SS-43GVS4)
+  12 <List Paragraph> Supply and install single-stage, for inert, reactive, flammable and oxidizing gases and gas mixtures, purity max. 6.0. EMD 3100: Inlet pressure 40 bar, Outlet pressure 0.1 – 10 bar, EMD 3104 (analytic version): Inlet pressure 12 bar, Outlet pressure 0.1 – 4.4 bar
+  13 <List Paragraph> Supply and install stainless Steel Swagelok Tube Fitting, Union Tee, 1/4 in. Tube OD (Part #: SS-400-3)
+  14 <List Paragraph> Supply and install stainless Steel Swagelok Tube Fitting, Reducing Union, 1/4 in. x 1/8 in. Tube OD (Part #: SS-400-6-2)
+  15 <List Paragraph> Supply and install SS 1/8”  piping TCC,model: T1-02 Dokweiler
+  16 <List Paragraph> Supply and install SS 1/4” piping TCC,model: T1-04 Dokweiler
+  17 <List Paragraph> Supply and install stauff Pipe Clamps 106.4-PP-H
+  18 <List Paragraph> Supply and install stauff Screws IS-M6X20-ISO4762-8.8-W3
+  19 <List Paragraph> Supply and install TS11A/B2X Parker EO MOUNTING RAIL 11mm X 2MTR GE
+  21 <List Paragraph> Current Project Budget Estimate:
+  22 <Normal> *Budget does not include VAT
+  23 <List Paragraph> Project Schedule:
+  24 <List Paragraph> The IHP will participate in the management of the construction activities with the oversight of the construction works required. The KAUST IHP will also oversee and coordinate the IHP Equipment team for associated installation.
+  25 <List Paragraph> Approximate Milestones and Durations:
+  32 <List Paragraph> Should there be any concerns, please do not hesitate to contact me. Thank you.
+
+### TABLES ###
+total tables: 3
+
+--- TABLE 0 : rows=5 cols=2 ---
+  R0: ['Project Reference:', 'PR 29271 Gas Station in FLOC 2-4640 for anaerobic microbial cultivation']
+  R1: ['Division:', 'BESE']
+  R2: ['Customer / Proponent:', '']
+  R3: ['Contact:', 'paula.garciamartinez@kaust.edu.sa /']
+  ... (1 more rows)
+
+--- TABLE 1 : rows=4 cols=2 ---
+  R0: ['Scope:', 'Attached']
+  R1: ['TOTAL ESTIMATED PROJECT COST:', '']
+  R2: ['/ Scope:', 'Construction: Construction, Testing and Commissioning, Project Hand Over']
+  R3: ['WBS:', 'BAS/1/1096/01-01']
+
+--- TABLE 2 : rows=5 cols=2 ---
+  R0: ['Detailed Design', '1 Weeks']
+  R1: ['Materials Order and Delivery', '8 Weeks']
+  R2: ['Construction Works', '2 Weeks']
+  R3: ['Handing over', '1 Week']
+  ... (1 more rows)

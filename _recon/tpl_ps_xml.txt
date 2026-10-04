@@ -1,0 +1,72 @@
+FILE: E:\ENGINEERING_DATA\IHP_Projects\General Template- internal\Template\Project Summary\Project Summary (PR ----).docx
+====================================================================================================
+
+### ZIP PARTS ###
+  [Content_Types].xml  (3381 bytes)
+  _rels/.rels  (737 bytes)
+  word/document.xml  (67611 bytes)
+  word/_rels/document.xml.rels  (2375 bytes)
+  word/footnotes.xml  (3120 bytes)
+  word/endnotes.xml  (3112 bytes)
+  word/header1.xml  (5686 bytes)
+  word/footer1.xml  (3531 bytes)
+  word/_rels/header1.xml.rels  (289 bytes)
+  word/media/image1.png  (8894 bytes)
+  word/theme/theme1.xml  (6992 bytes)
+  word/settings.xml  (23967 bytes)
+  word/glossary/settings.xml  (4460 bytes)
+  word/glossary/document.xml  (4467 bytes)
+  word/glossary/_rels/document.xml.rels  (685 bytes)
+  customXml/item4.xml  (306 bytes)
+  customXml/itemProps4.xml  (341 bytes)
+  word/numbering.xml  (95324 bytes)
+  word/styles.xml  (42293 bytes)
+  word/webSettings.xml  (12562 bytes)
+  word/glossary/styles.xml  (30295 bytes)
+  customXml/item1.xml  (290 bytes)
+  word/glossary/webSettings.xml  (976 bytes)
+  word/glossary/fontTable.xml  (3833 bytes)
+  customXml/itemProps1.xml  (425 bytes)
+  docProps/core.xml  (722 bytes)
+  docProps/app.xml  (993 bytes)
+  docProps/custom.xml  (1024 bytes)
+  customXml/item2.xml  (11716 bytes)
+  customXml/itemProps2.xml  (1149 bytes)
+  customXml/_rels/item1.xml.rels  (296 bytes)
+  customXml/_rels/item2.xml.rels  (296 bytes)
+  customXml/_rels/item3.xml.rels  (296 bytes)
+  customXml/_rels/item4.xml.rels  (296 bytes)
+  customXml/item3.xml  (219 bytes)
+  customXml/itemProps3.xml  (335 bytes)
+  word/fontTable.xml  (3379 bytes)
+
+### FIELD / MERGE MARKERS in document.xml ###
+  MERGEFIELD: 0 occurrence(s)
+  fldSimple: 0 occurrence(s)
+  w:sdt: 21 occurrence(s)
+  w:sdtPr: 6 occurrence(s)
+  w:instrText: 0 occurrence(s)
+  fldChar: 0 occurrence(s)
+  w:dataBinding: 0 occurrence(s)
+  SHAPE: 0 occurrence(s)
+  w:fldChar: 0 occurrence(s)
+
+### instrText CONTENTS (document.xml) ###
+
+### MERGEFIELD names in document order ###
+
+### sdt blocks (content controls) ###
+  ---- sdt at 5082 ----
+     text: BESE
+  ---- sdt at 12703 ----
+     text:  
+  ---- sdt at 35834 ----
+     text: </w:sdtPr><w:sdtEndPr/><w:sdtContent><w:r w:rsidR="0053166D" w:rsidRPr="0053166D"><w:rPr><w:b/><w:bCs/><w:color w:val="000000"/></w:rPr><w:t>$ |  4,000
+
+### HEADERS / FOOTERS ###
+  -- word/header1.xml --
+     text: In-House Projects | Facilities |   | Management
+     PAGE field: False, NUMPAGES: False, MERGEFIELD: False
+  -- word/footer1.xml --
+     text:      | PR 29271  | Gas Station in FLOC 2-4640 for anaerobic microbial cultivation
+     PAGE field: False, NUMPAGES: False, MERGEFIELD: False
