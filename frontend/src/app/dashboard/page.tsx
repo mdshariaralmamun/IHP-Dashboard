@@ -11,6 +11,16 @@ import type { TrackerSources } from '@/lib/api';
 import { canDo, useUser } from '@/lib/useUser';
 import { EAR_STATUS_LABELS, EAR_STATUS_ORDER, PHASES, PRIORITY_STYLES } from '@/lib/types';
 import type { ProjectSummary } from '@/lib/types';
+import {
+  BarList,
+  DataTable,
+  Donut,
+  KpiCard,
+  PBI_COLORS,
+  PbiCanvas,
+  SlicerBar,
+  VisualCard,
+} from '@/components/powerbi/PowerBI';
 
 /**
  * Dashboard tile order — the Planner's own lifecycle buckets, in delivery
@@ -45,6 +55,10 @@ function BucketDashboard() {
   const [consistency, setConsistency] = useState<ConsistencyResponse | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Power BI overview: the slicers that drive the cross-filtering register.
+  const [biPhase, setBiPhase] = useState<string[]>([]);
+  const [biBucket, setBiBucket] = useState<string[]>([]);
+  const [biQuery, setBiQuery] = useState('');
 
   const load = useCallback(() => {
     listProjects()
@@ -191,6 +205,57 @@ function BucketDashboard() {
   // Bucketed = rows carrying a Planner bucket in the current snapshot.
   const bucketed = Object.values(bucketCounts).reduce((a, b) => a + b, 0);
 
+  // ---- Power BI overview: one cross-filtering surface over the register ----
+  const toggleBi = (list: string[], set: (v: string[]) => void, key: string) =>
+    set(list.includes(key) ? list.filter((k) => k !== key) : [...list, key]);
+
+  const clearBi = () => {
+    setBiPhase([]);
+    setBiBucket([]);
+    setBiQuery("");
+  };
+
+  // The equipment/ICR branch lives in the O&M tracker, not the Planner.
+  const icrCount = (omActive?.items ?? []).filter((i) => i.app_disposition === "ICR").length;
+
+  const biRows = useMemo(() => {
+    const q = biQuery.trim().toLowerCase();
+    return live
+      .filter((p) => biPhase.length === 0 || biPhase.includes(p.phase ?? ""))
+      .filter((p) => biBucket.length === 0 || biBucket.includes(p.planner_bucket ?? ""))
+      .filter((p) =>
+        !q
+          ? true
+          : (p.pr_number + " " + p.title + " " + (p.pi_name ?? "") + " " + (p.location ?? ""))
+              .toLowerCase()
+              .indexOf(q) >= 0,
+      )
+      .slice(0, 60);
+  }, [live, biPhase, biBucket, biQuery]);
+
+  const biPriority = Object.entries(priorityCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, value], i) => ({
+      key: label,
+      label,
+      value,
+      color: PBI_COLORS[(i + 2) % PBI_COLORS.length],
+    }));
+
+  const biBuckets = BUCKETS.filter((b) => (bucketCounts[b.key] ?? 0) > 0).map((b, i) => ({
+    key: b.key,
+    label: b.label,
+    value: bucketCounts[b.key] ?? 0,
+    color: PBI_COLORS[i % PBI_COLORS.length],
+  }));
+
+  const biPhases = PHASES.map((ph, i) => ({
+    key: ph.key,
+    label: ph.label,
+    value: counts[ph.key] ?? 0,
+    color: PBI_COLORS[i % PBI_COLORS.length],
+  }));
+
   return (
     <div className="min-h-screen bg-apple-surface/50">
       <Header user={user} />
@@ -332,6 +397,147 @@ function BucketDashboard() {
         {!projects && !error && (
           <p className="text-sm text-apple-muted">Loading projects…</p>
         )}
+
+        {/* ---- Power BI-style overview: every visual cross-filters the register ---- */}
+        <PbiCanvas>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+            <KpiCard
+              label="Live projects"
+              value={total}
+              hint={bucketed + " in a Planner bucket"}
+              accent="navy"
+              icon="📊"
+              active={biPhase.length === 0 && biBucket.length === 0 && biQuery.trim() === ""}
+              onClick={clearBi}
+            />
+            {PHASES.map((ph, i) => (
+              <KpiCard
+                key={ph.key}
+                label={ph.label}
+                value={counts[ph.key] ?? 0}
+                hint={ph.hint}
+                accent={["blue", "violet", "orange", "green"][i % 4]}
+                active={biPhase.includes(ph.key)}
+                onClick={() => toggleBi(biPhase, setBiPhase, ph.key)}
+              />
+            ))}
+            <KpiCard
+              label="ICR (O&M)"
+              value={icrCount}
+              hint="equipment branch — not counted above"
+              accent="pink"
+              href="/dashboard/active-prs"
+            />
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-sm dark:border-white/10 dark:bg-white/[0.04]">
+            <SlicerBar
+              label="Division"
+              items={biPhases}
+              selected={biPhase}
+              onToggle={(k) => toggleBi(biPhase, setBiPhase, k)}
+              onClear={() => setBiPhase([])}
+            />
+            <span className="hidden h-5 w-px bg-slate-200 dark:bg-white/10 sm:block" />
+            <SlicerBar
+              label="Bucket"
+              items={biBuckets}
+              selected={biBucket}
+              onToggle={(k) => toggleBi(biBucket, setBiBucket, k)}
+              onClear={() => setBiBucket([])}
+            />
+            <input
+              value={biQuery}
+              onChange={(e) => setBiQuery(e.target.value)}
+              placeholder="Search PR, title, PI, location…"
+              className="ml-auto w-full max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-apple-text outline-none focus:border-primary dark:border-white/10 dark:bg-white/5"
+            />
+          </div>
+
+          <div className="mt-3 grid gap-3 lg:grid-cols-3">
+            <VisualCard title="Project divisions" subtitle="click a slice to filter the register">
+              <Donut
+                items={biPhases}
+                selected={biPhase}
+                onSelect={(k) => toggleBi(biPhase, setBiPhase, k)}
+                centerLabel="projects"
+              />
+            </VisualCard>
+            <VisualCard title="Planner buckets" subtitle="the Planner lifecycle, in delivery order">
+              <BarList items={biBuckets} selected={biBucket} onSelect={(k) => toggleBi(biBucket, setBiBucket, k)} />
+            </VisualCard>
+            <VisualCard title="Priority" subtitle="from the Planner notes and labels">
+              <BarList items={biPriority} />
+            </VisualCard>
+          </div>
+
+          <VisualCard
+            className="mt-3"
+            title={"Register — " + biRows.length + " of " + total + " live projects"}
+            subtitle={
+              biPhase.length || biBucket.length || biQuery.trim()
+                ? "filtered" +
+                  (biPhase.length ? " · " + biPhase.join(", ") : "") +
+                  (biBucket.length ? " · " + biBucket.join(", ") : "") +
+                  (biQuery.trim() ? ' · "' + biQuery + '"' : "")
+                : "click any row to open the project"
+            }
+            actions={
+              (biPhase.length > 0 || biBucket.length > 0 || biQuery.trim() !== "") && (
+                <button
+                  type="button"
+                  onClick={clearBi}
+                  className="rounded border border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-500 hover:bg-slate-50 dark:border-white/10"
+                >
+                  Clear filters
+                </button>
+              )
+            }
+          >
+            <DataTable
+              rows={biRows}
+              hrefFor={(p) => "/projects/" + p.id}
+              empty="No live project matches this selection."
+              columns={[
+                {
+                  key: "pr",
+                  label: "PR",
+                  render: (p) => <span className="font-mono font-semibold">{p.pr_number}</span>,
+                },
+                {
+                  key: "title",
+                  label: "Title",
+                  render: (p) => (
+                    <span className="block max-w-[26rem] truncate" title={p.title}>
+                      {p.title}
+                    </span>
+                  ),
+                },
+                { key: "phase", label: "Division", render: (p) => p.phase ?? "—" },
+                { key: "bucket", label: "Bucket", render: (p) => p.planner_bucket ?? "—" },
+                { key: "stage", label: "Stage", render: (p) => p.stage.replace(/_/g, " ") },
+                { key: "pi", label: "PI", render: (p) => p.pi_name ?? "—" },
+                {
+                  key: "priority",
+                  label: "Priority",
+                  render: (p) =>
+                    p.priority ? (
+                      <span
+                        className={
+                          "rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset " +
+                          (PRIORITY_STYLES[p.priority.toLowerCase()] ?? "bg-gray-100 text-gray-700 ring-gray-300")
+                        }
+                      >
+                        {p.priority}
+                      </span>
+                    ) : (
+                      "—"
+                    ),
+                },
+              ]}
+            />
+          </VisualCard>
+        </PbiCanvas>
 
         {/* The three lifecycle divisions — click to drill into the register */}
         <div>

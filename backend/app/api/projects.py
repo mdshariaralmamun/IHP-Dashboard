@@ -428,6 +428,10 @@ def om_active_prs(
         elif not d["in_planner"] and r.source_tab == "Active Project Assessment PRs":
             d["tag"] = "Upcoming EAR"
             upcoming_ear += 1
+        elif d["app_disposition"] == "ICR":
+            # Construction work on the equipment tab: it is in the register as
+            # an ICR project even when the Planner never carried it.
+            d["tag"] = "In app · ICR"
         elif d["in_planner"]:
             d["tag"] = "In Planner"
         else:

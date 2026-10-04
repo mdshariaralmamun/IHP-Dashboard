@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import { getOmActivePrs, pullIcrProjects } from '@/lib/api';
 import type { OmActiveResponse, OmActivePr, PullIcrResponse } from '@/lib/api';
 import { useUser } from '@/lib/useUser';
+import { KpiCard } from '@/components/powerbi/PowerBI';
 
 /** Category -> label + colours. Equipment work is NOT part of IHP counts. */
 const CATEGORY_META: Record<string, { label: string; hint: string; cls: string }> = {
@@ -86,6 +87,7 @@ function ActivePrs() {
   }, [data]);
 
   const s = data?.summary ?? {};
+  const icrInApp = (data?.items ?? []).filter((i) => i.app_disposition === 'ICR').length;
   const order = ['CONSTRUCTION', 'EQUIPMENT_INSTALLATION', 'EQUIPMENT_ASSESSMENT', 'ASEPC_PROPOSAL', 'ICR', 'UNKNOWN'];
 
   return (
@@ -182,36 +184,31 @@ function ActivePrs() {
 
         {data && (
           <>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-                <div className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                  IHP active (counted)
-                </div>
-                <div className="mt-1 text-3xl font-bold tabular-nums text-emerald-800">
-                  {s.ihp_active_count ?? 0}
-                </div>
-                <p className="mt-1 text-[11px] text-emerald-700">Construction Projects</p>
-              </div>
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
-                <div className="text-xs font-semibold uppercase tracking-wide text-amber-700">
-                  Equipment installation (excluded)
-                </div>
-                <div className="mt-1 text-3xl font-bold tabular-nums text-amber-800">
-                  {s.equipment_branch_count ?? 0}
-                </div>
-                <p className="mt-1 text-[11px] text-amber-700">
-                  Installation + lab-equipment assessment — no modification, no utility tie-in
-                </p>
-              </div>
-              <div className="rounded-2xl border border-purple-200 bg-purple-50 p-5">
-                <div className="text-xs font-semibold uppercase tracking-wide text-purple-700">
-                  ASEPC proposals
-                </div>
-                <div className="mt-1 text-3xl font-bold tabular-nums text-purple-800">
-                  {s.assessment_count ?? 0}
-                </div>
-                <p className="mt-1 text-[11px] text-purple-700">Assessment / proposal stage</p>
-              </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <KpiCard
+                label="IHP active"
+                value={s.ihp_active_count ?? 0}
+                hint="construction projects (counted)"
+                accent="green"
+              />
+              <KpiCard
+                label="In app as ICR"
+                value={icrInApp}
+                hint="pulled from the equipment tab"
+                accent="teal"
+              />
+              <KpiCard
+                label="Equipment installation"
+                value={s.equipment_branch_count ?? 0}
+                hint="no modification / utility tie-in"
+                accent="orange"
+              />
+              <KpiCard
+                label="ASEPC proposals"
+                value={s.assessment_count ?? 0}
+                hint="assessment / proposal stage"
+                accent="violet"
+              />
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs">
@@ -289,7 +286,9 @@ function ActivePrs() {
                                   ? 'rounded-full bg-purple-100 px-2 py-0.5 font-semibold text-purple-800'
                                   : (r as { tag?: string }).tag === 'Equipment installation'
                                     ? 'rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-800'
-                                    : 'rounded-full bg-apple-surface px-2 py-0.5 text-apple-muted'
+                                    : (r as { tag?: string }).tag === 'In app · ICR'
+                                      ? 'rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-800'
+                                      : 'rounded-full bg-apple-surface px-2 py-0.5 text-apple-muted'
                               }
                             >
                               {(r as { tag?: string }).tag}
