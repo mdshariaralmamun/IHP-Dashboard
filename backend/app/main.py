@@ -159,6 +159,8 @@ def create_app() -> FastAPI:
     # detail catch-all so /api/projects/{id}/next-step resolves here.
     app.include_router(planning.router, prefix="/api")
     app.include_router(planning.todos_router, prefix="/api")
+    # PI / requester directory (derived from the register).
+    app.include_router(planning.contacts_router, prefix="/api")
     # The PR data room: raw source files, their extracted text and the AI brief.
     app.include_router(sources.router, prefix="/api")
     app.include_router(sources.sources_router, prefix="/api")

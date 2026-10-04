@@ -63,6 +63,7 @@ const NAV_MENUS: NavMenu[] = [
     label: 'Projects',
     items: [
       { label: 'Project Register', href: '/projects', hint: 'All projects, search & filters' },
+      { label: 'PI Directory', href: '/contacts', hint: 'PI / requester name and email per PR' },
       { label: 'New Project', href: '/projects/new', hint: 'Create a project manually' },
       { label: 'Tracker Upload & Sync', href: '/upload', hint: 'Publish the Planner / O&M tracker, review conflicts' },
     ],

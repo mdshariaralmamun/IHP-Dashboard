@@ -814,6 +814,33 @@ export interface OmActiveResponse {
   items: OmActivePr[];
 }
 
+export interface ContactProject {
+  id: number;
+  pr_number: string;
+  title: string;
+  stage: string;
+  disposition: string | null;
+}
+
+export interface Contact {
+  name: string;
+  email: string;
+  project_count: number;
+  active_count: number;
+  projects: ContactProject[];
+}
+
+export interface ContactList {
+  total: number;
+  with_email: number;
+  contacts: Contact[];
+}
+
+/** The PI / requester directory, derived from the register. */
+export function listContacts(q = ''): Promise<ContactList> {
+  return request<ContactList>('/api/contacts' + (q ? '?q=' + encodeURIComponent(q) : ''));
+}
+
 export function getOmActivePrs(): Promise<OmActiveResponse> {
   return request<OmActiveResponse>('/api/projects/om-active');
 }

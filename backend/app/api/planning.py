@@ -518,3 +518,63 @@ def cancel_draft(project: Project, reason: str, justification: str) -> tuple[str
         "Kind regards,\nIHP Design and Construction"
     )
     return subject, body
+contacts_router = APIRouter(prefix="/contacts", tags=["contacts"])
+
+
+@contacts_router.get("")
+def list_contacts(
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+    q: str | None = Query(None, description="Search a name or an email"),
+    limit: int = Query(500, ge=1, le=2000),
+):
+    """The PI / requester directory, derived from the register.
+
+    Every PR names the person who owns it (`pi_name` + `pi_email`, or the
+    Planner's Requestor line). Grouping those into one row per person gives
+    the directory the TQ and EAR mail address - no separate list to maintain,
+    and it can never drift from the register.
+    """
+    projects = db.scalars(select(Project).order_by(Project.id.desc())).all()
+    people: dict[tuple[str, str], dict[str, Any]] = {}
+    for project in projects:
+        name = (project.pi_name or "").strip()
+        email = (project.pi_email or "").strip()
+        if not name and not email:
+            continue
+        key = (name.lower(), email.lower())
+        entry = people.setdefault(
+            key,
+            {
+                "name": name,
+                "email": email,
+                "project_count": 0,
+                "active_count": 0,
+                "projects": [],
+            },
+        )
+        entry["project_count"] += 1
+        if project.stage not in ("CLOSEOUT", "PUNCH_LIST", "ICR_DONE", "CANCELLED"):
+            entry["active_count"] += 1
+        entry["projects"].append(
+            {
+                "id": project.id,
+                "pr_number": project.pr_number,
+                "title": project.title,
+                "stage": project.stage,
+                "disposition": project.disposition,
+            }
+        )
+    needle = (q or "").strip().lower()
+    out = []
+    for entry in people.values():
+        if needle and needle not in entry["name"].lower() and needle not in entry["email"].lower():
+            continue
+        entry["projects"] = entry["projects"][:20]
+        out.append(entry)
+    out.sort(key=lambda e: (-e["active_count"], -e["project_count"], e["name"].lower()))
+    return {
+        "total": len(out),
+        "with_email": sum(1 for e in out if e["email"]),
+        "contacts": out[:limit],
+    }
