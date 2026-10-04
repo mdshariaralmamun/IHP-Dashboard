@@ -47,3 +47,4 @@ patch.py
 # Files that contained real API keys - never commit these.
 claude-failover.js
 run-claude-openrouter.ps1
+.scratch/
