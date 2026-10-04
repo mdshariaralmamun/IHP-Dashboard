@@ -172,6 +172,28 @@ def _labels_to_tokens(label_str: str | None) -> tuple[str | None, str | None]:
     return trade, type_
 
 
+#: Columns read from a tracker sheet. Generous enough for every parser here
+#: (the widest needs 33) without materialising the 227-column sheets in the
+#: O&M workbook, which is what exhausted memory before.
+MAX_COLUMNS = 40
+
+
+def resolve_sheet_name(names: list[str], sheet: str) -> str | None:
+    """The workbook's real name for `sheet`, tolerating case and stray space.
+
+    The O&M tabs are stored with TRAILING SPACES ("Active Equipment PRs "),
+    which a plain `sheet in names` misses. The old fallback then read
+    sheet[0] - a 2750 x 16333 scratch dump - and the container was killed
+    parsing it, taking every O&M feature with it.
+    """
+    if sheet in names:
+        return sheet
+    wanted = sheet.strip().casefold()
+    for name in names:
+        if name.strip().casefold() == wanted:
+            return name
+    return None
+
 def sheet_rows(path: Path | str, sheet: str, start_row: int = 2,
                min_cols: int = 0) -> list[list[Any]]:
     """Data rows of one sheet from EITHER an .xlsx or a .md tracker export.
@@ -186,15 +208,27 @@ def sheet_rows(path: Path | str, sheet: str, start_row: int = 2,
     if path.suffix.lower() == ".md":
         rows = md_sheet(path, sheet)
     else:
-        wb = openpyxl.load_workbook(path, data_only=True)
-        if sheet in wb.sheetnames:
-            ws = wb[sheet]
-        else:
-            ws = wb[wb.sheetnames[0]]
-        rows = [
-            [ws.cell(r, c).value for c in range(1, ws.max_column + 1)]
-            for r in range(start_row, ws.max_row + 1)
-        ]
+        # read_only: the O&M workbook declares sheets up to 2750 x 16333
+        # cells, and loading that in normal mode exhausts the container.
+        wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
+        try:
+            resolved = resolve_sheet_name(wb.sheetnames, sheet)
+            if resolved is None:
+                raise KeyError(
+                    f"sheet {sheet!r} not in {list(wb.sheetnames)}"
+                )
+            ws = wb[resolved]
+            width = max(min_cols, MAX_COLUMNS)
+            rows = []
+            for row in ws.iter_rows(
+                min_row=start_row, max_col=width, values_only=True
+            ):
+                padded = list(row[:width])
+                while len(padded) < width:
+                    padded.append(None)
+                rows.append(padded)
+        finally:
+            wb.close()
     if min_cols:
         for row in rows:
             while len(row) < min_cols:
@@ -337,10 +371,12 @@ def parse_om(path: Path, sheet: str = " In House Projects") -> list[OmRow]:
     """
     path = Path(path)
     if path.suffix.lower() != ".md":
-        wb = openpyxl.load_workbook(path, data_only=True)
-        if sheet not in wb.sheetnames:
+        wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
+        names = list(wb.sheetnames)
+        wb.close()
+        if resolve_sheet_name(names, sheet) is None:
             raise ValueError(
-                f"O&M sheet {sheet!r} not found. Available: {wb.sheetnames}")
+                f"O&M sheet {sheet!r} not found. Available: {names}")
 
     out: list[OmRow] = []
     # xlsx: header is row 1, data from row 2. md: header already stripped.
