@@ -1,6 +1,6 @@
 """add the materials take-off draft table
 
-Revision ID: a1b2c3d4e5f6
+Revision ID: 20261004_1540
 Revises: f3a4b5c6d7e8
 Create Date: 2026-10-04 15:40:00.000000
 
@@ -12,7 +12,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = 'a1b2c3d4e5f6'
+revision: str = '20261004_1540'
 down_revision: str | None = 'f3a4b5c6d7e8'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
