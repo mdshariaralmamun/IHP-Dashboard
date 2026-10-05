@@ -23,6 +23,7 @@ import TrackingShare from '@/components/TrackingShare';
 import StageChangePanel from '@/components/project/StageChangePanel';
 import NextStepCard from '@/components/project/NextStepCard';
 import SourceRoomCard from '@/components/project/SourceRoomCard';
+import MaterialPicker from '@/components/project/MaterialPicker';
 import AiReviewCard from '@/components/project/AiReviewCard';
 import PlanMarkersCard from '@/components/project/PlanMarkersCard';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
@@ -257,6 +258,11 @@ function ProjectDetailView() {
                 reduced to text and read by the AI into a structured brief. */}
             <div className="mb-6">
               <SourceRoomCard projectId={project.id} canEdit={canEditProject} />
+            </div>
+
+            {/* The materials list: pick the MTO rows out of the price master. */}
+            <div className="mb-6">
+              <MaterialPicker projectId={project.id} />
             </div>
 
             {/* The plan and its pins: the drawing the project is really about. */}

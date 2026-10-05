@@ -841,6 +841,69 @@ export function listContacts(q = ''): Promise<ContactList> {
   return request<ContactList>('/api/contacts' + (q ? '?q=' + encodeURIComponent(q) : ''));
 }
 
+export interface PricedMaterial {
+  id: number;
+  item_code: string;
+  description: string;
+  trade: string | null;
+  unit: string;
+  base_unit_rate: number;
+  currency: string;
+  supplier?: string | null;
+}
+
+/** Search the materials price master - the list the MTO is picked from. */
+export function searchPricing(q: string, limit = 40): Promise<PricedMaterial[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (q) params.set('q', q);
+  return request<PricedMaterial[]>('/api/mto/pricing?' + params.toString());
+}
+
+export interface PickedMaterial {
+  description: string;
+  unit: string | null;
+  qty: string;
+  trade: string | null;
+  item_code: string | null;
+}
+
+/** Build the materials take-off from the rows picked out of the master. */
+export async function downloadPickedMto(
+  projectId: number,
+  items: PickedMaterial[],
+): Promise<void> {
+  const token = getToken();
+  const res = await fetch('/api/projects/' + projectId + '/sources/mto-picked', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
+    },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) {
+    let message = 'Could not build the MTO.';
+    try {
+      const body: unknown = await res.json();
+      if (body && typeof body === 'object' && 'detail' in body) {
+        message = String((body as { detail: unknown }).detail);
+      }
+    } catch {
+      /* keep the generic message */
+    }
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'MTO.xlsx';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 /** Download the materials take-off for an ICR project (no SOW to read). */
 export async function downloadIcrMto(projectId: number): Promise<void> {
   const token = getToken();

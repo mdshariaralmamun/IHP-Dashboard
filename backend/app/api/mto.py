@@ -70,16 +70,30 @@ def get_pricing_suggestion(
 @router.get("/pricing", response_model=list[MasterPricingOut])
 def list_pricing_suggestions(
     trade: str | None = None,
+    q: str | None = None,
+    limit: int = 50,
+    active_only: bool = True,
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
-    """List all master pricing suggestions, optionally filtered by trade.
+    """Search the materials price master - the list the MTO is picked from.
 
-    Useful for browsing available rates before generating BOQ/MTO.
+    `q` matches the description or the item code, so the engineer types a few
+    words ("ball valve 1/2") and picks the real master row instead of typing a
+    rate. Capped by `limit` because the master holds thousands of rows and the
+    picker needs a page, not the whole list.
     """
     query = select(MasterPricing)
     if trade:
         query = query.where(MasterPricing.trade == trade)
+    if active_only:
+        query = query.where(MasterPricing.is_active.is_(True))
+    if q:
+        needle = f"%{q.strip()}%"
+        query = query.where(
+            MasterPricing.description.ilike(needle) | MasterPricing.item_code.ilike(needle)
+        )
+    query = query.order_by(MasterPricing.item_code).limit(max(1, min(limit, 200)))
     return db.scalars(query).all()
 
 

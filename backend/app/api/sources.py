@@ -29,6 +29,7 @@ from fastapi import (
     UploadFile,
     status,
 )
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -548,6 +549,76 @@ def generate_icr_mto(
     path = template_docgen.generate_boq_mto(project, brief.payload, out_dir / filename)
     workflow.log_action(
         db, _user, "docgen:mto-icr", project, {"file": filename, "brief": brief.version}
+    )
+    db.commit()
+    return FileResponse(
+        path,
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+
+class PickedMtoItem(BaseModel):
+    description: str
+    unit: str | None = None
+    qty: str | float | int | None = None
+    trade: str | None = None
+    item_code: str | None = None
+
+
+class PickedMtoIn(BaseModel):
+    items: list[PickedMtoItem]
+
+
+@router.post("/{project_id}/sources/mto-picked")
+def generate_mto_from_picked(
+    project_id: int,
+    body: PickedMtoIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_ATTACHMENTS_UPLOAD)),
+):
+    """Build the materials take-off from rows picked out of the price master.
+
+    The engineer searches the master, picks the rows and sets quantities; this
+    writes them into the team's own MATERIALS TAKEOFF grid with the master rate
+    where the row came from one. Nothing is invented: what was picked is what
+    the workbook contains.
+    """
+    from fastapi.responses import FileResponse
+
+    from ..services import template_docgen
+
+    project = get_project_or_404(db, project_id)
+    items = [item for item in body.items if (item.description or "").strip()]
+    if not items:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Pick at least one material from the list first.",
+        )
+    payload = {
+        "scope_by_trade": [],
+        "line_items": [
+            {
+                "ref": item.item_code or str(index + 1),
+                "trade": item.trade or "Plumbing",
+                "description": item.description,
+                "unit": item.unit,
+                "qty": item.qty,
+            }
+            for index, item in enumerate(items)
+        ],
+    }
+    out_dir = storage.project_dir(project.pr_number, "generated")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{project.pr_number} MTO.xlsx"
+    path = template_docgen.generate_boq_mto(project, payload, out_dir / filename)
+    workflow.log_action(
+        db,
+        user,
+        "docgen:mto-picked",
+        project,
+        {"file": filename, "items": len(items)},
     )
     db.commit()
     return FileResponse(
