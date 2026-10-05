@@ -29,6 +29,26 @@ html[data-text-size="large"] { font-size: 18px; }
     border-color: rgba(255, 255, 255, 0.14);
   }
 
+  /* A native <select> popup is drawn by the operating system, not by us: the
+     closed control can be dark while the option list is painted light (or the
+     reverse), which is how a dropdown ends up as white text on a white panel
+     and reads as empty. `color-scheme` tells the browser which way to paint
+     that popup, and the explicit option colours cover the browsers that ignore
+     it. This is the register's Bucket / Division / Disposition dropdowns. */
+  :where(html.dark) :where(select) {
+    color-scheme: dark;
+  }
+
+  :where(html.dark) :where(select option, select optgroup) {
+    background-color: #1c1c1e;
+    color: #f5f5f7;
+  }
+
+  :where(select option, select optgroup) {
+    background-color: #ffffff;
+    color: #111827;
+  }
+
   :where(html.dark) :where(input, textarea, select)::placeholder {
     color: #98989d;
     opacity: 1; /* Firefox lowers placeholder opacity by default */
