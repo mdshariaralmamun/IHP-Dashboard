@@ -384,6 +384,21 @@ _RE_ON_HOLD = re.compile(r"\bon\s*hold\b", re.I)
 _RE_WBS = re.compile(r"(cost\s*cent(er|re)|\bwbs\b)", re.I)
 _RE_SUMMARY = re.compile(r"(summary\s*package|project\s*summary|summary\s*ready)", re.I)
 _RE_SITE_VISIT = re.compile(r"site\s*visit", re.I)
+# The steps the team actually names in the log, in their own words.
+_RE_SUMMARY_TRADE = re.compile(
+    r"(project\s*)?summary\s*(?:was\s*)?(?:received|receive|rec\.?)\s*"
+    r"(?:by|from)?\s*(?:the\s*)?trade",
+    re.I,
+)
+_RE_WAITING_WBS = re.compile(
+    r"(waiting|awaiting|pending)\s*(?:for\s*)?(?:the\s*)?(wbs|cost\s*cent(er|re))",
+    re.I,
+)
+_RE_PI_SIGNATURE = re.compile(
+    r"(under\s*(?:the\s*)?pi\s*signature|pi\s*signature|signature\s*of\s*(?:the\s*)?pi)",
+    re.I,
+)
+_RE_EAR_REVISED = re.compile(r"ear\s*(?:was\s*)?(revised|re-?issued|re-?submitt?ed)", re.I)
 #: A project is cancelled when ASEPC does not approve it (or it is dropped).
 _RE_CANCELLED = re.compile(
     r"(project\s+cancell?ed|cancell?ed\s+(the\s+)?project|"
@@ -399,20 +414,26 @@ _RE_EAR_APPROVED_DATE = re.compile(
 EAR_SUBSTATUS_LABELS: dict[str, str] = {
     "cancelled": "Cancelled (ASEPC not approved)",
     "on_hold": "On Hold",
-    "asepc_pending": "Waiting for ASEPC Approval",
+    "site_visit": "Site Visit Done",
+    "summary_trade": "Project Summary Received by Trade",
+    "waiting_wbs": "Waiting for WBS",
+    "pi_signature": "EAR Under PI Signature",
+    "asepc_pending": "EAR Waiting for ASEPC Approval",
     "ear_approved": "EAR Approved",
+    "ear_revised": "EAR Revised",
     "ear_issued": "EAR Issued",
     "wbs_request": "WBS / Cost Center Request",
     "awaiting_summary": "Awaiting Summary Package",
-    "site_visit": "Site Visit Done",
     "asepc_approved": "ASEPC Approved (to construction)",
     "in_progress": "In Progress",
 }
 
-#: Display order: what needs attention first.
+#: The EAR funnel, in the order the team works it (blocked states first, so a
+#: held or cancelled request never reads as progress).
 EAR_SUBSTATUS_ORDER: tuple[str, ...] = (
-    "cancelled", "on_hold", "asepc_pending", "ear_approved", "ear_issued",
-    "wbs_request", "awaiting_summary", "site_visit", "asepc_approved",
+    "cancelled", "on_hold", "site_visit", "summary_trade", "waiting_wbs",
+    "pi_signature", "asepc_pending", "ear_approved", "ear_revised",
+    "ear_issued", "wbs_request", "awaiting_summary", "asepc_approved",
     "in_progress",
 )
 
@@ -468,12 +489,21 @@ def ear_substatus(notes: str | None, flags: list[str] | None = None,
         # EAR is approved but the project cannot start construction until
         # ASEPC approves - and it will be cancelled if they do not.
         return "asepc_pending"
+    if _RE_EAR_REVISED.search(text):
+        # A revision is later than the approval it revises, so it wins.
+        return "ear_revised"
     if ear_ok:
         return "ear_approved"
+    if _RE_PI_SIGNATURE.search(text):
+        return "pi_signature"
     if _RE_EAR_ISSUED.search(text):
         return "ear_issued"
+    if _RE_WAITING_WBS.search(combined):
+        return "waiting_wbs"
     if _RE_WBS.search(combined):
         return "wbs_request"
+    if _RE_SUMMARY_TRADE.search(text):
+        return "summary_trade"
     if _RE_SUMMARY.search(text):
         return "awaiting_summary"
     if _RE_SITE_VISIT.search(text):
