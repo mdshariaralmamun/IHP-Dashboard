@@ -1,7 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { downloadPickedMto, searchPricing } from '@/lib/api';
+import {
+  clearMtoDraft,
+  downloadPickedMto,
+  getMtoDraft,
+  saveMtoDraft,
+  searchPricing,
+} from '@/lib/api';
 import type { PickedMaterial, PricedMaterial } from '@/lib/api';
 import { VisualCard } from '@/components/powerbi/PowerBI';
 
@@ -54,6 +60,55 @@ export default function MaterialPicker({ projectId }: { projectId: number }) {
     void search('', trade);
   }, [search, trade]);
 
+  // Restore the saved draft, so the take-off is still there tomorrow.
+  useEffect(() => {
+    getMtoDraft(projectId)
+      .then((draft) => {
+        if (draft.items.length) {
+          setPicked(
+            draft.items.map((line) => ({
+              description: line.description,
+              unit: line.unit,
+              qty: line.qty ?? '1',
+              trade: line.trade,
+              item_code: line.item_code,
+            })),
+          );
+          setNotice('Draft restored — ' + draft.items.length + ' saved line(s).');
+        }
+      })
+      .catch(() => undefined);
+  }, [projectId]);
+
+  async function saveDraft() {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const saved = await saveMtoDraft(projectId, picked);
+      setNotice('Draft saved — ' + saved.count + ' line(s).');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save the draft');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function clearDraft() {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await clearMtoDraft(projectId);
+      setPicked([]);
+      setNotice('Draft cleared.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not clear the draft');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function add(material: PricedMaterial) {
     setPicked((rows) => [
       ...rows,
@@ -95,14 +150,32 @@ export default function MaterialPicker({ projectId }: { projectId: number }) {
       title="Materials list - pick the MTO"
       subtitle="search the price master, pick the rows, set the quantities"
       actions={
-        <button
-          type="button"
-          onClick={() => void build()}
+        <>
+          <button
+            type="button"
+            onClick={() => void build()}
           disabled={busy || picked.length === 0}
           className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
         >
           {busy ? 'Building…' : 'Generate MTO (' + picked.length + ')'}
         </button>
+        <button
+          type="button"
+          onClick={() => void saveDraft()}
+          disabled={busy}
+          className="rounded-md border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 disabled:opacity-50"
+        >
+          Save draft
+        </button>
+        <button
+          type="button"
+          onClick={() => void clearDraft()}
+          disabled={busy || picked.length === 0}
+          className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+        >
+            Clear draft
+          </button>
+        </>
       }
     >
       <div className="flex flex-wrap items-center gap-2">

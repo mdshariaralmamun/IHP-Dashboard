@@ -985,3 +985,32 @@ class SourceBrief(Base):
 
     project: Mapped[Project] = relationship(back_populates="source_briefs")
 
+
+class MtoDraftItem(Base):
+    """One line of a project's materials take-off draft.
+
+    The take-off is built up over days: pick a valve from the price master
+    today, type in the item the supplier quoted tomorrow, generate the file
+    when the scope settles. The draft is therefore stored per project and
+    survives reloads, deploys and restarts - the MTO never disappears.
+    """
+
+    __tablename__ = "mto_draft_items"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    #: Display order inside the take-off.
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    trade: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    description: Mapped[str] = mapped_column(Text)
+    unit: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    qty: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    #: The price-master row this line was picked from, when it was picked.
+    item_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    unit_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utcnow, onupdate=utcnow
+    )
+

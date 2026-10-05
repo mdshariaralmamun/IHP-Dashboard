@@ -627,3 +627,119 @@ def generate_mto_from_picked(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
+
+
+class DraftItemIn(BaseModel):
+    description: str
+    unit: str | None = None
+    qty: str | None = None
+    trade: str | None = None
+    item_code: str | None = None
+    unit_price: float | None = None
+
+
+class MtoDraftIn(BaseModel):
+    items: list[DraftItemIn]
+
+
+def _draft_rows(db: Session, project_id: int):
+    from ..models import MtoDraftItem
+
+    return db.scalars(
+        select(MtoDraftItem)
+        .where(MtoDraftItem.project_id == project_id)
+        .order_by(MtoDraftItem.position, MtoDraftItem.id)
+    ).all()
+
+
+def _draft_out(rows) -> list[dict[str, Any]]:
+    return [
+        {
+            "id": row.id,
+            "position": row.position,
+            "trade": row.trade,
+            "description": row.description,
+            "unit": row.unit,
+            "qty": row.qty,
+            "item_code": row.item_code,
+            "unit_price": row.unit_price,
+        }
+        for row in rows
+    ]
+
+
+@router.get("/{project_id}/mto-draft")
+def get_mto_draft(
+    project_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """The saved materials take-off draft for this project."""
+    project = get_project_or_404(db, project_id)
+    rows = _draft_rows(db, project.id)
+    return {"project_id": project.id, "count": len(rows), "items": _draft_out(rows)}
+
+
+@router.put("/{project_id}/mto-draft")
+def save_mto_draft(
+    project_id: int,
+    body: MtoDraftIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_ATTACHMENTS_UPLOAD)),
+):
+    """Replace the saved draft with the rows currently being edited.
+
+    A save is a whole-list replace: the picker is the single editor, so the
+    list it holds IS the draft. Rows keep their id where the line survived, so
+    nothing else that references a line is disturbed.
+    """
+    from ..models import MtoDraftItem
+
+    project = get_project_or_404(db, project_id)
+    existing = {row.id: row for row in _draft_rows(db, project.id)}
+    kept: set[int] = set()
+    for position, item in enumerate(body.items):
+        description = (item.description or "").strip()
+        if not description:
+            continue
+        row = existing.get(getattr(item, "database_id", None) or 0)
+        if row is None:
+            row = MtoDraftItem(project_id=project.id, created_by_id=user.id)
+            db.add(row)
+        row.position = position
+        row.trade = (item.trade or "").strip() or None
+        row.description = description
+        row.unit = (item.unit or "").strip() or None
+        row.qty = (item.qty or "").strip() or None
+        row.item_code = (item.item_code or "").strip() or None
+        row.unit_price = item.unit_price
+        db.flush()
+        kept.add(row.id)
+    for row_id, row in existing.items():
+        if row_id not in kept:
+            db.delete(row)
+    workflow.log_action(
+        db, user, "mto-draft:save", project, {"lines": len(kept)}
+    )
+    db.commit()
+    rows = _draft_rows(db, project.id)
+    return {"project_id": project.id, "count": len(rows), "items": _draft_out(rows)}
+
+
+@router.delete("/{project_id}/mto-draft", status_code=status.HTTP_204_NO_CONTENT)
+def clear_mto_draft(
+    project_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_ATTACHMENTS_UPLOAD)),
+):
+    """Delete the saved draft (the generated file stays attached)."""
+    from ..models import MtoDraftItem
+
+    project = get_project_or_404(db, project_id)
+    removed = 0
+    for row in _draft_rows(db, project.id):
+        db.delete(row)
+        removed += 1
+    workflow.log_action(db, user, "mto-draft:clear", project, {"lines": removed})
+    db.commit()
+

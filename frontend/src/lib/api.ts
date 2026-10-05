@@ -872,6 +872,44 @@ export interface PickedMaterial {
   item_code: string | null;
 }
 
+export interface MtoDraftLine {
+  id?: number;
+  trade: string | null;
+  description: string;
+  unit: string | null;
+  qty: string | null;
+  item_code: string | null;
+  unit_price?: number | null;
+}
+
+export interface MtoDraft {
+  project_id: number;
+  count: number;
+  items: MtoDraftLine[];
+}
+
+/** The saved materials take-off draft for this project. */
+export function getMtoDraft(projectId: number): Promise<MtoDraft> {
+  return request<MtoDraft>('/api/projects/' + projectId + '/mto-draft');
+}
+
+/** Save the draft being edited (whole-list replace). */
+export function saveMtoDraft(
+  projectId: number,
+  items: MtoDraftLine[],
+): Promise<MtoDraft> {
+  return request<MtoDraft>(
+    '/api/projects/' + projectId + '/mto-draft',
+    { method: 'PUT' },
+    { items },
+  );
+}
+
+/** Delete the saved draft. */
+export function clearMtoDraft(projectId: number): Promise<void> {
+  return request<void>('/api/projects/' + projectId + '/mto-draft', { method: 'DELETE' });
+}
+
 /** Build the materials take-off from the rows picked out of the master. */
 export async function downloadPickedMto(
   projectId: number,
