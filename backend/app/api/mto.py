@@ -89,10 +89,15 @@ def list_pricing_suggestions(
     if active_only:
         query = query.where(MasterPricing.is_active.is_(True))
     if q:
-        needle = f"%{q.strip()}%"
-        query = query.where(
-            MasterPricing.description.ilike(needle) | MasterPricing.item_code.ilike(needle)
-        )
+        # Word-by-word, in any order: "ball valve 1/2" must find a row written
+        # "Ball Valve, 1/2 in." - a single substring match misses it, and the
+        # picker is useless if the obvious search returns nothing.
+        for token in [part for part in q.split() if part.strip()]:
+            needle = f"%{token.strip()}%"
+            query = query.where(
+                MasterPricing.description.ilike(needle)
+                | MasterPricing.item_code.ilike(needle)
+            )
     query = query.order_by(MasterPricing.item_code).limit(max(1, min(limit, 200)))
     return db.scalars(query).all()
 
