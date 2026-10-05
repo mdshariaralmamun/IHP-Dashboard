@@ -399,6 +399,12 @@ _RE_PI_SIGNATURE = re.compile(
     re.I,
 )
 _RE_EAR_REVISED = re.compile(r"ear\s*(?:was\s*)?(revised|re-?issued|re-?submitt?ed)", re.I)
+# "EAR waiting for ASEPC approval" said in the note itself, which is a stage in
+# its own right and not only a consequence of the project type.
+_RE_ASEPC_WAITING = re.compile(
+    r"((waiting|awaiting|pending).{0,24}\basepc\b|\basepc\b.{0,24}(approval|approve|pending|waiting))",
+    re.I,
+)
 #: A project is cancelled when ASEPC does not approve it (or it is dropped).
 _RE_CANCELLED = re.compile(
     r"(project\s+cancell?ed|cancell?ed\s+(the\s+)?project|"
@@ -488,6 +494,8 @@ def ear_substatus(notes: str | None, flags: list[str] | None = None,
     if ear_ok and needs_asepc:
         # EAR is approved but the project cannot start construction until
         # ASEPC approves - and it will be cancelled if they do not.
+        return "asepc_pending"
+    if _RE_ASEPC_WAITING.search(text):
         return "asepc_pending"
     if _RE_EAR_REVISED.search(text):
         # A revision is later than the approval it revises, so it wins.
