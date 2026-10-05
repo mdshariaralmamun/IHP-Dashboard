@@ -1,5 +1,7 @@
 'use client';
 
+import { downloadIcrMto } from '@/lib/api';
+
 import { useEffect, useState } from 'react';
 import ErrorBox from '@/components/ErrorBox';
 import { addBoqItem, createSowRevision, exportBoqExcel, getSowSuggestions, updateSowStatus } from '@/lib/api';
@@ -113,11 +115,35 @@ export default function SowBoqPanel({
 
   if (isIcr) {
     return (
-      <section className="p-4 border rounded border-apple-surface text-apple-text">
-        <p className="text-sm text-apple-muted">
-          This project is ICR-classified and skips the SOW step. The MTO is
-          captured in the Construction panel.
+      <section className="rounded-lg border border-apple-border bg-apple-surface p-5 shadow-sm">
+        <h3 className="text-sm font-semibold text-apple-text">
+          ICR — materials take-off (MTO)
+        </h3>
+        <p className="mt-1 text-xs text-apple-muted">
+          This PR is ICR-classified: it runs <strong>MOM → ICR hand-off →
+          materials</strong> and skips EAR / SOW / BOQ. The MTO is built from the
+          data room — the engineer&apos;s material list, the utility matrix, the
+          supplier quotations — so upload those first, press{' '}
+          <strong>Analyze with AI</strong>, then generate the MTO here.
         </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => void run('mto', () => downloadIcrMto(project.id))}
+            className="rounded-md bg-primary px-3 py-2 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+          >
+            {busy === 'mto' ? 'Generating…' : 'Generate MTO (materials take-off)'}
+          </button>
+          <span className="text-[11px] text-apple-muted">
+            Filled from the brief above; quantities come from the uploaded material list.
+          </span>
+        </div>
+        {error && (
+          <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            {error}
+          </p>
+        )}
       </section>
     );
   }

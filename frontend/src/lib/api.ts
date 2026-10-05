@@ -841,6 +841,35 @@ export function listContacts(q = ''): Promise<ContactList> {
   return request<ContactList>('/api/contacts' + (q ? '?q=' + encodeURIComponent(q) : ''));
 }
 
+/** Download the materials take-off for an ICR project (no SOW to read). */
+export async function downloadIcrMto(projectId: number): Promise<void> {
+  const token = getToken();
+  const res = await fetch('/api/projects/' + projectId + '/sources/mto', {
+    headers: token ? { Authorization: 'Bearer ' + token } : undefined,
+  });
+  if (!res.ok) {
+    let message = 'Could not generate the MTO.';
+    try {
+      const body: unknown = await res.json();
+      if (body && typeof body === 'object' && 'detail' in body) {
+        message = String((body as { detail: unknown }).detail);
+      }
+    } catch {
+      /* keep the generic message */
+    }
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'MTO.xlsx';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function getOmActivePrs(): Promise<OmActiveResponse> {
   return request<OmActiveResponse>('/api/projects/om-active');
 }

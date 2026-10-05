@@ -509,3 +509,50 @@ def delete_source(
     )
     db.delete(source)
     db.commit()
+
+
+@router.get("/{project_id}/sources/mto")
+def generate_icr_mto(
+    project_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """The materials take-off for a project with no SOW (the ICR branch).
+
+    ICR work skips EAR/SOW, so the SOW-driven MTO generator has nothing to
+    read. The take-off is built from the data room instead: the engineer's
+    material list and the AI brief's line items - the same rows the BOQ is
+    built from - written into the team's own MTO grid.
+    """
+    from fastapi.responses import FileResponse
+
+    from ..services import template_docgen
+
+    project = get_project_or_404(db, project_id)
+    brief = db.scalars(
+        select(SourceBrief)
+        .where(SourceBrief.project_id == project.id)
+        .order_by(SourceBrief.id.desc())
+    ).first()
+    if brief is None or brief.status != "ready" or not brief.payload:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Upload the material list (or the quotation) in the data room and "
+                "run Analyze with AI first - the MTO is built from it."
+            ),
+        )
+    out_dir = storage.project_dir(project.pr_number, "generated")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{project.pr_number} MTO.xlsx"
+    path = template_docgen.generate_boq_mto(project, brief.payload, out_dir / filename)
+    workflow.log_action(
+        db, _user, "docgen:mto-icr", project, {"file": filename, "brief": brief.version}
+    )
+    db.commit()
+    return FileResponse(
+        path,
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
