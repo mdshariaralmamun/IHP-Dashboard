@@ -5,6 +5,17 @@ import { downloadPickedMto, searchPricing } from '@/lib/api';
 import type { PickedMaterial, PricedMaterial } from '@/lib/api';
 import { VisualCard } from '@/components/powerbi/PowerBI';
 
+/** The trades the take-off is grouped by, in the order the team reads them. */
+const TRADES: { key: string; label: string }[] = [
+  { key: '', label: 'All trades' },
+  { key: 'civil_arch', label: 'Civil / Architectural' },
+  { key: 'electrical', label: 'Electrical' },
+  { key: 'low_current', label: 'Low Current / Telecom' },
+  { key: 'plumbing', label: 'Plumbing' },
+  { key: 'hvac', label: 'HVAC' },
+  { key: 'fire_protection', label: 'Fire Protection' },
+];
+
 /**
  * Pick the MTO from the materials price master.
  *
@@ -21,20 +32,27 @@ export default function MaterialPicker({ projectId }: { projectId: number }) {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [masterSize, setMasterSize] = useState<number | null>(null);
+  const [trade, setTrade] = useState('');
+  const [manual, setManual] = useState({
+    description: '',
+    unit: 'EA',
+    qty: '1',
+    trade: 'plumbing',
+  });
 
-  const search = useCallback(async (text: string) => {
+  const search = useCallback(async (text: string, tradeKey: string) => {
     try {
-      const rows = await searchPricing(text);
+      const rows = await searchPricing(text, 40, tradeKey);
       setResults(rows);
-      setMasterSize((size) => (size === null && !text ? rows.length : size));
+      setMasterSize((size) => (size === null && !text && !tradeKey ? rows.length : size));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not search the price master');
     }
   }, []);
 
   useEffect(() => {
-    void search('');
-  }, [search]);
+    void search('', trade);
+  }, [search, trade]);
 
   function add(material: PricedMaterial) {
     setPicked((rows) => [
@@ -43,7 +61,7 @@ export default function MaterialPicker({ projectId }: { projectId: number }) {
         description: material.description,
         unit: material.unit,
         qty: '1',
-        trade: material.trade,
+        trade: material.trade || trade || 'plumbing',
         item_code: material.item_code,
       },
     ]);
@@ -88,11 +106,22 @@ export default function MaterialPicker({ projectId }: { projectId: number }) {
       }
     >
       <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={trade}
+          onChange={(e) => setTrade(e.target.value)}
+          className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-apple-text dark:border-white/10 dark:bg-white/5"
+        >
+          {TRADES.map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <input
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            void search(e.target.value);
+            void search(e.target.value, trade);
           }}
           placeholder="Search the materials list - e.g. ball valve 1/2, EMT conduit, socket…"
           className="w-full max-w-md rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-apple-text outline-none focus:border-primary dark:border-white/10 dark:bg-white/5"
@@ -127,6 +156,61 @@ export default function MaterialPicker({ projectId }: { projectId: number }) {
         )}
       </div>
 
+      {/* Anything the master does not carry is typed in here: the MTO is a
+          project document, not a price-list export. */}
+      <div className="mt-3 grid gap-2 rounded-lg border border-dashed border-slate-300 p-2 lg:grid-cols-[1fr_110px_80px_170px_auto] dark:border-white/10">
+        <input
+          value={manual.description}
+          onChange={(event) => setManual({ ...manual, description: event.target.value })}
+          placeholder="Add a material manually - description"
+          className="rounded border border-slate-200 px-2 py-1 text-xs dark:border-white/10 dark:bg-white/5"
+        />
+        <input
+          value={manual.unit}
+          onChange={(event) => setManual({ ...manual, unit: event.target.value })}
+          placeholder="Unit"
+          className="rounded border border-slate-200 px-2 py-1 text-xs dark:border-white/10 dark:bg-white/5"
+        />
+        <input
+          value={manual.qty}
+          onChange={(event) => setManual({ ...manual, qty: event.target.value })}
+          placeholder="Qty"
+          className="rounded border border-slate-200 px-2 py-1 text-right text-xs tabular-nums dark:border-white/10 dark:bg-white/5"
+        />
+        <select
+          value={manual.trade}
+          onChange={(event) => setManual({ ...manual, trade: event.target.value })}
+          className="rounded border border-slate-200 px-2 py-1 text-xs dark:border-white/10 dark:bg-white/5"
+        >
+          {TRADES.filter((option) => option.key).map((option) => (
+            <option key={option.key} value={option.key}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => {
+            if (!manual.description.trim()) return;
+            setPicked((rows) => [
+              ...rows,
+              {
+                description: manual.description.trim(),
+                unit: manual.unit.trim() || 'EA',
+                qty: manual.qty.trim() || '1',
+                trade: manual.trade,
+                item_code: null,
+              },
+            ]);
+            setManual({ ...manual, description: '', qty: '1' });
+          }}
+          disabled={!manual.description.trim()}
+          className="rounded-md border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 disabled:opacity-50"
+        >
+          + Add manually
+        </button>
+      </div>
+
       {picked.length > 0 && (
         <ul className="mt-3 space-y-1 border-t border-slate-200 pt-2 dark:border-white/10">
           {picked.map((row, index) => (
@@ -135,6 +219,10 @@ export default function MaterialPicker({ projectId }: { projectId: number }) {
               className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] dark:border-white/10"
             >
               <span className="min-w-0 flex-1 truncate text-apple-text">{row.description}</span>
+              <span className="shrink-0 rounded bg-slate-100 px-1.5 text-[10px] uppercase text-slate-500">
+                {(TRADES.find((option) => option.key === row.trade)?.label ?? row.trade ?? '')
+                  .replace(' / Architectural', '')}
+              </span>
               <span className="text-slate-500">{row.unit}</span>
               <input
                 value={row.qty}

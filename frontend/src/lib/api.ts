@@ -853,9 +853,14 @@ export interface PricedMaterial {
 }
 
 /** Search the materials price master - the list the MTO is picked from. */
-export function searchPricing(q: string, limit = 40): Promise<PricedMaterial[]> {
+export function searchPricing(
+  q: string,
+  limit = 40,
+  trade = '',
+): Promise<PricedMaterial[]> {
   const params = new URLSearchParams({ limit: String(limit) });
   if (q) params.set('q', q);
+  if (trade) params.set('trade', trade);
   return request<PricedMaterial[]>('/api/mto/pricing?' + params.toString());
 }
 
