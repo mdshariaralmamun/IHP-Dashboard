@@ -986,6 +986,36 @@ class SourceBrief(Base):
     project: Mapped[Project] = relationship(back_populates="source_briefs")
 
 
+class BriefQuestion(Base):
+    """One open question from the AI brief, with the answer kept on it.
+
+    The briefs are versioned and replaced; the answers are not. A question is
+    matched on its text, so re-running the analysis keeps every answer that was
+    already written and only adds the new questions.
+    """
+
+    __tablename__ = "brief_questions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    question: Mapped[str] = mapped_column(Text)
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    who_can_answer: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    blocking: Mapped[bool] = mapped_column(Boolean, default=False)
+    #: The answer written by the engineer / PI, and who wrote it.
+    answer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: open | answered | closed
+    status: Mapped[str] = mapped_column(String(16), default="open", index=True)
+    answered_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    answered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utcnow, onupdate=utcnow
+    )
+
+
 class MtoDraftItem(Base):
     """One line of a project's materials take-off draft.
 

@@ -11,8 +11,10 @@ import {
   getSourceText,
   uploadSources,
 } from '@/lib/api';
+import { answerQuestion, listQuestions } from '@/lib/api';
 import type {
   GenerateResult,
+  ProjectQuestion,
   SourceBrief,
   SourceDocument,
   SourceRoom,
@@ -66,6 +68,8 @@ export default function SourceRoomCard({
   const [textBody, setTextBody] = useState<string>('');
   const [polling, setPolling] = useState(false);
   const [generated, setGenerated] = useState<GenerateResult | null>(null);
+  const [questions, setQuestions] = useState<ProjectQuestion[]>([]);
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
   const [generating, setGenerating] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const polls = useRef(0);
@@ -82,7 +86,30 @@ export default function SourceRoomCard({
 
   useEffect(() => {
     void load();
-  }, [load]);
+    listQuestions(projectId)
+      .then((data) => setQuestions(data.questions))
+      .catch(() => undefined);
+  }, [load, projectId]);
+
+  async function saveAnswer(question: ProjectQuestion, status?: 'answered' | 'closed') {
+    const answer = drafts[question.id];
+    setBusy(true);
+    setError(null);
+    try {
+      const saved = await answerQuestion(projectId, question.id, {
+        answer: answer !== undefined ? answer : question.answer,
+        status: status ?? 'answered',
+      });
+      setQuestions((rows) => rows.map((row) => (row.id === saved.id ? saved : row)));
+      setNotice(
+        (status === 'closed' ? 'Closed: ' : 'Answer saved: ') + question.question.slice(0, 60),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save the answer');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   // Poll the brief while the background analysis runs.
   useEffect(() => {
@@ -550,6 +577,89 @@ export default function SourceRoomCard({
                       )}
                     </div>
                     {q.why && <p className="mt-0.5 text-apple-muted">{q.why}</p>}
+                  </li>
+                ))}
+              </ul>
+            </VisualCard>
+          )}
+
+          {questions.length > 0 && (
+            <VisualCard
+              title={'Questions & clarifications — ' + questions.length}
+              subtitle="write the answer here; it is kept with the project, not with the brief"
+            >
+              <ul className="space-y-2">
+                {questions.map((question) => (
+                  <li
+                    key={question.id}
+                    className={
+                      'rounded-lg border p-2.5 ' +
+                      (question.status === 'closed'
+                        ? 'border-slate-200 bg-slate-50/60 dark:border-white/10'
+                        : question.blocking
+                          ? 'border-red-200 bg-red-50/50'
+                          : 'border-slate-200 dark:border-white/10')
+                    }
+                  >
+                    <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                      {question.blocking && question.status === 'open' && (
+                        <span className="rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                          BLOCKING
+                        </span>
+                      )}
+                      <span className="font-semibold text-apple-text">{question.question}</span>
+                      {question.who_can_answer && (
+                        <span className="rounded-full bg-apple-surface px-2 py-0.5 text-[10px] text-apple-muted">
+                          ask: {question.who_can_answer}
+                        </span>
+                      )}
+                      <span
+                        className={
+                          'ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold ' +
+                          (question.status === 'closed'
+                            ? 'bg-slate-200 text-slate-700'
+                            : question.status === 'answered'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800')
+                        }
+                      >
+                        {question.status}
+                      </span>
+                    </div>
+                    {question.detail && (
+                      <p className="mt-0.5 text-[11px] text-apple-muted">{question.detail}</p>
+                    )}
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <input
+                        defaultValue={question.answer ?? ''}
+                        onChange={(event) =>
+                          setDrafts((rows) => ({ ...rows, [question.id]: event.target.value }))
+                        }
+                        placeholder="Type the answer / clarification here…"
+                        className="min-w-[16rem] flex-1 rounded-md border border-apple-border bg-apple-surface px-2 py-1 text-xs text-apple-text"
+                      />
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void saveAnswer(question, 'answered')}
+                        className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                      >
+                        Save answer
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void saveAnswer(question, 'closed')}
+                        className="rounded-md border border-apple-border px-3 py-1 text-xs font-semibold text-apple-muted hover:bg-apple-surface disabled:opacity-50"
+                      >
+                        Close
+                      </button>
+                      {question.answered_at && (
+                        <span className="text-[10px] text-apple-muted">
+                          answered {question.answered_at.slice(0, 10)}
+                        </span>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>

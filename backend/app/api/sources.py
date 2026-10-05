@@ -305,6 +305,7 @@ def _run_analysis(brief_id: int, project_id: int) -> None:
         brief.payload = payload
         brief.status = "ready"
         brief.finished_at = _now()
+        _sync_questions(db, project_id, payload)
         db.commit()
     finally:
         db.close()
@@ -743,3 +744,115 @@ def clear_mto_draft(
     workflow.log_action(db, user, "mto-draft:clear", project, {"lines": removed})
     db.commit()
 
+
+def _sync_questions(db: Session, project_id: int, payload: dict) -> int:
+    """Mirror the brief's open questions as answerable rows (text-matched)."""
+    from ..models import BriefQuestion
+
+    existing = {
+        (row.question or "").strip().lower(): row
+        for row in db.scalars(
+            select(BriefQuestion).where(BriefQuestion.project_id == project_id)
+        ).all()
+    }
+    added = 0
+    for row in payload.get("open_questions") or []:
+        if not isinstance(row, dict):
+            continue
+        text = str(row.get("question") or "").strip()
+        if not text:
+            continue
+        current = existing.get(text.lower())
+        if current is None:
+            current = BriefQuestion(project_id=project_id, question=text)
+            db.add(current)
+            existing[text.lower()] = current
+            added += 1
+        current.detail = str(row.get("why") or "").strip() or None
+        current.who_can_answer = str(row.get("who_can_answer") or "").strip() or None
+        current.blocking = bool(row.get("blocking"))
+    return added
+
+
+@router.get("/{project_id}/questions")
+def list_questions(
+    project_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Open questions with the answers written so far (blocking first)."""
+    from ..models import BriefQuestion
+
+    project = get_project_or_404(db, project_id)
+    rows = db.scalars(
+        select(BriefQuestion)
+        .where(BriefQuestion.project_id == project.id)
+        .order_by(BriefQuestion.status, BriefQuestion.blocking.desc(), BriefQuestion.id)
+    ).all()
+    return {
+        "project_id": project.id,
+        "counts": {
+            "total": len(rows),
+            "open": sum(1 for r in rows if r.status == "open"),
+            "answered": sum(1 for r in rows if r.status == "answered"),
+            "closed": sum(1 for r in rows if r.status == "closed"),
+            "blocking_open": sum(1 for r in rows if r.status == "open" and r.blocking),
+        },
+        "questions": [
+            {
+                "id": r.id,
+                "question": r.question,
+                "detail": r.detail,
+                "who_can_answer": r.who_can_answer,
+                "blocking": r.blocking,
+                "answer": r.answer,
+                "status": r.status,
+                "answered_at": r.answered_at,
+            }
+            for r in rows
+        ],
+    }
+
+
+class QuestionAnswerIn(BaseModel):
+    answer: str | None = None
+    status: str | None = None
+
+
+@router.put("/{project_id}/questions/{question_id}")
+def answer_question(
+    project_id: int,
+    question_id: int,
+    body: QuestionAnswerIn,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_ATTACHMENTS_UPLOAD)),
+):
+    """Write the answer to one open question, or close it."""
+    from ..models import BriefQuestion
+
+    project = get_project_or_404(db, project_id)
+    row = db.get(BriefQuestion, question_id)
+    if row is None or row.project_id != project.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Question not found"
+        )
+    if body.answer is not None:
+        row.answer = body.answer.strip() or None
+        if row.answer:
+            row.answered_by_id = user.id
+            row.answered_at = _now()
+    if body.status in ("open", "answered", "closed"):
+        row.status = body.status
+    elif body.answer is not None:
+        row.status = "answered" if row.answer else "open"
+    workflow.log_action(db, user, "question:answer", project,
+                        {"question_id": row.id, "status": row.status})
+    db.commit()
+    return {
+        "id": row.id,
+        "question": row.question,
+        "answer": row.answer,
+        "status": row.status,
+        "blocking": row.blocking,
+        "answered_at": row.answered_at,
+    }

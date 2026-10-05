@@ -888,6 +888,47 @@ export interface MtoDraft {
   items: MtoDraftLine[];
 }
 
+export interface ProjectQuestion {
+  id: number;
+  question: string;
+  detail: string | null;
+  who_can_answer: string | null;
+  blocking: boolean;
+  answer: string | null;
+  status: 'open' | 'answered' | 'closed' | string;
+  answered_at: string | null;
+}
+
+export interface QuestionList {
+  project_id: number;
+  counts: {
+    total: number;
+    open: number;
+    answered: number;
+    closed: number;
+    blocking_open: number;
+  };
+  questions: ProjectQuestion[];
+}
+
+/** The project's open questions and the answers written so far. */
+export function listQuestions(projectId: number): Promise<QuestionList> {
+  return request<QuestionList>('/api/projects/' + projectId + '/questions');
+}
+
+/** Write the answer to one question (or close it). */
+export function answerQuestion(
+  projectId: number,
+  questionId: number,
+  body: { answer?: string | null; status?: 'open' | 'answered' | 'closed' },
+): Promise<ProjectQuestion> {
+  return request<ProjectQuestion>(
+    '/api/projects/' + projectId + '/questions/' + questionId,
+    { method: 'PUT' },
+    body,
+  );
+}
+
 /** The saved materials take-off draft for this project. */
 export function getMtoDraft(projectId: number): Promise<MtoDraft> {
   return request<MtoDraft>('/api/projects/' + projectId + '/mto-draft');
