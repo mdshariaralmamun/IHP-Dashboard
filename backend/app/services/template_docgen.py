@@ -133,6 +133,90 @@ def _quantity(value: Any) -> float | str | None:
     return int(number) if number == int(number) else number
 
 
+def site_location(project: Project) -> str:
+    """The location exactly the way the team writes it.
+
+    "3-2650" (or "B7 L2 A3") is decoded against the site's own masters and
+    printed as "Building 3 Level 2 Area 6 Rm# 3-2650", which is how it appears
+    on the drawings and in the O&M tracker. Anything that does not decode is
+    passed through untouched - never guessed at.
+    """
+    raw = (project.location or "").strip()
+    if not raw:
+        return "TBD"
+    try:
+        from . import reference
+
+        decoded = reference.decode_location(raw)
+    except Exception:  # noqa: BLE001 - the reference masters are optional
+        decoded = None
+    if not decoded:
+        return raw
+    parts = [f"Building {decoded.get('building')}"]
+    if decoded.get("level") is not None:
+        parts.append(f"Level {decoded['level']}")
+    if decoded.get("area") is not None:
+        parts.append(f"Area {decoded['area']}")
+    if decoded.get("room"):
+        parts.append(f"Rm# {decoded['room']}")
+    return " ".join(parts)
+
+
+def wbs_code(project: Project) -> str:
+    """The WBS / source of funding, when the request carries a real code.
+
+    A funding line with a number in it ("120/520", "BAS/1/1096/01-01") is the
+    WBS; free text like "ASEPC" is not, and becomes TBD rather than inventing a
+    cost centre.
+    """
+    for source in (project.funding_source, getattr(project, "ear_number", None)):
+        text = (source or "").strip()
+        if text and any(character.isdigit() for character in text):
+            return text
+    return "TBD"
+
+
+def cost_estimate_usd(project: Project) -> str:
+    """The USD total of the newest generated Cost Estimate, when there is one.
+
+    The workbook holds formulas (=I*D, then the exchange rate), so it is
+    recomputed here from the quantities and unit prices the app itself wrote -
+    reading the cells back would need Excel to have saved a cached value.
+    """
+    import openpyxl
+
+    from ..core.config import get_settings
+
+    directory = Path(get_settings().DATA_DIR) / "projects"
+    candidates: list[Path] = []
+    if directory.exists():
+        for path in directory.rglob("*.xlsx"):
+            name = path.name.lower()
+            if "cost estimate" in name and name.startswith(project.pr_number.lower()):
+                candidates.append(path)
+    if not candidates:
+        return "TBD"
+    newest = max(candidates, key=lambda item: item.stat().st_mtime)
+    try:
+        workbook = openpyxl.load_workbook(newest, data_only=True)
+        sheet = workbook["Bill of Quantity"]
+        total = 0.0
+        for row in range(6, sheet.max_row + 1):
+            label = str(sheet.cell(row=row, column=2).value or "").strip().upper()
+            if label.startswith("TOTAL"):
+                break
+            quantity = sheet.cell(row=row, column=4).value
+            price = sheet.cell(row=row, column=9).value
+            if isinstance(quantity, (int, float)) and isinstance(price, (int, float)):
+                total += float(quantity) * float(price)
+        workbook.close()
+    except Exception:  # noqa: BLE001 - a missing/odd workbook must not break the summary
+        return "TBD"
+    if total <= 0:
+        return "TBD"
+    return f"USD {total:,.0f}"
+
+
 def _intro(project: Project, why: str) -> str:
     where = project.location or "the site"
     return (
@@ -160,10 +244,13 @@ def summary_context(
         "project_reference": f"{project.pr_number} {project.title}".strip(),
         "division": _division(project, derived),
         "customer": project.pi_name or "TBD",
+        # Contact is the requester's own email (the PI Email column of the
+        # master register, which is where the PR request's Requester Email
+        # lands); the location is decoded into the site's written form.
         "contact": project.pi_email or "TBD",
-        "project_location": project.location or "TBD",
-        "budget": "Within IHP budget" if not project.description else "To be confirmed",
-        "wbs": "TBD",
+        "project_location": site_location(project),
+        "budget": cost_estimate_usd(project),
+        "wbs": wbs_code(project),
         "schedule": {
             "detailed_design": "1 Weeks",
             "materials": "8 Weeks",
