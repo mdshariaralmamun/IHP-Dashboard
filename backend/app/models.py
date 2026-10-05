@@ -93,6 +93,11 @@ class Project(Base):
     pi_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     pi_email: Mapped[str | None] = mapped_column(String(200), nullable=True)
     funding_source: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    #: Fund Source and WBS Number from the PR request / master register: an
+    #: ASEPC request is delivered "within the IHP budget", a baseline one
+    #: carries its own estimate and WBS cost centre.
+    wbs_number: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    cost_estimate_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
     stage: Mapped[str] = mapped_column(String(32), default="INTAKE")
     disposition: Mapped[str | None] = mapped_column(String(16), nullable=True)
     #: Raw MS-Project Bucket from the IHP planner tracker (EAR, DESIGN,

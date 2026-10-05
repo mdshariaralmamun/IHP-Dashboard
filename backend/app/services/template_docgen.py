@@ -162,17 +162,45 @@ def site_location(project: Project) -> str:
     return " ".join(parts)
 
 
-def wbs_code(project: Project) -> str:
-    """The WBS / source of funding, when the request carries a real code.
+def is_aspec(project: Project) -> bool:
+    """An ASEPC request is delivered within the IHP budget, not against a PO."""
+    return "asep" in (project.funding_source or "").strip().lower()
 
-    A funding line with a number in it ("120/520", "BAS/1/1096/01-01") is the
-    WBS; free text like "ASEPC" is not, and becomes TBD rather than inventing a
-    cost centre.
+
+def wbs_code(project: Project) -> str:
+    """The WBS the summary prints.
+
+    The PR request / master register carries the cost centre (e.g.
+    "KCR/1/2601-01-01" for an ASEPC request, "12380" or "BAS/1/1435-01-01" for
+    a baseline one). Free text with no number in it is never dressed up as a
+    cost centre: it prints TBD.
     """
-    for source in (project.funding_source, getattr(project, "ear_number", None)):
+    for source in (
+        getattr(project, "wbs_number", None),
+        project.funding_source,
+    ):
         text = (source or "").strip()
         if text and any(character.isdigit() for character in text):
             return text
+    return "TBD"
+
+
+def budget_line(project: Project) -> str:
+    """The TOTAL ESTIMATED PROJECT COST cell.
+
+    ASEPC: "Within IHP budget". A baseline request carries its own estimate, so
+    the number is printed as the dollars the team writes ($ 3,200). When a
+    baseline request has no estimate on file the cell says TBD rather than
+    claiming a budget nobody approved.
+    """
+    if is_aspec(project):
+        return "Within IHP budget"
+    amount = getattr(project, "cost_estimate_usd", None)
+    if isinstance(amount, (int, float)) and amount > 0:
+        return f"$ {amount:,.0f}"
+    generated = cost_estimate_usd(project)
+    if generated.startswith("$"):
+        return generated
     return "TBD"
 
 
@@ -214,7 +242,7 @@ def cost_estimate_usd(project: Project) -> str:
         return "TBD"
     if total <= 0:
         return "TBD"
-    return f"USD {total:,.0f}"
+    return f"$ {total:,.0f}"
 
 
 def _intro(project: Project, why: str) -> str:
@@ -249,7 +277,7 @@ def summary_context(
         # lands); the location is decoded into the site's written form.
         "contact": project.pi_email or "TBD",
         "project_location": site_location(project),
-        "budget": cost_estimate_usd(project),
+        "budget": budget_line(project),
         "wbs": wbs_code(project),
         "schedule": {
             "detailed_design": "1 Weeks",
