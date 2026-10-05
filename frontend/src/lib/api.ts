@@ -929,6 +929,69 @@ export function answerQuestion(
   );
 }
 
+/** Open a document in a new tab as a web view (HTML / PDF / image). */
+export async function openAttachmentView(
+  projectId: number,
+  attachmentId: number,
+): Promise<void> {
+  const token = getToken();
+  const res = await fetch(
+    '/api/projects/' + projectId + '/attachments/' + attachmentId + '/view',
+    { headers: token ? { Authorization: 'Bearer ' + token } : undefined },
+  );
+  if (!res.ok) {
+    let message = 'Could not open the document.';
+    try {
+      const body: unknown = await res.json();
+      if (body && typeof body === 'object' && 'detail' in body) {
+        message = String((body as { detail: unknown }).detail);
+      }
+    } catch {
+      /* keep the generic message */
+    }
+    throw new Error(message);
+  }
+  const type = res.headers.get('content-type') ?? 'text/html';
+  const blob = new Blob([await res.blob()], { type });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank', 'noopener');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+/** Download a document as PDF (converted once on the server, then cached). */
+export async function downloadAttachmentPdf(
+  projectId: number,
+  attachmentId: number,
+  filename: string,
+): Promise<void> {
+  const token = getToken();
+  const res = await fetch(
+    '/api/projects/' + projectId + '/attachments/' + attachmentId + '/pdf',
+    { headers: token ? { Authorization: 'Bearer ' + token } : undefined },
+  );
+  if (!res.ok) {
+    let message = 'Could not build the PDF.';
+    try {
+      const body: unknown = await res.json();
+      if (body && typeof body === 'object' && 'detail' in body) {
+        message = String((body as { detail: unknown }).detail);
+      }
+    } catch {
+      /* keep the generic message */
+    }
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename.replace(/\.[^.]+$/, '') + '.pdf';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 /** The saved materials take-off draft for this project. */
 export function getMtoDraft(projectId: number): Promise<MtoDraft> {
   return request<MtoDraft>('/api/projects/' + projectId + '/mto-draft');

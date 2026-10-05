@@ -856,3 +856,126 @@ def answer_question(
         "blocking": row.blocking,
         "answered_at": row.answered_at,
     }
+
+
+#: How a document is shown in the web view. Office formats are converted on
+#: demand (LibreOffice is in the image); what the browser can already render is
+#: served as-is.
+def _inline_media(suffix: str) -> str:
+    return {
+        ".pdf": "application/pdf",
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+    }.get(suffix, "application/octet-stream")
+
+
+def _convert(path: Path, target: str) -> Path | None:
+    """Convert a document next to itself with headless LibreOffice."""
+    try:
+        from ..services.docgen import docx_to_pdf  # noqa: F401
+
+        import shutil
+        import subprocess
+
+        soffice = shutil.which("soffice")
+        if not soffice:
+            return None
+        out_dir = path.parent / "webview"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        expected = out_dir / (path.stem + "." + target)
+        if expected.exists() and expected.stat().st_mtime >= path.stat().st_mtime:
+            return expected
+        subprocess.run(
+            [soffice, "--headless", "--convert-to", target, "--outdir", str(out_dir), str(path)],
+            check=True,
+            capture_output=True,
+            timeout=240,
+        )
+    except Exception:  # noqa: BLE001 - the caller falls back to a download
+        return None
+    return expected if expected.exists() else None
+
+
+@router.get("/{project_id}/attachments/{attachment_id}/view")
+def attachment_web_view(
+    project_id: int,
+    attachment_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """The web view of one document.
+
+    PDFs and images are served in the browser directly. Word and Excel are
+    converted to HTML on demand (cached beside the file, and re-converted when
+    the document changes), so every deliverable can be read in the app instead
+    of only as extracted text.
+    """
+    from fastapi.responses import FileResponse, HTMLResponse
+
+    from ..models import Attachment
+
+    project = get_project_or_404(db, project_id)
+    attachment = db.get(Attachment, attachment_id)
+    if attachment is None or attachment.project_id != project.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found"
+        )
+    path = Path(attachment.stored_path)
+    if not path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="The stored file is missing"
+        )
+    suffix = path.suffix.lower()
+    if suffix in {".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp"}:
+        return FileResponse(path, media_type=_inline_media(suffix))
+    if suffix in {".docx", ".doc", ".xlsx", ".xls", ".xlsm"}:
+        converted = _convert(path, "html")
+        if converted is None:
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail="This file could not be rendered in the browser; download it instead.",
+            )
+        return HTMLResponse(converted.read_text(encoding="utf-8", errors="ignore"))
+    raise HTTPException(
+        status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+        detail=f"No web view for {suffix or 'this file'} yet.",
+    )
+
+
+@router.get("/{project_id}/attachments/{attachment_id}/pdf")
+def attachment_pdf(
+    project_id: int,
+    attachment_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """The document as PDF, converted once and cached beside the file."""
+    from fastapi.responses import FileResponse
+
+    from ..models import Attachment
+
+    project = get_project_or_404(db, project_id)
+    attachment = db.get(Attachment, attachment_id)
+    if attachment is None or attachment.project_id != project.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found"
+        )
+    path = Path(attachment.stored_path)
+    if not path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="The stored file is missing"
+        )
+    if path.suffix.lower() == ".pdf":
+        return FileResponse(path, media_type="application/pdf", filename=path.name)
+    converted = _convert(path, "pdf")
+    if converted is None:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Could not convert this document to PDF.",
+        )
+    return FileResponse(
+        converted, media_type="application/pdf", filename=path.stem + ".pdf"
+    )

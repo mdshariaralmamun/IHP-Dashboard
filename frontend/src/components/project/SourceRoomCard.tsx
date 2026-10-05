@@ -5,10 +5,12 @@ import {
   analyzeSources,
   deleteSource,
   downloadAttachment,
+  downloadAttachmentPdf,
   generateDeliverables,
   getSourceBrief,
   getSourceRoom,
   getSourceText,
+  openAttachmentView,
   uploadSources,
 } from '@/lib/api';
 import { answerQuestion, listQuestions } from '@/lib/api';
@@ -420,13 +422,31 @@ export default function SourceRoomCard({
               </span>
               <span className="font-medium text-apple-text">{doc.filename}</span>
               <span className="text-[10px] text-apple-muted">{size(doc.size_bytes)}</span>
-              <button
-                type="button"
-                onClick={() => void downloadAttachment(projectId, doc.attachment_id, doc.filename)}
-                className="ml-auto text-[10px] font-semibold text-primary hover:underline"
-              >
-                download
-              </button>
+              <span className="ml-auto flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void openAttachmentView(projectId, doc.attachment_id)}
+                  className="text-[10px] font-semibold text-primary hover:underline"
+                >
+                  web view
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void downloadAttachmentPdf(projectId, doc.attachment_id, doc.filename)
+                  }
+                  className="text-[10px] font-semibold text-primary hover:underline"
+                >
+                  PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void downloadAttachment(projectId, doc.attachment_id, doc.filename)}
+                  className="text-[10px] font-semibold text-slate-500 hover:underline"
+                >
+                  download
+                </button>
+              </span>
             </li>
           ))}
         </ul>
