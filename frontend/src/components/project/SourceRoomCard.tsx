@@ -233,6 +233,18 @@ export default function SourceRoomCard({
   });
   const payload = brief?.payload ?? null;
 
+  // The brief always lists what it asked; the answers live on the project. So
+  // anything already answered or closed is filtered out here - a question the
+  // engineer has dealt with must never be shown back to them as still open.
+  const settled = new Set(
+    questions
+      .filter((row) => row.status !== 'open')
+      .map((row) => row.question.trim().toLowerCase()),
+  );
+  const openFromBrief = (payload?.open_questions ?? []).filter(
+    (row) => !settled.has((row.question ?? '').trim().toLowerCase()),
+  );
+
   return (
     <section className="rounded-xl border border-apple-border bg-white p-5 shadow-sm dark:bg-white/[0.04]">
       <div className="flex flex-wrap items-start justify-between gap-2">
@@ -549,13 +561,13 @@ export default function SourceRoomCard({
             </VisualCard>
           )}
 
-          {(payload.open_questions ?? []).length > 0 && (
+          {openFromBrief.length > 0 && (
             <VisualCard
-              title={'Open questions / TQ — ' + (payload.open_questions ?? []).length}
-              subtitle="answer these before the documents are issued"
+              title={'Still unanswered — ' + openFromBrief.length}
+              subtitle="what the AI asked that has no answer on the project yet"
             >
               <ul className="space-y-1">
-                {(payload.open_questions ?? []).map((q, i) => (
+                {openFromBrief.map((q, i) => (
                   <li
                     key={i}
                     className={
