@@ -175,7 +175,8 @@ def collect(db: Session) -> dict[str, Any]:
             "DISPOSITION",
             "EAR_DRAFT",
             "EAR_REVIEW",
-            "EAR_APPROVED",
+            "EAR_ISSUED",
+        "EAR_APPROVED",
         ),
     }
 

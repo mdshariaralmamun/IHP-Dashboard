@@ -30,6 +30,9 @@ DISPOSITION = "DISPOSITION"
 EAR_DRAFT = "EAR_DRAFT"
 EAR_REVIEW = "EAR_REVIEW"
 EAR_APPROVED = "EAR_APPROVED"
+#: The EAR has been issued to the PI / proponent for signature, but is not
+#: approved yet - the state the boards show as "EAR Under PI Signature".
+EAR_ISSUED = "EAR_ISSUED"
 SOW_DRAFT = "SOW_DRAFT"
 SOW_REVIEW = "SOW_REVIEW"
 SOW_APPROVED = "SOW_APPROVED"
@@ -59,6 +62,7 @@ STAGES = [
     DISPOSITION,
     EAR_DRAFT,
     EAR_REVIEW,
+    EAR_ISSUED,
     EAR_APPROVED,
     SOW_DRAFT,
     SOW_REVIEW,
@@ -76,7 +80,7 @@ STAGES = [
 
 #: Stages that only the PROJECT branch can ever reach.
 PROJECT_ONLY_STAGES: frozenset[str] = frozenset(
-    {EAR_DRAFT, EAR_REVIEW, EAR_APPROVED, SOW_DRAFT, SOW_REVIEW, SOW_APPROVED,
+    {EAR_DRAFT, EAR_REVIEW, EAR_ISSUED, EAR_APPROVED, SOW_DRAFT, SOW_REVIEW, SOW_APPROVED,
      PROCUREMENT, WORK_PERMIT, CONSTRUCTION, CLOSEOUT, PUNCH_LIST}
 )
 
@@ -87,7 +91,10 @@ ALLOWED_TRANSITIONS: dict[str, set[str]] = {
     MOM_CONFIRMED: {DISPOSITION, EAR_DRAFT, MTO_DRAFT},
     DISPOSITION: {EAR_DRAFT, MTO_DRAFT},
     EAR_DRAFT: {EAR_REVIEW, DISPOSITION},
-    EAR_REVIEW: {EAR_APPROVED, EAR_DRAFT},
+    EAR_REVIEW: {EAR_APPROVED, EAR_ISSUED, EAR_DRAFT},
+    # Issued to the PI for signature: it comes back approved, or back to review
+    # with their comments.
+    EAR_ISSUED: {EAR_APPROVED, EAR_REVIEW},
     EAR_APPROVED: {SOW_DRAFT, MTO_DRAFT},
     SOW_DRAFT: {SOW_REVIEW, EAR_APPROVED},
     SOW_REVIEW: {SOW_APPROVED, SOW_DRAFT},

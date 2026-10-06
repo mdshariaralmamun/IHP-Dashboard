@@ -20,6 +20,7 @@ export const STAGES: StageOption[] = [
   { id: 'DISPOSITION', label: 'Disposition' },
   { id: 'EAR_DRAFT', label: 'EAR Draft' },
   { id: 'EAR_REVIEW', label: 'EAR Review' },
+  { id: 'EAR_ISSUED', label: 'EAR Issued' },
   { id: 'EAR_APPROVED', label: 'EAR Approved' },
   { id: 'SOW_DRAFT', label: 'SOW Draft' },
   { id: 'SOW_REVIEW', label: 'SOW Review' },

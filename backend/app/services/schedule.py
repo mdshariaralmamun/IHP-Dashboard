@@ -30,6 +30,7 @@ NEXT_STAGE: dict[str, str] = {
     "DISPOSITION": "EAR",
     "EAR_DRAFT": "EAR review",
     "EAR_REVIEW": "EAR approval",
+    "EAR_ISSUED": "ASEPC / SOW",
     "EAR_APPROVED": "ASEPC / SOW",
     "SOW_DRAFT": "SOW review",
     "SOW_REVIEW": "SOW approval",
