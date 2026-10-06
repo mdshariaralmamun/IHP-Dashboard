@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import ErrorBox from '@/components/ErrorBox';
 import StageBadge from '@/components/StageBadge';
-import { ApiError, getBoard, setSummaryStatus, updateProject } from '@/lib/api';
+import { ApiError, getBoard, setProjectStage, setSummaryStatus, updateProject } from '@/lib/api';
 import type { Board, BoardRow } from '@/lib/api';
+import { STAGES, stageName } from '@/lib/stages';
 import {
   BarList,
   Donut,
@@ -341,6 +342,8 @@ export default function PhaseBoard({ phase }: { phase: 'ear' | 'design' | 'proco
                   busy={busy === row.id}
                   onPatch={patch}
                   onCycleSummary={cycleSummary}
+                  onReload={load}
+                  onError={setError}
                 />
               ))}
             </div>
@@ -352,15 +355,72 @@ export default function PhaseBoard({ phase }: { phase: 'ear' | 'design' | 'proco
 }
 
 function Row({
-  row, busy, onPatch, onCycleSummary,
+  row, busy, onPatch, onCycleSummary, onReload, onError,
 }: {
   row: BoardRow;
   busy: boolean;
   onPatch: (row: BoardRow, fields: Record<string, string | null>) => void;
   onCycleSummary: (row: BoardRow) => void;
+  onReload: () => void;
+  onError: (message: string) => void;
 }) {
   const [owner, setOwner] = useState(row.owner_username ?? '');
   const [note, setNote] = useState(row.followup_note ?? '');
+  const [stageTarget, setStageTarget] = useState('');
+
+  const dirty =
+    owner !== (row.owner_username ?? '') || note !== (row.followup_note ?? '');
+
+  // The court follows the stage: handing a PR to the next stage hands it to
+  // whoever owns that stage (the engineer keeps it while it is EAR/design work,
+  // the PI once it is out for signature, the construction team from PTW on).
+  const CONSTRUCTION_STAGES = ['PROCUREMENT', 'WORK_PERMIT', 'CONSTRUCTION', 'CLOSEOUT', 'PUNCH_LIST'];
+  const nextCourt = stageTarget
+    ? CONSTRUCTION_STAGES.includes(stageTarget)
+      ? 'the construction team'
+      : stageTarget.startsWith('EAR')
+        ? 'the engineer'
+        : stageTarget === 'CANCELLED'
+          ? 'closed'
+          : 'the next owner'
+    : 'shown after you pick a stage';
+
+  async function saveOwner() {
+    if (owner === (row.owner_username ?? '')) return;
+    await onPatch(row, { owner_username: owner || null });
+  }
+
+  async function saveNote() {
+    if (note === (row.followup_note ?? '')) return;
+    await onPatch(row, { followup_note: note || null });
+  }
+
+  async function saveAll() {
+    const fields: Record<string, string | null> = {};
+    if (owner !== (row.owner_username ?? '')) fields.owner_username = owner || null;
+    if (note !== (row.followup_note ?? '')) fields.followup_note = note || null;
+    if (Object.keys(fields).length) await onPatch(row, fields);
+  }
+
+  async function moveStage(target: string) {
+    try {
+      await setProjectStage(row.id, target, {
+        justification: 'Handed on from the board to ' + stageName(target),
+      });
+      onReload();
+    } catch (e) {
+      onError(
+        e instanceof ApiError && e.status === 409
+          ? e.message +
+            ' — use the stage panel on the project page to force it with a reason.'
+          : e instanceof Error
+            ? e.message
+            : 'Could not move the stage.',
+      );
+    } finally {
+      setStageTarget('');
+    }
+  }
 
   const subject = row.pr_number + ' — ' + (row.next_action ?? 'status');
   const body =
@@ -428,21 +488,60 @@ function Row({
         </a>
       </div>
 
-      <div className="mt-2 grid gap-2 sm:grid-cols-[200px_1fr]">
+      {/* Saving is explicit: a blur-save quietly lost what was typed when the
+          board refreshed, so each field has its own Save and Enter also saves. */}
+      <div className="mt-2 grid gap-2 sm:grid-cols-[190px_1fr_auto]">
         <input
           value={owner}
           onChange={(e) => setOwner(e.target.value)}
-          onBlur={() => owner !== (row.owner_username ?? '') && onPatch(row, { owner_username: owner || null })}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void saveOwner();
+          }}
           placeholder="Assign to (engineer)"
           className="rounded border border-apple-border bg-apple-surface px-2 py-1 text-xs"
         />
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          onBlur={() => note !== (row.followup_note ?? '') && onPatch(row, { followup_note: note || null })}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void saveNote();
+          }}
           placeholder="Follow-up note — what to do / current situation & reason"
           className="rounded border border-apple-border bg-apple-surface px-2 py-1 text-xs"
         />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={busy || !dirty}
+            onClick={() => void saveAll()}
+            className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-40"
+          >
+            Save
+          </button>
+          <span className="text-[10px] text-apple-muted">{dirty ? 'unsaved' : 'saved'}</span>
+        </div>
+      </div>
+
+      {/* Hand the PR on: another stage, and therefore another court. */}
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-apple-muted">Move to</span>
+        <select
+          value={stageTarget}
+          onChange={(e) => {
+            setStageTarget(e.target.value);
+            if (e.target.value) void moveStage(e.target.value);
+          }}
+          disabled={busy}
+          className="rounded border border-apple-border bg-apple-surface px-2 py-1 text-[11px]"
+        >
+          <option value="">— stage —</option>
+          {STAGES.filter((s) => s.id !== row.stage).map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-apple-muted">then it is {nextCourt}</span>
       </div>
       {row.followup_note && (
         <p className="mt-1 text-[11px] text-apple-muted">Note: {row.followup_note}</p>
