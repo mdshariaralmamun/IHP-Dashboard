@@ -17,6 +17,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -58,6 +59,18 @@ FOLLOWUP_BUCKETS: tuple[str, ...] = (
 )
 
 _BUCKET_LOOKUP = {b.upper(): b for b in FOLLOWUP_BUCKETS}
+
+#: The EAR approval states the team tracks (the sheets carry the dates, the
+#: proponent signs through DocuSign, and the team can set it by hand).
+EAR_APPROVAL_STATES: frozenset[str] = frozenset(
+    {"approved", "pending_approval", "under_progress", "cancelled"}
+)
+
+
+class EarApprovalIn(BaseModel):
+    status: str
+    date: str | None = None
+    note: str | None = None
 
 
 def _now() -> datetime:
@@ -584,4 +597,59 @@ def list_contacts(
         "total": len(out),
         "with_email": sum(1 for e in out if e["email"]),
         "contacts": out[:limit],
+    }
+
+
+
+@router.put("/{project_id}/ear-approval")
+def set_ear_approval(
+    project_id: int,
+    body: "EarApprovalIn",
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_PROJECTS_EDIT)),
+):
+    """Record the EAR approval: approved / pending / in progress / cancelled.
+
+    The Planner and O&M sheets carry the real dates and the proponent signs
+    through DocuSign; this is the team's own switch, for the times the sheet
+    lags or the answer came by mail. "approved" also moves the project to the
+    EAR Approved stage so the two can never disagree.
+    """
+    project = get_project_or_404(db, project_id)
+    status = (body.status or "").strip().lower()
+    if status not in EAR_APPROVAL_STATES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="status must be one of: " + ", ".join(sorted(EAR_APPROVAL_STATES)),
+        )
+    project.ear_approval_status = status
+    project.ear_approval_date = (body.date or "").strip() or None
+    if body.note is not None:
+        project.ear_approval_note = (body.note or "").strip() or None
+    if status == "approved" and project.stage in ("EAR_DRAFT", "EAR_REVIEW", "EAR_ISSUED"):
+        try:
+            workflow.transition(
+                project,
+                workflow.EAR_APPROVED,
+                user,
+                db,
+                detail={"justification": body.note or "EAR approved by the proponent"},
+                action="stage:EAR_APPROVED",
+            )
+        except workflow.WorkflowError:
+            pass
+    workflow.log_action(
+        db,
+        user,
+        "ear:approval",
+        project,
+        {"status": status, "date": project.ear_approval_date},
+    )
+    db.commit()
+    return {
+        "project_id": project.id,
+        "status": project.ear_approval_status,
+        "date": project.ear_approval_date,
+        "note": project.ear_approval_note,
+        "stage": project.stage,
     }

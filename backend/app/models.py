@@ -97,6 +97,12 @@ class Project(Base):
     #: ASEPC request is delivered "within the IHP budget", a baseline one
     #: carries its own estimate and WBS cost centre.
     wbs_number: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    #: The EAR approval as the team tracks it: the Planner / O&M sheets carry
+    #: the dates, and the proponent signs through DocuSign. Recorded here so the
+    #: board can show and change it by hand when the sheet lags.
+    ear_approval_status: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    ear_approval_date: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    ear_approval_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     cost_estimate_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
     stage: Mapped[str] = mapped_column(String(32), default="INTAKE")
     disposition: Mapped[str | None] = mapped_column(String(16), nullable=True)
