@@ -911,6 +911,31 @@ export interface QuestionList {
   questions: ProjectQuestion[];
 }
 
+export interface AiChatReply {
+  reply: string;
+  citations: { label?: string; filename?: string; detail?: string }[];
+  available: boolean;
+}
+
+export type AiChatScope = 'project' | 'standards' | 'all';
+
+/** Ask the AI about this project (it reads the project's indexed documents). */
+export function aiChat(body: {
+  projectId: number;
+  message: string;
+  scope?: AiChatScope;
+  provider?: string | null;
+  model?: string | null;
+}): Promise<AiChatReply> {
+  return request<AiChatReply>('/api/ai/chat', { method: 'POST' }, {
+    project_id: body.projectId,
+    message: body.message,
+    scope: body.scope ?? 'project',
+    provider: body.provider ?? null,
+    model: body.model ?? null,
+  });
+}
+
 /** The project's open questions and the answers written so far. */
 export function listQuestions(projectId: number): Promise<QuestionList> {
   return request<QuestionList>('/api/projects/' + projectId + '/questions');
