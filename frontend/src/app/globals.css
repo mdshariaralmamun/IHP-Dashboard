@@ -95,6 +95,21 @@ html[data-text-size="large"] { font-size: 18px; }
     background-color: rgba(245, 245, 247, 0.25);
   }
 
+  /* The app's own label colours.
+   *
+   * text-apple-muted is the most used label in the app ("then it is shown after
+   * you pick a stage", "PI:", the field hints). It resolves from a CSS variable
+   * that is too dark on a dark card, so the hint disappeared while the field
+   * stayed readable. Remapped for dark mode, together with the primary text
+   * colour, so no label can fall below the contrast the rest of the page has. */
+  :where(html.dark) :where([class~="text-apple-muted"]) {
+    color: #a1a1a6;
+  }
+
+  :where(html.dark) :where([class~="text-apple-text"]) {
+    color: #f5f5f7;
+  }
+
   /* Dark-mode safety net for hard-coded dark text on dark cards: any Tailwind
    * text utility from the dark end of the palette is remapped, so a panel that
    * forgot a dark: variant still reads. */
