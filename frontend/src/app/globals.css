@@ -77,6 +77,46 @@ html[data-text-size="large"] { font-size: 18px; }
     color-scheme: dark;
   }
 
+  /* Typed text must always be readable in dark mode.
+   *
+   * This selector (element + class) deliberately out-specifies a bare Tailwind
+   * text utility, so a field that ends up inside a component carrying
+   * text-slate-900 / text-black - e.g. "what is the next step", the follow-up
+   * note, the materials search - can never paint dark text on the dark field
+   * the rest of this block sets. The reported "I type and cannot read it". */
+  html.dark input,
+  html.dark textarea,
+  html.dark select {
+    color: #f5f5f7;
+  }
+
+  html.dark input::selection,
+  html.dark textarea::selection {
+    background-color: rgba(245, 245, 247, 0.25);
+  }
+
+  /* Dark-mode safety net for hard-coded dark text on dark cards: any Tailwind
+   * text utility from the dark end of the palette is remapped, so a panel that
+   * forgot a dark: variant still reads. */
+  :where(html.dark) :where([class~="text-black"], [class~="text-slate-900"],
+    [class~="text-slate-800"], [class~="text-gray-900"], [class~="text-gray-800"],
+    [class~="text-zinc-900"], [class~="text-zinc-800"], [class~="text-neutral-900"],
+    [class~="text-neutral-800"], [class~="text-stone-900"], [class~="text-stone-800"]) {
+    color: #f5f5f7;
+  }
+
+  :where(html.dark) :where([class~="text-slate-700"], [class~="text-gray-700"],
+    [class~="text-zinc-700"], [class~="text-neutral-700"], [class~="text-stone-700"],
+    [class~="text-slate-600"], [class~="text-gray-600"], [class~="text-zinc-600"],
+    [class~="text-neutral-600"], [class~="text-stone-600"]) {
+    color: #d1d5db;
+  }
+
+  :where(html.dark) :where([class~="bg-slate-50"], [class~="bg-gray-50"],
+    [class~="bg-slate-100"], [class~="bg-gray-100"]) {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
   /* A bare bg-white carries no dark variant, so in dark mode it rendered as a
      white card holding light text (invisible). Turn those surfaces dark by
      default. This rule is in the base layer, so an explicit dark:bg-* utility
