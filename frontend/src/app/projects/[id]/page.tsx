@@ -25,6 +25,7 @@ import NextStepCard from '@/components/project/NextStepCard';
 import SourceRoomCard from '@/components/project/SourceRoomCard';
 import MaterialPicker from '@/components/project/MaterialPicker';
 import ProjectChat from '@/components/project/ProjectChat';
+import LiveTrackingStepper, { icrSteps } from '@/components/project/LiveTrackingStepper';
 import AiReviewCard from '@/components/project/AiReviewCard';
 import PlanMarkersCard from '@/components/project/PlanMarkersCard';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
@@ -244,6 +245,22 @@ function ProjectDetailView() {
                 canRun={canEditProject}
               />
             </div>
+
+            {/* The ICR delivery sequence as a chevron tracker: green behind,
+                blue where we are, grey ahead. */}
+            {project.disposition === 'ICR' && (
+              <div className="mb-6">
+                <LiveTrackingStepper
+                  steps={icrSteps({
+                    hasMom: Boolean(project.mom),
+                    milestones: (project.icr_handoffs ?? []).map(
+                      (handoff) => handoff.milestone,
+                    ),
+                    stage: project.stage,
+                  })}
+                />
+              </div>
+            )}
 
             {/* What happens next: the one next step, the to-do list, and the
                 cancellation record. Always visible, whatever the stage. */}
