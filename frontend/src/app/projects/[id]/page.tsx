@@ -203,9 +203,6 @@ function ProjectDetailView() {
                   defaultTo={project.pi_email ?? ''}
                   stageLabel={project.phase ?? null}
                   trackingToken={project.tracking_token ?? null}
-                  defaultTo={project.pi_email ?? null}
-                  stageLabel={stageLabel(project.stage)}
-                  trackingToken={project.tracking_token ?? null}
                 />
 
                 <div className="mt-6 p-4 bg-apple-surface/50 border border-apple-border rounded-md">
