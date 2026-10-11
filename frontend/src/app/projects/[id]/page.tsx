@@ -197,6 +197,12 @@ function ProjectDetailView() {
                   target={trackingRef}
                   endpoint={`/api/projects/${project.id}/tracking-email`}
                   prNumber={project.pr_number}
+                  // Pre-addressed: the follow-up email goes out to whoever the
+                  // app holds for this PR (the requester / PI from the contacts
+                  // list), so nothing has to be typed or looked up.
+                  defaultTo={project.pi_email ?? ''}
+                  stageLabel={project.phase ?? null}
+                  trackingToken={project.tracking_token ?? null}
                   defaultTo={project.pi_email ?? null}
                   stageLabel={stageLabel(project.stage)}
                   trackingToken={project.tracking_token ?? null}
