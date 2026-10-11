@@ -1,6 +1,12 @@
 'use client';
 
 import { VisualCard } from '@/components/powerbi/PowerBI';
+import { STAGES } from '@/lib/stages';
+
+const STAGE_IDS = STAGES.map((s) => s.id);
+const STAGE_LABELS: Record<string, string> = Object.fromEntries(
+  STAGES.map((s) => [s.id, s.label]),
+);
 
 export type StepState = 'done' | 'active' | 'future';
 
@@ -80,6 +86,16 @@ export default function LiveTrackingStepper({
       </div>
     </VisualCard>
   );
+}
+
+/** The delivery stages, for a project that is not ICR. */
+export function workflowSteps(stage: string): TrackStep[] {
+  const index = Math.max(STAGE_IDS.indexOf(stage), 0);
+  return STAGE_IDS.map((id, position) => ({
+    label: STAGE_LABELS[id] ?? id.replace(/_/g, ' '),
+    state: position < index ? 'done' : position === index ? 'active' : 'future',
+    date: position <= index ? null : null,
+  }));
 }
 
 /**

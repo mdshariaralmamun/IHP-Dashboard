@@ -25,7 +25,7 @@ import NextStepCard from '@/components/project/NextStepCard';
 import SourceRoomCard from '@/components/project/SourceRoomCard';
 import MaterialPicker from '@/components/project/MaterialPicker';
 import ProjectChat from '@/components/project/ProjectChat';
-import LiveTrackingStepper, { icrSteps } from '@/components/project/LiveTrackingStepper';
+import LiveTrackingStepper, { icrSteps, workflowSteps } from '@/components/project/LiveTrackingStepper';
 import AiReviewCard from '@/components/project/AiReviewCard';
 import PlanMarkersCard from '@/components/project/PlanMarkersCard';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
@@ -189,8 +189,22 @@ function ProjectDetailView() {
             {(activeTab === 'all') && (
               <div className="bg-apple-surface p-6 rounded-lg shadow-sm border border-apple-border mb-6">
                 <div ref={trackingRef}>
-                  <h3 className="text-base font-bold text-apple-text mb-4">Live Tracking</h3>
-                  <TrackerStepper project={project} audit={audit} />
+                  {/* ONE Live Tracking, in both branches: the ICR sequence for
+                      an ICR project, the workflow stages otherwise. The old
+                      stepper sat above it, so the page showed two trackers. */}
+                  <LiveTrackingStepper
+                    steps={
+                      project.disposition === 'ICR'
+                        ? icrSteps({
+                            hasMom: Boolean(project.mom),
+                            milestones: (project.icr_handoffs ?? []).map(
+                              (handoff) => handoff.milestone,
+                            ),
+                            stage: project.stage,
+                          })
+                        : workflowSteps(project.stage)
+                    }
+                  />
                 </div>
 
                 {/* Outside the captured node, so the buttons stay out of the image. */}
@@ -245,22 +259,6 @@ function ProjectDetailView() {
                 canRun={canEditProject}
               />
             </div>
-
-            {/* The ICR delivery sequence as a chevron tracker: green behind,
-                blue where we are, grey ahead. */}
-            {project.disposition === 'ICR' && (
-              <div className="mb-6">
-                <LiveTrackingStepper
-                  steps={icrSteps({
-                    hasMom: Boolean(project.mom),
-                    milestones: (project.icr_handoffs ?? []).map(
-                      (handoff) => handoff.milestone,
-                    ),
-                    stage: project.stage,
-                  })}
-                />
-              </div>
-            )}
 
             {/* What happens next: the one next step, the to-do list, and the
                 cancellation record. Always visible, whatever the stage. */}
