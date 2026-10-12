@@ -287,6 +287,20 @@ export default function SourceRoomCard({
               </option>
             ))}
           </select>
+          {/* Voice notes from a site visit: the phone offers its recorder here. */}
+          <label className="cursor-pointer rounded-md border border-apple-border bg-white px-2 py-1.5 text-center text-[11px] font-semibold text-apple-text hover:bg-apple-surface dark:bg-white/5">
+            🎙 Voice note
+            <input
+              type="file"
+              multiple
+              accept="audio/*,video/*"
+              className="hidden"
+              onChange={(e) => {
+                setDocType('audio');
+                void onUpload(e.target.files);
+              }}
+            />
+          </label>
           <input
             ref={inputRef}
             type="file"

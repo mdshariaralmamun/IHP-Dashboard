@@ -58,6 +58,11 @@ DOC_TYPES: tuple[str, ...] = (
     "schedule",
     "report",
     "photo",
+    #: Voice notes and site-visit recordings: stored as they are (there is no
+    #: text to extract), and the raw material for a MOM transcript.
+    "audio",
+    "recording",
+    "video",
     "other",
 )
 
@@ -271,6 +276,8 @@ def extract_text(path: Path) -> tuple[str, str]:
             text = _eml_text(path)
         elif suffix in _PLAIN_SUFFIXES:
             text = _plain_text(path)
+        elif suffix in {".mp3", ".m4a", ".wav", ".ogg", ".oga", ".opus", ".aac", ".amr", ".wma", ".flac", ".3gp"}:
+            return "", "audio recording - stored for the record (transcribe to use it in a MOM)"
         elif suffix in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".tif", ".tiff", ".dwg", ".dxf", ".zip", ".rar", ".7z", ".mp4", ".mov"}:
             return "", "no text layer (image / drawing / archive) - stored for the reviewer"
         else:
