@@ -652,9 +652,17 @@ _DELIVERABLE_STAGE = "DELIVERABLE"
 
 
 def _soffice_pdf(path: Path) -> Path | None:
-    """Convert an office file to PDF next to it (LibreOffice is in the image)."""
+    """Convert an office file to PDF next to it (LibreOffice is in the image).
+
+    A .xlsx needs the Calc component (libreoffice-calc in backend/Dockerfile):
+    without it the BOQ and the Procore comment log silently dropped out of the
+    binder, because soffice exits 0 with "source file could not be loaded".
+    Each run gets its own user profile so two conversions can never fight over
+    the same lock.
+    """
     import shutil
     import subprocess
+    import tempfile
 
     soffice = shutil.which("soffice") or shutil.which("libreoffice")
     if not soffice:
@@ -664,9 +672,20 @@ def _soffice_pdf(path: Path) -> Path | None:
     expected = out_dir / (path.stem + ".pdf")
     if expected.exists() and expected.stat().st_mtime >= path.stat().st_mtime:
         return expected
+    profile = tempfile.mkdtemp(prefix="lo-profile-")
     try:
         subprocess.run(
-            [soffice, "--headless", "--convert-to", "pdf", "--outdir", str(out_dir), str(path)],
+            [
+                soffice,
+                "-env:UserInstallation=file://" + profile,
+                "--headless",
+                "--norestore",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                str(out_dir),
+                str(path),
+            ],
             check=True,
             capture_output=True,
             timeout=240,
@@ -678,7 +697,7 @@ def _soffice_pdf(path: Path) -> Path | None:
 
 def _cover_page(project: Project, revision: str, contents: list[str]) -> "fitz.Document":
     """The binder's cover sheet, built with PyMuPDF (A4 portrait)."""
-    import fitz
+    import pymupdf as fitz
 
     doc = fitz.open()
     page = doc.new_page(width=595, height=842)
@@ -738,15 +757,25 @@ def combined_binder(
     work = Path(tempfile.mkdtemp(prefix="ihp-binder-"))
     sources: list[tuple[str, Path]] = []
     try:
-        # 1. SOW and BOQ from the app's own generators, converted to PDF.
-        sow_docx = generators.generate_sow_docx(project, sow)
-        sow_pdf = _soffice_pdf(sow_docx)
-        if sow_pdf:
-            sources.append(("Scope of Work", sow_pdf))
-        boq_xlsx = generators.generate_boq_xlsx(project, list(items), sow)
-        boq_pdf = _soffice_pdf(boq_xlsx)
-        if boq_pdf:
-            sources.append(("Bill of Quantities", boq_pdf))
+        # 1. SOW and BOQ from the app's own generators, converted to PDF. A
+        # part that cannot be converted is recorded, never dropped silently:
+        # a binder missing its BOQ is worse than a visible error.
+        def add_part(name: str, office_file: Path) -> Path | None:
+            converted = _soffice_pdf(office_file)
+            if converted is None:
+                workflow.log_action(
+                    db,
+                    user,
+                    "package:skip",
+                    project,
+                    {"file": name, "error": "could not convert the generated file to PDF"},
+                )
+                return None
+            sources.append((name, converted))
+            return converted
+
+        add_part("Scope of Work", generators.generate_sow_docx(project, sow))
+        add_part("Bill of Quantities", generators.generate_boq_xlsx(project, list(items), sow))
 
         # 1b. The Procore comment log, so each reviewer sees IHP's answers.
         from . import procore as procore_api
@@ -755,9 +784,7 @@ def combined_binder(
         if comments:
             log_xlsx = work / f"{project.pr_number} Comments Logs.xlsx"
             procore_api.comment_log_xlsx(project, comments, log_xlsx)
-            log_pdf = _soffice_pdf(log_xlsx)
-            if log_pdf:
-                sources.append((f"Procore Comment Log ({len(comments)} items)", log_pdf))
+            add_part(f"Procore Comment Log ({len(comments)} items)", log_xlsx)
 
         # 2. Uploaded drawings (any PDF attachment that is not a generated doc).
         drawings = db.scalars(

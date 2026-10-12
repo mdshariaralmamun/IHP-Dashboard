@@ -41,6 +41,11 @@ current version is shown in the app under **Admin → Version**.
   and reports which items the new package must still answer.
 
 ### Fixes
+- **The BOQ was silently missing from the binder**: the image had LibreOffice
+  Writer but not **Calc**, so `.xlsx` → PDF failed while `soffice` still exited
+  0 with "source file could not be loaded". `libreoffice-calc` is now installed,
+  every conversion gets its own user profile, and a part that cannot be converted
+  is written to the audit trail instead of quietly dropping out of the binder.
 - `GET /projects/{id}/sow` called with its arguments swapped, which would have
   failed the first time it was used.
 - PyMuPDF is now imported as `pymupdf` (the `fitz` alias is deprecated).

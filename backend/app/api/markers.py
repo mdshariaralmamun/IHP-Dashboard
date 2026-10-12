@@ -178,7 +178,7 @@ def plan_png(
     cached = source.with_suffix(f".p{page}.png")
     if not cached.exists():
         try:
-            import fitz  # PyMuPDF
+            import pymupdf as fitz  # PyMuPDF ('fitz' is the deprecated alias)
 
             document = fitz.open(source)
             if page > document.page_count:

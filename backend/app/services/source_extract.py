@@ -82,7 +82,7 @@ def _clip(text: str) -> str:
 
 def _pdf_text(path: Path) -> str:
     try:
-        import fitz  # PyMuPDF
+        import pymupdf as fitz  # PyMuPDF ('fitz' is the deprecated alias)
 
         with fitz.open(path) as doc:
             return "\n".join(page.get_text() for page in doc)
