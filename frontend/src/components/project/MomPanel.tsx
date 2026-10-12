@@ -820,12 +820,19 @@ export default function MomPanel({
             )}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <input
-              type="text"
+            {/* A proper writing window: several lines, drag to resize, and it
+                grows with what you type. Line breaks are kept in the MOM. */}
+            <textarea
               value={newItem.scope}
               onChange={(e) => setNewItem((prev) => ({ ...prev, scope: e.target.value }))}
-              placeholder="Scope / task description"
-              className={inputClass}
+              onInput={(e) => {
+                const el = e.currentTarget;
+                el.style.height = 'auto';
+                el.style.height = Math.max(el.scrollHeight, 96) + 'px';
+              }}
+              rows={4}
+              placeholder="Scope / task description — write as much as you need; line breaks are kept"
+              className={`${inputClass} w-full min-h-24 resize-y leading-relaxed`}
             />
             <input
               type="text"
@@ -858,11 +865,17 @@ export default function MomPanel({
                   return (
                     <li key={i} className="flex flex-wrap items-center gap-2">
                       <span className="text-xs text-apple-muted">{i + 1}.</span>
-                      <input
-                        type="text"
+                      <textarea
                         value={editDraft.scope}
                         onChange={(e) => setEditDraft((p) => ({ ...p, scope: e.target.value }))}
-                        className={inputClass}
+                        onInput={(e) => {
+                          const el = e.currentTarget;
+                          el.style.height = 'auto';
+                          el.style.height = Math.max(el.scrollHeight, 96) + 'px';
+                        }}
+                        rows={4}
+                        placeholder="Scope / task description — several lines allowed"
+                        className={`${inputClass} w-full min-h-24 resize-y leading-relaxed`}
                       />
                       <input
                         type="text"
