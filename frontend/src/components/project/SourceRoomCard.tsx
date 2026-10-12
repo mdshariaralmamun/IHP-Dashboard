@@ -179,12 +179,12 @@ export default function SourceRoomCard({
     }
   }
 
-  async function generate() {
+  async function generate(only?: string) {
     setGenerating(true);
     setError(null);
     setNotice(null);
     try {
-      const result = await generateDeliverables(projectId);
+      const result = await generateDeliverables(projectId, only);
       setGenerated(result);
       setNotice(
         result.documents.length +
@@ -407,6 +407,27 @@ export default function SourceRoomCard({
           >
             {generating ? 'Building…' : 'Generate documents'}
           </button>
+        </div>
+      )}
+
+      {/* One button per document, so each is generated on its own screen
+          instead of everything coming out of a single click. */}
+      {canEdit && brief?.status === 'ready' && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-apple-muted">
+            Generate only
+          </span>
+          {['Project Summary', 'Scope of Work', 'BOQ', 'Cost Estimate', 'MTO'].map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              onClick={() => void generate(kind)}
+              disabled={generating}
+              className="rounded-full border border-apple-border px-2.5 py-1 text-[11px] font-semibold text-apple-text hover:bg-apple-surface disabled:opacity-50"
+            >
+              {kind}
+            </button>
+          ))}
         </div>
       )}
 

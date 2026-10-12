@@ -316,6 +316,9 @@ def _run_analysis(brief_id: int, project_id: int) -> None:
 @router.post("/{project_id}/sources/generate")
 def generate_deliverables(
     project_id: int,
+    #: Generate ONE document ("Project Summary", "Scope of Work", "BOQ",
+    #: "Cost Estimate", "MTO"); omitted, the whole set is built.
+    only: str | None = None,
     db: Session = Depends(get_db),
     user: User = Depends(require_capability(CAP_ATTACHMENTS_UPLOAD)),
 ):
@@ -390,6 +393,15 @@ def generate_deliverables(
             lambda out: template_docgen.generate_boq_mto(project, payload, out),
         ),
     )
+    if only:
+        wanted = only.strip().lower()
+        jobs = tuple(job for job in jobs if job[0].strip().lower() == wanted)
+        if not jobs:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=("only must be one of: Project Summary, Scope of Work, "
+                        "BOQ, Cost Estimate, MTO"),
+            )
     generated = []
     try:
         for kind, filename, builder in jobs:

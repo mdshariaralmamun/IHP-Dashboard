@@ -1287,9 +1287,15 @@ export interface GenerateResult {
 }
 
 /** Render the project documents from the latest brief and attach them. */
-export function generateDeliverables(projectId: number): Promise<GenerateResult> {
+export function generateDeliverables(
+  projectId: number,
+  /** Generate one document only: "Project Summary" | "Scope of Work" | "BOQ"
+   *  | "Cost Estimate" | "MTO". Omitted, the whole set is built. */
+  only?: string,
+): Promise<GenerateResult> {
+  const suffix = only ? '?only=' + encodeURIComponent(only) : '';
   return request<GenerateResult>(
-    '/api/projects/' + projectId + '/sources/generate',
+    '/api/projects/' + projectId + '/sources/generate' + suffix,
     { method: 'POST' },
   );
 }
