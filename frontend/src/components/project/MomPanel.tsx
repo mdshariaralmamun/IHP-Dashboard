@@ -819,9 +819,14 @@ export default function MomPanel({
               </span>
             )}
           </div>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {/* A proper writing window: several lines, drag to resize, and it
-                grows with what you type. Line breaks are kept in the MOM. */}
+          {/* items-start: when the scope box is resized or grows, the trade
+              select, Action by, ETC and Add stay pinned to the first line
+              instead of stretching or floating to the middle. */}
+          <div className="mt-2 flex flex-wrap items-start gap-2">
+            {/* Multi-line writing window, same behaviour as the Invitation box:
+                rows=2 starting height, min-height 2.5rem, drag the bottom-right
+                handle (resize-y), and it grows with what you type. Line breaks
+                are kept and printed in the MOM. */}
             <textarea
               value={newItem.scope}
               onChange={(e) => setNewItem((prev) => ({ ...prev, scope: e.target.value }))}
@@ -830,9 +835,9 @@ export default function MomPanel({
                 el.style.height = 'auto';
                 el.style.height = Math.max(el.scrollHeight, 96) + 'px';
               }}
-              rows={4}
+              rows={2}
               placeholder="Scope / task description — write as much as you need; line breaks are kept"
-              className={`${inputClass} w-full min-h-24 resize-y leading-relaxed`}
+              className={`${inputClass} min-h-10 flex-1 resize-y leading-relaxed`}
             />
             <input
               type="text"
@@ -862,9 +867,11 @@ export default function MomPanel({
               {mom.details!.agenda!.map((item, i) => {
                 const own = ownAgendaTrade !== null && item.trade === ownAgendaTrade;
                 if (editingIndex === i) {
+                  // items-start keeps the row aligned to the top while the
+                  // scope box is resized.
                   return (
-                    <li key={i} className="flex flex-wrap items-center gap-2">
-                      <span className="text-xs text-apple-muted">{i + 1}.</span>
+                    <li key={i} className="flex flex-wrap items-start gap-2">
+                      <span className="pt-2 text-xs text-apple-muted">{i + 1}.</span>
                       <textarea
                         value={editDraft.scope}
                         onChange={(e) => setEditDraft((p) => ({ ...p, scope: e.target.value }))}
@@ -873,9 +880,9 @@ export default function MomPanel({
                           el.style.height = 'auto';
                           el.style.height = Math.max(el.scrollHeight, 96) + 'px';
                         }}
-                        rows={4}
+                        rows={2}
                         placeholder="Scope / task description — several lines allowed"
-                        className={`${inputClass} w-full min-h-24 resize-y leading-relaxed`}
+                        className={`${inputClass} min-h-10 flex-1 resize-y leading-relaxed`}
                       />
                       <input
                         type="text"
