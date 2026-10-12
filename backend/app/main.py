@@ -30,6 +30,7 @@ from .api import (  # noqa: F401 (routers registered below)
     imports,
     intake,
     mom,
+    pipeline,
     planning,
     projects,
     public,
@@ -161,6 +162,8 @@ def create_app() -> FastAPI:
     app.include_router(planning.todos_router, prefix="/api")
     # PI / requester directory (derived from the register).
     app.include_router(planning.contacts_router, prefix="/api")
+    # The five-stage delivery pipeline (spine + guards).
+    app.include_router(pipeline.router, prefix="/api")
     # The PR data room: raw source files, their extracted text and the AI brief.
     app.include_router(sources.router, prefix="/api")
     app.include_router(sources.sources_router, prefix="/api")

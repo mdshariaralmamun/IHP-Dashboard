@@ -936,6 +936,42 @@ export function aiChat(body: {
   });
 }
 
+export interface PipelineStageRow {
+  stage: number;
+  label: string;
+  status: string;
+  note: string | null;
+  updated_at: string | null;
+  allowed_statuses: string[];
+  blocked_reason: string | null;
+}
+
+export interface PipelineResponse {
+  project_id: number;
+  stages: PipelineStageRow[];
+  procore_status: string;
+  mto_unlocked: boolean;
+  current_stage: number;
+}
+
+/** The five-stage delivery spine for a project. */
+export function getPipeline(projectId: number): Promise<PipelineResponse> {
+  return request<PipelineResponse>('/api/projects/' + projectId + '/pipeline');
+}
+
+/** Set one stage's status (stage 4 carries the Procore submittal status). */
+export function setPipelineStage(
+  projectId: number,
+  stage: number,
+  body: { status: string; note?: string | null },
+): Promise<PipelineResponse> {
+  return request<PipelineResponse>(
+    '/api/projects/' + projectId + '/pipeline/' + stage + '/advance',
+    { method: 'POST' },
+    body,
+  );
+}
+
 /** The project's open questions and the answers written so far. */
 export function listQuestions(projectId: number): Promise<QuestionList> {
   return request<QuestionList>('/api/projects/' + projectId + '/questions');

@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import (
     JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -937,6 +938,33 @@ class ProjectTodo(Base):
     )
 
     project: Mapped[Project] = relationship(back_populates="todos")
+
+
+class PipelineStage(Base):
+    """One row per stage of the IHP delivery pipeline, per project.
+
+    The spine of the five-stage workflow (MOM -> EAR & Cost Estimate -> SOW /
+    BOQ / Drawings -> Procore comments & revision -> MTO). Status lives here
+    rather than in five scattered flags, so "where is this PR?" has one answer
+    and the guard rules can be enforced in one place.
+    """
+
+    __tablename__ = "pipeline_stages"
+    __table_args__ = (UniqueConstraint("project_id", "stage", name="uq_pipeline_project_stage"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    #: 1..5, as the team numbers them.
+    stage: Mapped[int] = mapped_column(Integer)
+    #: not_started | in_progress | awaiting_feedback | confirmed | pending_approval
+    #: | approved | revise_and_resubmit | approved_as_noted | done
+    #: stage 4 keeps the Procore submittal status itself.
+    status: Mapped[str] = mapped_column(String(24), default="not_started", index=True)
+    #: Free note: the Procore submittal date, the reviewer, what is blocking.
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
 class SourceDocument(Base):
     """One raw file in a PR data room.

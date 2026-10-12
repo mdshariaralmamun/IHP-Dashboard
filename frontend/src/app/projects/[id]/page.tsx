@@ -25,6 +25,7 @@ import NextStepCard from '@/components/project/NextStepCard';
 import SourceRoomCard from '@/components/project/SourceRoomCard';
 import MaterialPicker from '@/components/project/MaterialPicker';
 import ProjectChat from '@/components/project/ProjectChat';
+import PipelinePanel from '@/components/project/PipelinePanel';
 import AiReviewCard from '@/components/project/AiReviewCard';
 import PlanMarkersCard from '@/components/project/PlanMarkersCard';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
@@ -256,6 +257,11 @@ function ProjectDetailView() {
                 canEdit={canEditProject}
                 onChanged={load}
               />
+            </div>
+
+            {/* The five-stage delivery spine: one row per milestone gate. */}
+            <div className="mb-6">
+              <PipelinePanel projectId={project.id} />
             </div>
 
             {/* The raw data room: everything the engineer / PI / suppliers sent,
