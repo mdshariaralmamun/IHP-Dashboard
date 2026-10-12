@@ -74,6 +74,33 @@ AREA_BY_ROOM_BAND: dict[str, int] = {
 }
 
 
+#: The lab list (LAB LIST 02-2018): FLOC code -> lab, centre and PI, so a
+#: location can answer "which lab is this?" in the site's own words.
+_FLOC_LABS: dict[str, dict] | None = None
+
+
+def floc_info(code: str | None) -> dict | None:
+    """The lab the FLOC/room code belongs to, or None when it is not listed."""
+    global _FLOC_LABS
+    if not code:
+        return None
+    if _FLOC_LABS is None:
+        import json
+        from pathlib import Path
+
+        try:
+            path = (
+                Path(__file__).resolve().parent.parent
+                / "reference_data"
+                / "floc_labs.json"
+            )
+            rows = json.loads(path.read_text(encoding="utf-8"))
+            _FLOC_LABS = {str(row.get("floc", "")).strip(): row for row in rows}
+        except Exception:  # noqa: BLE001 - a missing list must not break locations
+            _FLOC_LABS = {}
+    return _FLOC_LABS.get(str(code).strip())
+
+
 def decode_location(text: str | None) -> dict[str, Any] | None:
     """Decode a location the way the site writes it.
 
@@ -146,6 +173,16 @@ def describe_location(text: str | None) -> str | None:
         line += f" ({decoded['building_code']} {decoded['building_title']})"
     elif decoded["form"] == "room-code":
         line += " (building not in the master list - verify)"
+    # Which lab it is, from the site's own lab list.
+    lab = floc_info(decoded.get("room"))
+    if lab and lab.get("lab"):
+        detail = str(lab["lab"])
+        # The centre is often already part of the lab's name - do not repeat it.
+        if lab.get("centre") and str(lab["centre"]).lower() not in detail.lower():
+            detail += f" ({lab['centre']})"
+        if lab.get("pi"):
+            detail += f" - PI: {lab['pi']}"
+        line += " - " + detail
     return line
 
 

@@ -1,0 +1,1094 @@
+[
+ {
+  "floc": "1-0700",
+  "lab": "Shaheen-II Phase 1 Site preparation",
+  "centre": "",
+  "pi": "John Larson"
+ },
+ {
+  "floc": "1-0R10",
+  "lab": "Supercomputing / CFO 500",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "1-2418",
+  "lab": "Visualization Core Lab / CFO-200",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "1-2740",
+  "lab": "3D Printer Laboratory",
+  "centre": "",
+  "pi": "W. Heidrich/E. Elnozahy"
+ },
+ {
+  "floc": "1-3216",
+  "lab": "Name not decided / Equipment only",
+  "centre": "CEMSE",
+  "pi": "Tareq Al Naffouri"
+ },
+ {
+  "floc": "1-3222",
+  "lab": "Computer Cluster (Computational Faculty)",
+  "centre": "COMPUTER CLUSTER",
+  "pi": "Andrea Fratalocchi"
+ },
+ {
+  "floc": "2-0650",
+  "lab": "NMR Expansion for DNP",
+  "centre": "CORE LABS",
+  "pi": "J. Mynar"
+ },
+ {
+  "floc": "2-0810",
+  "lab": "PI Offices",
+  "centre": "",
+  "pi": ""
+ },
+ {
+  "floc": "2-0820",
+  "lab": "Plant Growth Facility",
+  "centre": "CORE LABS",
+  "pi": "N/A"
+ },
+ {
+  "floc": "2-0850",
+  "lab": "Animal Vivarium",
+  "centre": "CORE LABS",
+  "pi": "N/A"
+ },
+ {
+  "floc": "2-0860",
+  "lab": "Animal Vivarium Expansion",
+  "centre": "CORE LABS",
+  "pi": "N/A"
+ },
+ {
+  "floc": "2-0870",
+  "lab": "Animal Vivarium Storage",
+  "centre": "CORE LABS",
+  "pi": "N/A"
+ },
+ {
+  "floc": "2-2600",
+  "lab": "N/A",
+  "centre": "BIOLOGY NEIGHBORHOOD 1",
+  "pi": "Pierre Magistretti"
+ },
+ {
+  "floc": "2-2610",
+  "lab": "Marine Environmental Research Lab",
+  "centre": "BIOLOGY NEIGHBORHOOD 1",
+  "pi": "Burton Jones"
+ },
+ {
+  "floc": "2-2620",
+  "lab": "Red Sea Biological & Environmental",
+  "centre": "BIOLOGY NEIGHBORHOOD 1",
+  "pi": "Duarte Carlos"
+ },
+ {
+  "floc": "2-2640",
+  "lab": "Name not decided",
+  "centre": "BIOLOGY NEIGHBORHOOD 1",
+  "pi": "Daniele Daffonchio"
+ },
+ {
+  "floc": "2-2710",
+  "lab": "Bioscience Core Labs",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "2-2750",
+  "lab": "Oligo (support)",
+  "centre": "",
+  "pi": "Sami Al-Qarawi"
+ },
+ {
+  "floc": "2-2800",
+  "lab": "Red Sea Research Center (RSRC)",
+  "centre": "RSRC",
+  "pi": "Duarte Carlos"
+ },
+ {
+  "floc": "2-2810",
+  "lab": "Red Sea Biological & Environmental / Equipment only",
+  "centre": "RSRC",
+  "pi": "Xelu Moran"
+ },
+ {
+  "floc": "2-2820",
+  "lab": "OBSOLETE",
+  "centre": "RSRC",
+  "pi": "OBSOLETE"
+ },
+ {
+  "floc": "2-2830",
+  "lab": "Equipment install only",
+  "centre": "RSRC",
+  "pi": "Susana Agusti"
+ },
+ {
+  "floc": "2-2850",
+  "lab": "OBSOLETE",
+  "centre": "RSRC",
+  "pi": "OBSOLETE"
+ },
+ {
+  "floc": "2-2910",
+  "lab": "Bioscience Core Labs",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "2-3600",
+  "lab": "Biology Neighborhood Lab",
+  "centre": "BIOLOGY NEIGHBORHOOD",
+  "pi": "Pierre Magistretti"
+ },
+ {
+  "floc": "2-3610",
+  "lab": "Environmental Epigenetics Research Lab",
+  "centre": "BIOLOGY NEIGHBORHOOD",
+  "pi": "Valerio Orlando"
+ },
+ {
+  "floc": "2-3620",
+  "lab": "Equipment install only",
+  "centre": "BIOLOGY NEIGHBORHOOD",
+  "pi": "Antonio Adamo"
+ },
+ {
+  "floc": "2-3630",
+  "lab": "REFER TO PR-207",
+  "centre": "BIOLOGY NEIGHBORHOOD",
+  "pi": "OBSOLETE"
+ },
+ {
+  "floc": "2-3650",
+  "lab": "Name not decided",
+  "centre": "BIOLOGY NEIGHBORHOOD",
+  "pi": "Wolfgang Fischle"
+ },
+ {
+  "floc": "2-3700",
+  "lab": "Biology Swing Lab (Swing Lab 3 EPM)",
+  "centre": "BIOLOGY SWING LAB",
+  "pi": "Pierre Magistretti"
+ },
+ {
+  "floc": "2-3710",
+  "lab": "Structural Biomolecular Engineering",
+  "centre": "BIOLOGY SWING LAB",
+  "pi": "Stefan Arold"
+ },
+ {
+  "floc": "2-3720",
+  "lab": "Computational Biology Lab",
+  "centre": "BIOLOGY SWING LAB",
+  "pi": "Takashi Gojobori"
+ },
+ {
+  "floc": "2-3730",
+  "lab": "Bioscience Lab (with PR No - 37(2-4830); relocation to PR No - 89)",
+  "centre": "BIOLOGY SWING LAB",
+  "pi": "Vladimir Bajic"
+ },
+ {
+  "floc": "2-3800",
+  "lab": "Center for Desert Agriculture (CDA)",
+  "centre": "CDA",
+  "pi": "Pierre Magistretti"
+ },
+ {
+  "floc": "2-3830/3920/3940",
+  "lab": "CDA RENOVATION",
+  "centre": "CDA",
+  "pi": "N/A"
+ },
+ {
+  "floc": "2-3900",
+  "lab": "Center for Desert Agriculture (CDA)",
+  "centre": "CDA",
+  "pi": "Pierre Magistretti"
+ },
+ {
+  "floc": "2-3910",
+  "lab": "Center for Desert Agriculture  / Equipment only",
+  "centre": "CDA",
+  "pi": "Magdy Mahfouz"
+ },
+ {
+  "floc": "2-3920",
+  "lab": "Center for Desert Agriculture (CDA PR No - 3)",
+  "centre": "CDA",
+  "pi": "Mousa BenHamed"
+ },
+ {
+  "floc": "2-3930",
+  "lab": "Center for Desert Agriculture (CDA PR No - 3)",
+  "centre": "CDA",
+  "pi": "Salim Al-Babili"
+ },
+ {
+  "floc": "2-3940",
+  "lab": "Center for Desert Agriculture (CDA PR No - 83)",
+  "centre": "CDA",
+  "pi": "Mark Tester"
+ },
+ {
+  "floc": "2-3950",
+  "lab": "Center for Desert Agriculture (CDA PR No - 83)",
+  "centre": "CDA",
+  "pi": "Heribert Hirt"
+ },
+ {
+  "floc": "2-3XXX",
+  "lab": "Equipment only",
+  "centre": "CDA",
+  "pi": "Krattinger"
+ },
+ {
+  "floc": "2-4610",
+  "lab": "DNA Replication & Recombination",
+  "centre": "",
+  "pi": "Samir Hamdan"
+ },
+ {
+  "floc": "2-4620",
+  "lab": "Stem Cell Trafficking",
+  "centre": "",
+  "pi": "Jasmeen Merzaban"
+ },
+ {
+  "floc": "2-4640",
+  "lab": "Integrative Systems Biology Lab",
+  "centre": "",
+  "pi": "Timothy Ravasi"
+ },
+ {
+  "floc": "2-4650",
+  "lab": "SEE PR NO - 185",
+  "centre": "",
+  "pi": ""
+ },
+ {
+  "floc": "2-4710",
+  "lab": "Refer to PR-193",
+  "centre": "OBSOLETE",
+  "pi": "OBSOLETE"
+ },
+ {
+  "floc": "2-4720",
+  "lab": "Nalco research venture",
+  "centre": "N\\A",
+  "pi": "Nalco"
+ },
+ {
+  "floc": "2-4730",
+  "lab": "VIBRAtional imaging laboratory (VIBRA lab)",
+  "centre": "N\\A",
+  "pi": "Carlo Liberale"
+ },
+ {
+  "floc": "2-4740",
+  "lab": "Name not decided",
+  "centre": "N\\A",
+  "pi": "Andrea Falqui"
+ },
+ {
+  "floc": "2-4750",
+  "lab": "Molecular Sensing & Imaging",
+  "centre": "",
+  "pi": "Enzo Di Fabrizio"
+ },
+ {
+  "floc": "2-4810",
+  "lab": "NOW PR NO-184",
+  "centre": "",
+  "pi": ""
+ },
+ {
+  "floc": "2-4820",
+  "lab": "OBSOLETE",
+  "centre": "OBSOLETE",
+  "pi": "OBSOLETE"
+ },
+ {
+  "floc": "2-4830",
+  "lab": "TBC",
+  "centre": "",
+  "pi": "Prof. Charlotte Hauser"
+ },
+ {
+  "floc": "2-4840",
+  "lab": "Biomolecular Lab (Bajic to relocate to PR No - 89)",
+  "centre": "",
+  "pi": "C. Gehring"
+ },
+ {
+  "floc": "2-4850",
+  "lab": "Pathogen Genomics Lab",
+  "centre": "",
+  "pi": "Arnab Pain"
+ },
+ {
+  "floc": "2-4900",
+  "lab": "Biology Neighborhood 2",
+  "centre": "BIOLOGY NEIGHBORHOOD 2",
+  "pi": "Pierre Magistretti"
+ },
+ {
+  "floc": "2-4930",
+  "lab": "Name not decided",
+  "centre": "BIOLOGY NEIGHBORHOOD 2",
+  "pi": "Inal Sahika"
+ },
+ {
+  "floc": "2-4950",
+  "lab": "Name not decided",
+  "centre": "",
+  "pi": "Satoshi Habushi"
+ },
+ {
+  "floc": "3-0319",
+  "lab": "SEM ( Room 0319) Equipment only",
+  "centre": "CORE LABS",
+  "pi": "Rachid Sougrat"
+ },
+ {
+  "floc": "3-0352",
+  "lab": "Nuclear Magnetic Resonance (NMR)",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "3-0600",
+  "lab": "Advanced Nanofabrication",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "3-0610",
+  "lab": "OBSOLETE",
+  "centre": "OBSOLETE",
+  "pi": "OBSOLETE"
+ },
+ {
+  "floc": "3-0720",
+  "lab": "NANO FAB - EBL / Equipment only",
+  "centre": "CORE LABS",
+  "pi": "N/A"
+ },
+ {
+  "floc": "3-0800",
+  "lab": "Imaging & Characterization",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "3-2610",
+  "lab": "Tomography of Nano-Structured Materials",
+  "centre": "",
+  "pi": "Talaat Al-Kassab"
+ },
+ {
+  "floc": "3-2620",
+  "lab": "Functional Nanomaterials & Devices",
+  "centre": "",
+  "pi": "Husam Al-Shareef"
+ },
+ {
+  "floc": "3-2630",
+  "lab": "Integrated Nanotechnology Lab",
+  "centre": "",
+  "pi": "Muhammad Hussain"
+ },
+ {
+  "floc": "3-2635",
+  "lab": "Expansion of LFO40",
+  "centre": "N\\A",
+  "pi": "Hussain + Salama"
+ },
+ {
+  "floc": "3-2640",
+  "lab": "Dry Electronics Lab",
+  "centre": "",
+  "pi": "TBD"
+ },
+ {
+  "floc": "3-2645",
+  "lab": "IMPACT Lab",
+  "centre": "",
+  "pi": "Atif Shamim"
+ },
+ {
+  "floc": "3-2650",
+  "lab": "PR - 134",
+  "centre": "N\\A",
+  "pi": "Hossein Fariborzi"
+ },
+ {
+  "floc": "3-2710",
+  "lab": "Equipment install only",
+  "centre": "SWING LAB",
+  "pi": "Xiaohang Li"
+ },
+ {
+  "floc": "3-2810",
+  "lab": "Magnetism/Spintronic/Multiferroic Mat/Nano Str.",
+  "centre": "",
+  "pi": "Xixiang Zhang"
+ },
+ {
+  "floc": "3-2820",
+  "lab": "Core Lab Expansion",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "3-2830",
+  "lab": "Thin Film",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "3-2910",
+  "lab": "Microfluidics Thrust Lab",
+  "centre": "",
+  "pi": "Elmootazbellah Elnozahy"
+ },
+ {
+  "floc": "3-2920",
+  "lab": "Laboratory for Carbon Nanostructures",
+  "centre": "",
+  "pi": "Pedro Da Costa"
+ },
+ {
+  "floc": "3-2930",
+  "lab": "MOCVD Phase II",
+  "centre": "CEMSE",
+  "pi": "Ohkawa / Li"
+ },
+ {
+  "floc": "3-2930-2950/0930",
+  "lab": "MOCVD CLUSTER",
+  "centre": "CEMSE",
+  "pi": "Ohkawa / Li"
+ },
+ {
+  "floc": "3-2950",
+  "lab": "MOCVD CLUSTER (PR-171)",
+  "centre": "CEMSE",
+  "pi": "Ohkawa / Li"
+ },
+ {
+  "floc": "3-3710",
+  "lab": "Name not decided",
+  "centre": "N\\A",
+  "pi": "He  Jr. Hau"
+ },
+ {
+  "floc": "3-3720",
+  "lab": "Name not decided",
+  "centre": "N\\A",
+  "pi": "Jeff Shamma"
+ },
+ {
+  "floc": "3-3730-50",
+  "lab": "Analytical Core Lab Expansion",
+  "centre": "CORE LABS",
+  "pi": "Heiko W. Langner"
+ },
+ {
+  "floc": "3-3740",
+  "lab": "Core lab GIRMS",
+  "centre": "CORE LABS",
+  "pi": "Heiko W. Langner"
+ },
+ {
+  "floc": "3-3810",
+  "lab": "Photonics Lab",
+  "centre": "",
+  "pi": "Boon Siew Ooi"
+ },
+ {
+  "floc": "3-3820",
+  "lab": "SMS Lab",
+  "centre": "",
+  "pi": "Iman Roqan"
+ },
+ {
+  "floc": "3-3835",
+  "lab": "Functional Nanomaterials & Devices PR No20 A expansion.",
+  "centre": "N\\A",
+  "pi": "Husam Al-Shareef"
+ },
+ {
+  "floc": "3-3840",
+  "lab": "Sensing, Magnetism & Microsystems",
+  "centre": "",
+  "pi": "Jurgen Kosel"
+ },
+ {
+  "floc": "3-3850",
+  "lab": "Sensors Lab",
+  "centre": "",
+  "pi": "Muhammad Hussain"
+ },
+ {
+  "floc": "3-3910",
+  "lab": "Open Access Analytical Lab",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "3-3930",
+  "lab": "Analytical Core Labs",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "3-4000",
+  "lab": "assigned to KCC (PR-09)",
+  "centre": "KCC",
+  "pi": "Luigi Cavallo"
+ },
+ {
+  "floc": "3-4600",
+  "lab": "KAUST Catalysis Center (KCC)",
+  "centre": "KCC",
+  "pi": "Jean-Marie Basset"
+ },
+ {
+  "floc": "3-4620",
+  "lab": "Equipment install",
+  "centre": "KCC",
+  "pi": "Jorge Gascon"
+ },
+ {
+  "floc": "3-4700",
+  "lab": "Polymer Catalysis Lab/KCC",
+  "centre": "KCC",
+  "pi": "Nikolaos Hadjichristidis"
+ },
+ {
+  "floc": "3-4740",
+  "lab": "Heterogeneous Photocatalysis/KCC",
+  "centre": "KCC",
+  "pi": "Kazuhiro Takanabe"
+ },
+ {
+  "floc": "3-4800",
+  "lab": "Biological & Organometallic Catalysis/KCC",
+  "centre": "KCC",
+  "pi": "Jorg Eppinger"
+ },
+ {
+  "floc": "3-4810",
+  "lab": "Micellar & Supramolecular Catalysis/KCC",
+  "centre": "KCC",
+  "pi": "Valentin Rodionov"
+ },
+ {
+  "floc": "3-4840",
+  "lab": "Homogenous Catalysis/KCC",
+  "centre": "KCC",
+  "pi": "Kuo-Wei (Andy) Huang"
+ },
+ {
+  "floc": "3-4900",
+  "lab": "KCC",
+  "centre": "KCC",
+  "pi": "Jean-Marie Basset"
+ },
+ {
+  "floc": "3-4930",
+  "lab": "Equipment only",
+  "centre": "KCC",
+  "pi": "Magnus Ruping"
+ },
+ {
+  "floc": "4-0188",
+  "lab": "Earth System Observation & Modelling",
+  "centre": "",
+  "pi": "Matthew McCabe"
+ },
+ {
+  "floc": "4-0312",
+  "lab": "Central Machine Shop",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "4-0620",
+  "lab": "Electronics Shop",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "4-0630",
+  "lab": "Metrology Core Facility",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "4-0650",
+  "lab": "Maintenance & Repair Shop",
+  "centre": "",
+  "pi": "LEM"
+ },
+ {
+  "floc": "4-0810",
+  "lab": "COHMAS Lab",
+  "centre": "",
+  "pi": "Gilles Lubineau"
+ },
+ {
+  "floc": "4-0820",
+  "lab": "Physicals Math Lab",
+  "centre": "",
+  "pi": "Aslan Kasimov"
+ },
+ {
+  "floc": "4-0850",
+  "lab": "Micro & Nano Characterization & Motion",
+  "centre": "",
+  "pi": "Mohammad Younis"
+ },
+ {
+  "floc": "4-2610",
+  "lab": "COHMAS Lab",
+  "centre": "",
+  "pi": "Gilles Lubineau"
+ },
+ {
+  "floc": "4-2620",
+  "lab": "High-Speed Fluids Imaging Lab",
+  "centre": "",
+  "pi": "Sigurdur Thoroddsen"
+ },
+ {
+  "floc": "4-3600",
+  "lab": "Material Sciences Swing Lab 1",
+  "centre": "SWING LAB",
+  "pi": "Yves Gnanou"
+ },
+ {
+  "floc": "4-3700",
+  "lab": "Chemistry Neighborhood Combo 2",
+  "centre": "CHEMISTRY NEIGHBORHOOD",
+  "pi": "Yves Gnanou"
+ },
+ {
+  "floc": "4-3800",
+  "lab": "Chemistry Swing Lab 1",
+  "centre": "SWING LAB",
+  "pi": "Yves Gnanou"
+ },
+ {
+  "floc": "4-3900",
+  "lab": "Chemistry Neighborhood Combo 1 (Priority)",
+  "centre": "CHEMISTRY NEIGHBORHOOD",
+  "pi": "Yves Gnanou"
+ },
+ {
+  "floc": "4-3910",
+  "lab": "Controlled Release & Delivery",
+  "centre": "N\\A",
+  "pi": "Niveen Khashab"
+ },
+ {
+  "floc": "4-3940",
+  "lab": "AMPM",
+  "centre": "",
+  "pi": "Klaus-Viktor Peinemann"
+ },
+ {
+  "floc": "4-4600",
+  "lab": "Advanced Membranes & Porous Materials (AMPM) Center",
+  "centre": "AMPM",
+  "pi": "Ingo Pinnau"
+ },
+ {
+  "floc": "4-4710",
+  "lab": "Nanostructured Functional Materials",
+  "centre": "",
+  "pi": "Yu Han"
+ },
+ {
+  "floc": "4-4720",
+  "lab": "Inorganic Membranes Lab",
+  "centre": "",
+  "pi": "Zhiping Lai"
+ },
+ {
+  "floc": "4-4730",
+  "lab": "Expansion Inorganics lab  (previously PR 41)",
+  "centre": "",
+  "pi": "Zhiping Lai"
+ },
+ {
+  "floc": "4-4800",
+  "lab": "Water Desalination & Reuse Center (WDRC; +32c Microb. E)",
+  "centre": "WDRC",
+  "pi": "Gary Amy"
+ },
+ {
+  "floc": "4-4910",
+  "lab": "OBSOLETE",
+  "centre": "OBSOLETE",
+  "pi": "OBSOLETE"
+ },
+ {
+  "floc": "4-4930",
+  "lab": "Close Out PR No - 32",
+  "centre": "WDRC",
+  "pi": "P. Hong"
+ },
+ {
+  "floc": "4-4950",
+  "lab": "Water Desalination & Reuse Center (WDRC)",
+  "centre": "WDRC",
+  "pi": "Himanshu Mishra"
+ },
+ {
+  "floc": "5-0600",
+  "lab": "Solar & Photovoltaics Engineering Research Center",
+  "centre": "SPERC",
+  "pi": "Iain Macculloch"
+ },
+ {
+  "floc": "5-0610",
+  "lab": "Close-out remaining equipment for LFO4 / Equipment only",
+  "centre": "SPERC",
+  "pi": "Iain Macculloch"
+ },
+ {
+  "floc": "5-0620",
+  "lab": "Equipment install only",
+  "centre": "SPERC",
+  "pi": "S De Wolf"
+ },
+ {
+  "floc": "5-0800",
+  "lab": "Upstream Petroleum Research Center",
+  "centre": "ANPERC",
+  "pi": "Tad Patzek"
+ },
+ {
+  "floc": "5-2700",
+  "lab": "Chemistry Swing Lab 2",
+  "centre": "SWING LAB",
+  "pi": "Yves Gnanou"
+ },
+ {
+  "floc": "5-2860",
+  "lab": "UPERC- Real Time Operational Center ( RTOC) / Equipment only",
+  "centre": "ANPERC",
+  "pi": "Tad Patzek"
+ },
+ {
+  "floc": "5-2900",
+  "lab": "Material Sciences Swing Lab 2 (Priority)",
+  "centre": "SWING LAB",
+  "pi": "Yves Gnanou"
+ },
+ {
+  "floc": "5-2910",
+  "lab": "Name not decided",
+  "centre": "",
+  "pi": "Carlo Santamarina"
+ },
+ {
+  "floc": "5-2940",
+  "lab": "2D Materials Research Lab",
+  "centre": "",
+  "pi": "Lance(Lain-Jong) Li"
+ },
+ {
+  "floc": "5-2950",
+  "lab": "Nano Oxides for Sustainable Energy",
+  "centre": "",
+  "pi": "Tao (Tom) Wu"
+ },
+ {
+  "floc": "5-3600",
+  "lab": "Solar & Photovoltaics Engineering Research Center",
+  "centre": "SPERC",
+  "pi": "Iain Macculloch"
+ },
+ {
+  "floc": "5-3600/3800",
+  "lab": "Space optimization ( PR - 4)",
+  "centre": "SPERC",
+  "pi": "Iain Macculloch"
+ },
+ {
+  "floc": "5-3700",
+  "lab": "Chemistry Neighborhood Combo 3 (Priority)",
+  "centre": "CHEMISTRY NEIGHBORHOOD",
+  "pi": "Yves Gnanou"
+ },
+ {
+  "floc": "5-3710",
+  "lab": "Name not decided",
+  "centre": "SPERC",
+  "pi": "Iain Macculloch"
+ },
+ {
+  "floc": "5-3715",
+  "lab": "TBC",
+  "centre": "SPERC",
+  "pi": "Iain Macculloch"
+ },
+ {
+  "floc": "5-3720",
+  "lab": "Name not decided",
+  "centre": "",
+  "pi": "Thomas Anthopoulos"
+ },
+ {
+  "floc": "5-3800",
+  "lab": "Solar & Photovoltaics Engineering Research Center",
+  "centre": "SPERC",
+  "pi": "Iain Macculloch"
+ },
+ {
+  "floc": "5-3830",
+  "lab": "Name not decided / Equipment only",
+  "centre": "SPERC",
+  "pi": "Fredric Laquai"
+ },
+ {
+  "floc": "5-3850",
+  "lab": "Ultrafast Laser Spectroscopy & 4D Electron Imaging / Equipment only",
+  "centre": "SPERC",
+  "pi": "Omar Abdelsaboor"
+ },
+ {
+  "floc": "5-3910",
+  "lab": "Organic Electronics & Photovoltaics",
+  "centre": "",
+  "pi": "Aram Amassian"
+ },
+ {
+  "floc": "5-3920",
+  "lab": "FMD3",
+  "centre": "",
+  "pi": "Mohamed Eddaoudi"
+ },
+ {
+  "floc": "5-3950",
+  "lab": "Inorganic Synthesis Lab",
+  "centre": "SPERC",
+  "pi": "Alexander Rothenberger"
+ },
+ {
+  "floc": "5-4700",
+  "lab": "Chemistry Neighborhood Lab",
+  "centre": "CHEMISTRY NEIGHBORHOOD",
+  "pi": "Yves Gnanou"
+ },
+ {
+  "floc": "5-4710",
+  "lab": "Macromolecular Sci&Eng Lab",
+  "centre": "CHEMISTRY NEIGHBORHOOD",
+  "pi": "Pierre Beaujuge"
+ },
+ {
+  "floc": "5-4720",
+  "lab": "Functional Nanomaterials Lab",
+  "centre": "CHEMISTRY NEIGHBORHOOD",
+  "pi": "Osman Bakr"
+ },
+ {
+  "floc": "5-4730",
+  "lab": "Environmental & Nanotechnology Lab",
+  "centre": "CHEMISTRY NEIGHBORHOOD",
+  "pi": "Peng Wang"
+ },
+ {
+  "floc": "5-4740",
+  "lab": "Polymer Synthesis (in PR No - 69) - Tools",
+  "centre": "CHEMISTRY NEIGHBORHOOD",
+  "pi": "Nikolaos Hadjichristidis"
+ },
+ {
+  "floc": "5-4800",
+  "lab": "Clean Combustion Research Center (CCRC)",
+  "centre": "CCRC",
+  "pi": "Suk Ho Chung"
+ },
+ {
+  "floc": "5-4820",
+  "lab": "Equipment install only",
+  "centre": "CCRC",
+  "pi": "Gaetano Magnotti"
+ },
+ {
+  "floc": "5-4910",
+  "lab": "Pyrolysis & Combustion Chemistry Lab/CCRC",
+  "centre": "CCRC",
+  "pi": "S. Sarathy/S. Chung"
+ },
+ {
+  "floc": "5-xxxx",
+  "lab": "TBC",
+  "centre": "SPERC",
+  "pi": "Derya Baran"
+ },
+ {
+  "floc": "7-02740",
+  "lab": "CCRC 400Bar Compressor",
+  "centre": "CCRC",
+  "pi": "William Roberts"
+ },
+ {
+  "floc": "7-0710",
+  "lab": "Engine Test Facilities/CCRC",
+  "centre": "CCRC",
+  "pi": "Suk Ho Chung"
+ },
+ {
+  "floc": "7-0730",
+  "lab": "MESA Engines (Bengt)",
+  "centre": "CCRC",
+  "pi": "Bengt"
+ },
+ {
+  "floc": "7-0740",
+  "lab": "High Pressure Combustion Lab",
+  "centre": "CCRC",
+  "pi": "William Roberts"
+ },
+ {
+  "floc": "7-0810",
+  "lab": "Kinetics/CCRC",
+  "centre": "CCRC",
+  "pi": "Aamir Farooq"
+ },
+ {
+  "floc": "7-0910/2910",
+  "lab": "Clean Combustion Test Cell Facility",
+  "centre": "CCRC",
+  "pi": "William Roberts/Dibble"
+ },
+ {
+  "floc": "7-0920",
+  "lab": "Seismology Store Lab",
+  "centre": "",
+  "pi": "Gerard Schuster"
+ },
+ {
+  "floc": "7-0930",
+  "lab": "Sea Water Lab",
+  "centre": "WDRC",
+  "pi": "Ng Kim Choon"
+ },
+ {
+  "floc": "7-2950",
+  "lab": "Solar Powered Adsoprtion Desalination Pilot Plant",
+  "centre": "WDRC",
+  "pi": "Kim Choon Ng"
+ },
+ {
+  "floc": "Bldg 1 level 0",
+  "lab": "Shaheen cooling upgrade",
+  "centre": "CORE LABS",
+  "pi": "CORE LABS"
+ },
+ {
+  "floc": "Bldg 2, level 0 , A 1/4,/ Bldg 3,Level 2,area 6/ Bldg 3, level 3, area 1/ Bldg 4 /'Bldg 4. level 2, area 3/'Bldg 4, level 2, area 4/'Bldg 4, level 2, area 6/'Bldg 5, Level 2, area 1",
+  "lab": "Enabling Works Building ,Steel grid and flooring works",
+  "centre": "",
+  "pi": "Enabling Works package"
+ },
+ {
+  "floc": "Bldg 3/4",
+  "lab": "Fire dooor complinace requirements for lab compliance",
+  "centre": "",
+  "pi": "HSE as built renovation"
+ },
+ {
+  "floc": "C-1010",
+  "lab": "CMOR 1 Seawater Lab (in 1010)",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "C-1020",
+  "lab": "CMOR 2 Marine Ops Elec Lab (1010)",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "C-1030",
+  "lab": "CMOR 3 Outdoor Seawater Lab (1030)",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "C-1050",
+  "lab": "CMOR Pilot and Main Seawater Lab",
+  "centre": "CORE LABS",
+  "pi": "Justin Mynar"
+ },
+ {
+  "floc": "DARI",
+  "lab": "Desert Green Space Facility Phase 1",
+  "centre": "CDA",
+  "pi": "Mark Tester"
+ },
+ {
+  "floc": "LSS",
+  "lab": "CMOR 1040",
+  "centre": "CORE LABS",
+  "pi": "Abdulaziz Al-Suwailem"
+ },
+ {
+  "floc": "MR-1050",
+  "lab": "OLD 32c (NOW IN CMOR 1050)",
+  "centre": "WDRC",
+  "pi": ""
+ },
+ {
+  "floc": "N/A",
+  "lab": "Mark Tester",
+  "centre": "CDA",
+  "pi": "Agricultural Technology Field-Testing Facility"
+ },
+ {
+  "floc": "National Clean Combustion Test Lab",
+  "lab": "TBC",
+  "centre": "TBC",
+  "pi": "TBC"
+ },
+ {
+  "floc": "RP1030 L0 A7",
+  "lab": "ProtoLab",
+  "centre": "CORE LABS",
+  "pi": "La Von L. Bennett"
+ },
+ {
+  "floc": "RPIC, Level 3, Area 7",
+  "lab": "RPIC Labs Renovation",
+  "centre": "RPIC",
+  "pi": "N/A"
+ },
+ {
+  "floc": "TBC",
+  "lab": "NOT ASSIGNED",
+  "centre": "NOT ASSIGNED",
+  "pi": "NOT ASSIGNED"
+ },
+ {
+  "floc": "WW Plant (CUP)",
+  "lab": "Waste Water Research lab",
+  "centre": "",
+  "pi": "Torove Leiknes"
+ }
+]
