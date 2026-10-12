@@ -831,9 +831,11 @@ export default function MomPanel({
               value={newItem.scope}
               onChange={(e) => setNewItem((prev) => ({ ...prev, scope: e.target.value }))}
               onInput={(e) => {
+                // Grow-only: never shrink below what the user dragged it to,
+                // so the resize handle and the auto-grow do not fight.
                 const el = e.currentTarget;
-                el.style.height = 'auto';
-                el.style.height = Math.max(el.scrollHeight, 96) + 'px';
+                const needed = el.scrollHeight;
+                if (needed > el.offsetHeight) el.style.height = needed + 'px';
               }}
               rows={2}
               placeholder="Scope / task description — write as much as you need; line breaks are kept"
@@ -876,9 +878,10 @@ export default function MomPanel({
                         value={editDraft.scope}
                         onChange={(e) => setEditDraft((p) => ({ ...p, scope: e.target.value }))}
                         onInput={(e) => {
+                          // Grow-only: a manual drag is never undone by typing.
                           const el = e.currentTarget;
-                          el.style.height = 'auto';
-                          el.style.height = Math.max(el.scrollHeight, 96) + 'px';
+                          const needed = el.scrollHeight;
+                          if (needed > el.offsetHeight) el.style.height = needed + 'px';
                         }}
                         rows={2}
                         placeholder="Scope / task description — several lines allowed"
