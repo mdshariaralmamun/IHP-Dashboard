@@ -28,19 +28,40 @@ _SHORT = re.compile(
 )
 
 
+def _data_path(name: str) -> Path:
+    """Locate a reference-data file wherever the app is running from.
+
+    In the image the package is installed into site-packages, which does not
+    carry the JSON masters, so the file is looked for beside the source, in the
+    app directory and in the data directory before giving up.
+    """
+    candidates = [
+        Path(__file__).resolve().parent / "reference_data",
+        Path(__file__).resolve().parent.parent / "reference_data",
+        Path(_DATA_DIR) / "reference_data",
+        Path("/app/app/reference_data"),
+        Path("/app/backend/app/reference_data"),
+    ]
+    for directory in candidates:
+        candidate = directory / name
+        if candidate.exists():
+            return candidate
+    return candidates[0] / name
+
+
 @lru_cache(maxsize=1)
 def buildings() -> tuple[dict[str, Any], ...]:
-    return tuple(json.loads((_DATA_DIR / "buildings.json").read_text("utf-8")))
+    return tuple(json.loads(_data_path("buildings.json").read_text("utf-8")))
 
 
 @lru_cache(maxsize=1)
 def lot_codes() -> tuple[dict[str, Any], ...]:
-    return tuple(json.loads((_DATA_DIR / "lot_codes.json").read_text("utf-8")))
+    return tuple(json.loads(_data_path("lot_codes.json").read_text("utf-8")))
 
 
 @lru_cache(maxsize=1)
 def lfos() -> tuple[dict[str, Any], ...]:
-    return tuple(json.loads((_DATA_DIR / "lfos.json").read_text("utf-8")))
+    return tuple(json.loads(_data_path("lfos.json").read_text("utf-8")))
 
 
 def building_by_number(number: int) -> dict[str, Any] | None:
@@ -89,11 +110,7 @@ def floc_info(code: str | None) -> dict | None:
         from pathlib import Path
 
         try:
-            path = (
-                Path(__file__).resolve().parent.parent
-                / "reference_data"
-                / "floc_labs.json"
-            )
+            path = _data_path("floc_labs.json")
             rows = json.loads(path.read_text(encoding="utf-8"))
             _FLOC_LABS = {str(row.get("floc", "")).strip(): row for row in rows}
         except Exception:  # noqa: BLE001 - a missing list must not break locations
