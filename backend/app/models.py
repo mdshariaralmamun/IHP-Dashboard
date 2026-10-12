@@ -4,10 +4,10 @@ Portable column types only (no Postgres-only types) so the same models run
 on SQLite (dev/tests) and PostgreSQL (production).
 """
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import (
-    JSON, Boolean, DateTime, Float, ForeignKey, Integer, String, Text,
+    JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text,
     UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -105,6 +105,12 @@ class Project(Base):
     ear_approval_date: Mapped[str | None] = mapped_column(String(20), nullable=True)
     ear_approval_note: Mapped[str | None] = mapped_column(Text, nullable=True)
     cost_estimate_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    #: Procore submittal review state, set manually in-app:
+    #: under_review | revise_resubmit | approved_as_noted | approved
+    procore_status: Mapped[str | None] = mapped_column(String(48), nullable=True)
+    procore_submittal_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    #: Current submittal revision for the Procore binder (0 = Rev 0, 1 = Rev 1...).
+    procore_revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     stage: Mapped[str] = mapped_column(String(32), default="INTAKE")
     disposition: Mapped[str | None] = mapped_column(String(16), nullable=True)
     #: Raw MS-Project Bucket from the IHP planner tracker (EAR, DESIGN,
@@ -1053,6 +1059,35 @@ class BriefQuestion(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utcnow, onupdate=utcnow
     )
+
+
+class ProcoreComment(Base):
+    """One reviewer comment on a Procore submittal, with the IHP response.
+
+    The comment log is a project document in its own right (PR-XXXXX Comments
+    Logs), so the rows live here rather than in a free-text note: reviewer,
+    department, discipline, the comment, what IHP did about it, and whether it
+    is still open. `revision` ties each row to the revision it was raised on.
+    """
+
+    __tablename__ = "procore_comments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    item_no: Mapped[int] = mapped_column(Integer, default=1)
+    reviewer: Mapped[str] = mapped_column(String(200), default="")
+    department: Mapped[str] = mapped_column(String(120), default="")
+    discipline: Mapped[str] = mapped_column(String(120), default="")
+    comment: Mapped[str] = mapped_column(Text, default="")
+    ihp_response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    action_taken: Mapped[str | None] = mapped_column(Text, nullable=True)
+    #: open | closed
+    status: Mapped[str] = mapped_column(String(16), default="open", index=True)
+    #: The revision the comment was raised on (0, 1, ...).
+    revision: Mapped[int] = mapped_column(Integer, default=0)
+    created_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
 
 class MtoDraftItem(Base):

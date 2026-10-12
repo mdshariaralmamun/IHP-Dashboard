@@ -3,6 +3,48 @@
 Every change to the app is recorded here from 11 October 2026 onwards, and the
 current version is shown in the app under **Admin → Version**.
 
+## 1.1.0 — 12 October 2026
+
+### The five-stage delivery spine
+- **Pipeline per PR**: Stage 1 *Request registered* → 2 *MOM* → 3 *SOW/BOQ
+  submitted* → 4 *Procore submittal* → 5 *MTO / procurement*, each with a status,
+  a note and the acting user, on the project page.
+- **Gates enforced by the API, explained in the UI**: stage 2 needs the MOM
+  confirmed, stage 3 needs stage 2 approved or pending, stage 4 needs stage 3
+  issued, and stage 5 waits until Procore approves. A blocked stage shows why
+  instead of offering a status that would be refused.
+
+### Combined Procore binder
+- **Download Combined Procore Binder (PDF)** merges a cover page, the SOW, the
+  BOQ, the **Procore Comment Log** and every non-generated PDF drawing with
+  PyMuPDF, so each page keeps its own size and orientation (A3 plots stay A3,
+  landscape CAD sheets stay landscape). Broken files are skipped and audited,
+  never fatal.
+- The binder is attached to the PR as a `DELIVERABLE` and the revision is printed
+  on the cover (**Rev 0**, **Rev 1** …), so the copy in Procore can always be
+  matched to the copy in the app.
+
+### Procore review round-trip
+- **Reviewer comment log** per PR: reviewer (HSE Team, FLP / Fire Protection,
+  FMOM / Building Management, Building Operations, CTPS, Proponent / PI — or any
+  free-text name), department, discipline, the comment, IHP's response, the
+  action taken, open/closed, and the revision the comment was raised on.
+- **Comment Log Sheet export** as `PR-XXXXX Comments Logs.xlsx` and PDF, with the
+  project title block, submittal date, status and revision.
+- **Procore status set by hand** — Under Review | Revise and Resubmit | Approved
+  as Noted | Approved — with the **submittal date**, because that is what Procore
+  tells the team; the app never guesses the outcome.
+- **Dropzone for the stamped Procore Submittal PDF** that comes back reviewed; it
+  is versioned and stored with the project.
+- **Generate Revision N Package** bumps the revision (Rev 0 → Rev 1), stamps the
+  new submittal date, keeps earlier comments on the revision they were raised on
+  and reports which items the new package must still answer.
+
+### Fixes
+- `GET /projects/{id}/sow` called with its arguments swapped, which would have
+  failed the first time it was used.
+- PyMuPDF is now imported as `pymupdf` (the `fitz` alias is deprecated).
+
 ## 1.0.0 — 11 October 2026
 
 ### Projects & pipeline

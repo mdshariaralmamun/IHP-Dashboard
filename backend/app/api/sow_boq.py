@@ -49,7 +49,7 @@ def list_sow_revisions(
     _user: User = Depends(get_current_user),
 ):
     """List all SOW revisions for a project."""
-    project = get_project_or_404(project_id, db)
+    project = get_project_or_404(db, project_id)
     return project.sow_records
 
 
@@ -705,6 +705,7 @@ def _cover_page(project: Project, revision: str, contents: list[str]) -> "fitz.D
 @router.post("/package/pdf")
 def combined_binder(
     project_id: int,
+    revision: int | None = Query(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -716,7 +717,7 @@ def combined_binder(
     """
     import tempfile
 
-    import fitz
+    import pymupdf as fitz  # the 'fitz' alias is deprecated
     from fastapi.responses import FileResponse
 
     from ..models import Attachment
@@ -747,6 +748,17 @@ def combined_binder(
         if boq_pdf:
             sources.append(("Bill of Quantities", boq_pdf))
 
+        # 1b. The Procore comment log, so each reviewer sees IHP's answers.
+        from . import procore as procore_api
+
+        comments = procore_api._comments(db, project.id)
+        if comments:
+            log_xlsx = work / f"{project.pr_number} Comments Logs.xlsx"
+            procore_api.comment_log_xlsx(project, comments, log_xlsx)
+            log_pdf = _soffice_pdf(log_xlsx)
+            if log_pdf:
+                sources.append((f"Procore Comment Log ({len(comments)} items)", log_pdf))
+
         # 2. Uploaded drawings (any PDF attachment that is not a generated doc).
         drawings = db.scalars(
             select(Attachment)
@@ -768,9 +780,13 @@ def combined_binder(
                 detail="Nothing to bind yet: generate the SOW / BOQ or attach the drawings.",
             )
 
+        rev_number = revision if revision is not None else (project.procore_revision or 0)
+        rev_label = f"Rev {rev_number}"
+        if sow and sow.revision_name:
+            rev_label = f"{rev_label} (SOW {sow.revision_name})"
         cover = _cover_page(
             project,
-            revision=(sow.revision_name if sow and sow.revision_name else "Rev 0"),
+            revision=rev_label,
             contents=[name for name, _path in sources],
         )
         out = fitz.open()
@@ -787,7 +803,7 @@ def combined_binder(
 
         out_dir = storage.project_dir(project.pr_number, "generated")
         out_dir.mkdir(parents=True, exist_ok=True)
-        filename = f"{project.pr_number} Procore Submittal Binder.pdf"
+        filename = f"{project.pr_number} Procore Submittal Binder Rev {rev_number}.pdf"
         target = out_dir / filename
         out.save(str(target), deflate=True, garbage=3)
         pages = out.page_count

@@ -936,15 +936,10 @@ export function aiChat(body: {
   });
 }
 
-/** Download the combined Procore submittal binder (cover + SOW + BOQ + drawings). */
-export async function downloadProcoreBinder(projectId: number): Promise<void> {
-  const token = getToken();
-  const res = await fetch('/api/projects/' + projectId + '/package/pdf', {
-    method: 'POST',
-    headers: token ? { Authorization: 'Bearer ' + token } : undefined,
-  });
+/** Save a file response as a download, surfacing the API's message on failure. */
+async function saveAsDownload(res: Response, fallbackName: string): Promise<void> {
   if (!res.ok) {
-    let message = 'Could not build the binder.';
+    let message = 'The file could not be generated.';
     try {
       const body: unknown = await res.json();
       if (body && typeof body === 'object' && 'detail' in body) {
@@ -959,11 +954,143 @@ export async function downloadProcoreBinder(projectId: number): Promise<void> {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = 'Procore Submittal Binder.pdf';
+  anchor.download = fallbackName;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+/** Download the combined Procore submittal binder (cover + SOW + BOQ + comment log + drawings). */
+export async function downloadProcoreBinder(projectId: number, revision?: number): Promise<void> {
+  const token = getToken();
+  const query = revision === undefined ? '' : '?revision=' + revision;
+  const res = await fetch('/api/projects/' + projectId + '/package/pdf' + query, {
+    method: 'POST',
+    headers: token ? { Authorization: 'Bearer ' + token } : undefined,
+  });
+  await saveAsDownload(
+    res,
+    'Procore Submittal Binder' + (revision === undefined ? '' : ' Rev ' + revision) + '.pdf',
+  );
+}
+
+// --- Procore submittal review (comments log + revisions) ---
+
+export interface ProcoreCommentRow {
+  id: number;
+  item_no: number;
+  reviewer: string;
+  department: string;
+  discipline: string;
+  comment: string;
+  ihp_response: string;
+  action_taken: string;
+  status: string;
+  revision: number;
+  created_at: string | null;
+}
+
+export interface ProcoreState {
+  procore_status: string | null;
+  procore_submittal_date: string | null;
+  revision: number;
+  reviewers: string[];
+  statuses: string[];
+  comments: ProcoreCommentRow[];
+  open_comments: number;
+}
+
+export interface ProcoreCommentInput {
+  reviewer?: string;
+  department?: string;
+  discipline?: string;
+  comment?: string;
+  ihp_response?: string | null;
+  action_taken?: string | null;
+  status?: string;
+  revision?: number;
+}
+
+export function getProcore(projectId: number): Promise<ProcoreState> {
+  return request<ProcoreState>(`/api/projects/${projectId}/procore`);
+}
+
+export function addProcoreComment(
+  projectId: number,
+  body: ProcoreCommentInput,
+): Promise<ProcoreCommentRow> {
+  return request<ProcoreCommentRow>(
+    `/api/projects/${projectId}/procore/comments`,
+    { method: 'POST' },
+    body,
+  );
+}
+
+export function updateProcoreComment(
+  projectId: number,
+  commentId: number,
+  body: ProcoreCommentInput,
+): Promise<ProcoreCommentRow> {
+  return request<ProcoreCommentRow>(
+    `/api/projects/${projectId}/procore/comments/${commentId}`,
+    { method: 'PATCH' },
+    body,
+  );
+}
+
+export function deleteProcoreComment(projectId: number, commentId: number): Promise<void> {
+  return request<void>(`/api/projects/${projectId}/procore/comments/${commentId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function setProcoreState(
+  projectId: number,
+  body: {
+    procore_status?: string | null;
+    procore_submittal_date?: string | null;
+    procore_revision?: number;
+  },
+): Promise<{ procore_status: string | null; procore_submittal_date: string | null; revision: number }> {
+  return request(`/api/projects/${projectId}/procore`, { method: 'PATCH' }, body);
+}
+
+/** Dropzone: the stamped Procore Submittal PDF that came back reviewed. */
+export function uploadProcoreSubmittal(
+  projectId: number,
+  file: File,
+): Promise<{ id: number; filename: string; version: number; size_bytes: number }> {
+  const form = new FormData();
+  form.append('file', file);
+  return request(`/api/projects/${projectId}/procore/submittal`, { method: 'POST', body: form });
+}
+
+/** Bump the submittal revision (Rev 0 -> Rev 1) for the next binder. */
+export function generateProcoreRevision(projectId: number): Promise<{
+  revision: number;
+  previous_revision: number;
+  procore_status: string;
+  procore_submittal_date: string;
+  comments: number;
+  open_comments: number;
+  must_answer: number[];
+}> {
+  return request(`/api/projects/${projectId}/procore/revise`, { method: 'POST' });
+}
+
+/** Download the Comment Log Sheet as Excel or PDF. */
+export async function downloadCommentLog(
+  projectId: number,
+  prNumber: string,
+  format: 'xlsx' | 'pdf',
+): Promise<void> {
+  const token = getToken();
+  const res = await fetch(
+    `/api/projects/${projectId}/procore/comments/log.${format}`,
+    { headers: token ? { Authorization: 'Bearer ' + token } : undefined },
+  );
+  await saveAsDownload(res, `${prNumber} Comments Logs.${format}`);
 }
 
 export interface PipelineStageRow {

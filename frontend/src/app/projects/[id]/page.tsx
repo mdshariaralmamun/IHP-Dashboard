@@ -26,6 +26,7 @@ import SourceRoomCard from '@/components/project/SourceRoomCard';
 import MaterialPicker from '@/components/project/MaterialPicker';
 import ProjectChat from '@/components/project/ProjectChat';
 import PipelinePanel from '@/components/project/PipelinePanel';
+import ProcorePanel from '@/components/project/ProcorePanel';
 import AiReviewCard from '@/components/project/AiReviewCard';
 import PlanMarkersCard from '@/components/project/PlanMarkersCard';
 import { ApiError, deleteProject, getAudit, getProject } from '@/lib/api';
@@ -262,6 +263,12 @@ function ProjectDetailView() {
             {/* The five-stage delivery spine: one row per milestone gate. */}
             <div className="mb-6">
               <PipelinePanel projectId={project.id} />
+            </div>
+
+            {/* The Procore review round-trip: reviewer comments, the comment
+                log sheet, and the revision that goes back. */}
+            <div className="mb-6">
+              <ProcorePanel projectId={project.id} prNumber={project.pr_number} />
             </div>
 
             {/* The raw data room: everything the engineer / PI / suppliers sent,
