@@ -909,16 +909,30 @@ export default function MomPanel({
                     </li>
                   );
                 }
+                // The item reads as a small card: trade and controls on one
+                // line, the whole scope text underneath, wrapping exactly as
+                // written (line breaks included).
                 return (
-                  <li key={i} className="flex flex-wrap items-baseline gap-2 text-xs text-apple-muted">
-                    <span className="text-apple-muted">{i + 1}.</span>
-                    {item.trade && (
-                      <span className="rounded bg-apple-surface px-1.5 py-0.5 text-apple-muted">
-                        {item.trade}
-                      </span>
-                    )}
-                    <span>{item.scope}</span>
-                    {own && (
+                  <li
+                    key={i}
+                    className="rounded-md border border-apple-border px-2.5 py-2 text-xs text-apple-muted"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-apple-text">{i + 1}.</span>
+                      {item.trade && (
+                        <span className="rounded bg-apple-surface px-1.5 py-0.5 font-medium text-apple-text">
+                          {item.trade}
+                        </span>
+                      )}
+                      {item.action && (
+                        <span className="rounded bg-blue-50 px-1.5 py-0.5 text-blue-700 dark:bg-white/10">
+                          Action: {item.action}
+                        </span>
+                      )}
+                      {item.etc && (
+                        <span className="rounded bg-apple-surface px-1.5 py-0.5">ETC: {item.etc}</span>
+                      )}
+                      {own && (
                       <span className="flex items-center gap-1.5">
                         <button
                           type="button"
@@ -937,7 +951,11 @@ export default function MomPanel({
                           Delete
                         </button>
                       </span>
-                    )}
+                      )}
+                    </div>
+                    <p className="mt-1.5 whitespace-pre-wrap leading-relaxed text-apple-text">
+                      {item.scope}
+                    </p>
                   </li>
                 );
               })}
