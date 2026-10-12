@@ -63,6 +63,17 @@ def lfo_by_number(number: int) -> dict[str, Any] | None:
     return next((l for l in lfos() if l["number"] == number), None)
 
 
+#: Room-number band -> area, as the team writes it on site. The band is the
+#: digit after the level digit (5-0600 -> level 0, band 6). Bands 1..5 are
+#: deliberately absent until the team confirms them.
+AREA_BY_ROOM_BAND: dict[str, int] = {
+    "6": 1,
+    "7": 3,
+    "8": 4,
+    "9": 6,
+}
+
+
 def decode_location(text: str | None) -> dict[str, Any] | None:
     """Decode a location the way the site writes it.
 
@@ -87,6 +98,19 @@ def decode_location(text: str | None) -> dict[str, Any] | None:
             "room": room.group(0),
             "form": "room-code",
         }
+        # The area of a room-code is the room number's band - the digit after
+        # the level digit: 5-0600 is Level 0, band 6, Area 1 (as is 5-3610:
+        # Level 3, band 6, Area 1). The team's mapping, given directly:
+        #   6xx -> Area 1, 7xx -> Area 3, 8xx -> Area 4, 9xx -> Area 6.
+        # Bands 1xx-5xx are not mapped yet - the team will confirm them - so
+        # the area stays None rather than being guessed.
+        # The code is building-level-room (5-0600 -> building 5, level 0, room
+        # 600), so the band is the room number's first digit: index 2 of the
+        # digits. 5-0600 -> 6 -> Area 1, 5-3610 -> 6 -> Area 1, 5-0700 -> 7 ->
+        # Area 3.
+        room_digits = "".join(ch for ch in str(decoded["room"]) if ch.isdigit())
+        band = room_digits[2:3] if len(room_digits) > 2 else ""
+        decoded["area"] = AREA_BY_ROOM_BAND.get(band)
     else:
         short = _SHORT.search(text)
         if not short:

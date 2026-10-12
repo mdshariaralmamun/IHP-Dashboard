@@ -32,7 +32,10 @@ class TestReference:
         decoded = reference.decode_location("Room 5-3610")
         assert decoded["building"] == 5 and decoded["level"] == 3
         assert decoded["room"] == "5-3610"
-        assert decoded["area"] is None  # only the B-form states the area
+        # The area now comes from the room number's band, as the team
+        # confirmed on site: 5-3610 is level 3, band 6, Area 1. The B-form
+        # (B7 L2 A3) still states it explicitly.
+        assert decoded["area"] == 1
         assert decoded["known_building"] is True
         assert "NORTH RESEARCH" in (decoded["building_title"] or "")
 
