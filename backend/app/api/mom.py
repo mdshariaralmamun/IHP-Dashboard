@@ -1,10 +1,13 @@
 """MOM (Minutes of Meeting) endpoints: generate, download, agenda, status."""
 
 import copy
+import re
 from pathlib import Path
 from datetime import datetime
 from email.message import EmailMessage
 
+from pydantic import BaseModel
+from sqlalchemy import select
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session
@@ -1076,3 +1079,110 @@ def update_mom_status(
     db.commit()
     db.refresh(mom)
     return mom
+
+
+
+class InvitationIn(BaseModel):
+    text: str
+
+
+#: "Sun, Oct 11, 2:00 PM - 2:30 PM" (Outlook) - the parts we keep.
+_RE_INV_WHEN = re.compile(
+    r"(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,?\s*(?P<date>[A-Za-z]{3,9}\s+\d{1,2}),?"
+    r"\s*(?P<start>\d{1,2}:\d{2}\s*(?:AM|PM))"
+    r"(?:\s*-\s*(?P<end>\d{1,2}:\d{2}\s*(?:AM|PM)))?",
+    re.I,
+)
+_RE_INV_ROOM = re.compile(r"\b\d{1,2}-\d{3,4}\b")
+_RE_INV_PR = re.compile(r"\bPR[\s-]?(\d{4,6})\b", re.I)
+_RE_INV_ROLE = re.compile(r"\(([^)]+)\)")
+
+
+@router.post("/parse-invitation")
+def parse_invitation(
+    project_id: int,
+    body: InvitationIn,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Read a pasted Outlook invitation into the MOM fields.
+
+    The invitation block the team copies from Outlook carries everything the
+    minute needs: the subject (PR number + meeting title), the date and time
+    range, the room code, and the participants with their status. Names are
+    matched to the project/contact list for their email addresses.
+    """
+    from ..services import reference
+
+    project = get_project_or_404(db, project_id)
+    text = (body.text or "").strip()
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+
+    subject = lines[0] if lines else ""
+    pr_match = _RE_INV_PR.search(subject)
+    title = subject
+    if pr_match:
+        title = _RE_INV_PR.sub("", subject).strip(" -	")
+    title = re.sub(r"\s{2,}", " ", title).strip() or subject
+
+    when = _RE_INV_WHEN.search(text)
+    meeting_date = when.group("date") if when else ""
+    start_time = (when.group("start") or "").upper() if when else ""
+    end_time = (when.group("end") or "").upper() if when else ""
+
+    room = ""
+    for line in lines[1:4]:
+        found = _RE_INV_ROOM.search(line)
+        if found:
+            room = found.group(0)
+            break
+    location = reference.describe_location(room) if room else ""
+
+    # Participants: their own lines, optionally with "(Role)".
+    attendees: list[dict[str, str]] = []
+    for line in lines:
+        role_match = _RE_INV_ROLE.search(line)
+        name = _RE_INV_ROLE.sub("", line).strip(" -	")
+        lowered = line.lower()
+        if not name or lowered.startswith(("participants", "link to", "invitation")):
+            continue
+        if "(" not in line and not any(
+            token in lowered for token in ("organizer", "accepted", "declined", "tentative")
+        ):
+            continue
+        attendees.append(
+            {
+                "name": name,
+                "title": (role_match.group(1) if role_match else "").strip(),
+                "email": "",
+                "status": (role_match.group(1) if role_match else "").strip(),
+            }
+        )
+
+    # Emails: the project's own contact first, then anyone in the register.
+    known: dict[str, str] = {}
+    if (project.pi_name or "").strip() and (project.pi_email or "").strip():
+        known[project.pi_name.strip().lower()] = project.pi_email.strip()
+    for other in db.scalars(select(Project)).all():
+        name = (other.pi_name or "").strip().lower()
+        email = (other.pi_email or "").strip()
+        if name and email and name not in known:
+            known[name] = email
+    matched = 0
+    for attendee in attendees:
+        email = known.get(attendee["name"].strip().lower())
+        if email:
+            attendee["email"] = email
+            matched += 1
+
+    return {
+        "pr_number": pr_match.group(1) if pr_match else "",
+        "meeting_title": title,
+        "meeting_date": meeting_date,
+        "start_time": start_time,
+        "end_time": end_time,
+        "location_code": room,
+        "meeting_location": location or room,
+        "attendees": attendees,
+        "attendees_with_email": matched,
+    }
