@@ -731,9 +731,12 @@ export default function MomPanel({
                   <div className="space-y-2">
                     {agenda.map((row, i) => {
                       const isCustomTrade = !!row.trade && !TRADE_OPTIONS.includes(row.trade);
+                      // items-start: the trade select, Action by, ETC and the ✕
+                      // stay pinned to the top line while the scope box is
+                      // resized or grows.
                       return (
-                        <div key={i} className="flex items-center gap-2">
-                          <span className="w-5 shrink-0 text-xs text-apple-muted">{i + 1}</span>
+                        <div key={i} className="flex flex-wrap items-start gap-2">
+                          <span className="w-5 shrink-0 pt-2 text-xs text-apple-muted">{i + 1}</span>
                           <select
                             value={
                               !row.trade ? '' : TRADE_OPTIONS.includes(row.trade) ? row.trade : '__other'
@@ -762,12 +765,22 @@ export default function MomPanel({
                               className={`${inputClass} sm:max-w-32`}
                             />
                           )}
-                          <input
-                            type="text"
+                          {/* A real writing window (same behaviour as the Invitation
+                              box): wraps instead of clipping, 72px to start, drag the
+                              bottom-right handle, and it grows with the text. Line
+                              breaks are kept and printed in the MOM. */}
+                          <textarea
+                            rows={2}
                             value={row.scope}
                             onChange={(e) => updateAgenda(i, 'scope', e.target.value)}
+                            onInput={(e) => {
+                              // Grow-only: a manual drag is never undone by typing.
+                              const el = e.currentTarget;
+                              const needed = el.scrollHeight;
+                              if (needed > el.offsetHeight) el.style.height = needed + 'px';
+                            }}
                             placeholder="Scope / task description"
-                            className={inputClass}
+                            className={`${inputClass} block min-h-[72px] flex-1 resize-y whitespace-pre-wrap font-sans leading-relaxed`}
                           />
                           <input
                             type="text"
