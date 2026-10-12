@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { clearToken, getAccessNotifications } from '@/lib/api';
 import { useTheme } from '@/components/ThemeProvider';
 import type { User } from '@/lib/types';
+import { APP_VERSION, APP_VERSION_DATE } from '@/lib/version';
 
 /**
  * Menu-bar configuration: every dashboard in the app is reachable by
@@ -95,6 +96,11 @@ const ADMIN_MENU: NavMenu = {
     { label: 'Roles', href: '/admin/roles', hint: 'Capabilities per role' },
     { label: 'User Role Assignments', href: '/admin/users-roles', hint: 'Who holds which role' },
     { label: 'System Settings', href: '/settings', hint: 'AI, paths, currency, theme' },
+    {
+      label: 'Version ' + APP_VERSION,
+      href: '/settings',
+      hint: 'Shipped ' + APP_VERSION_DATE + ' - every change is listed in CHANGELOG.md',
+    },
   ],
 };
 
