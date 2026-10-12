@@ -837,7 +837,7 @@ export default function MomPanel({
               }}
               rows={2}
               placeholder="Scope / task description — write as much as you need; line breaks are kept"
-              className={`${inputClass} min-h-10 flex-1 resize-y leading-relaxed`}
+              className={`${inputClass} block min-h-[72px] flex-1 resize-y whitespace-pre-wrap font-sans leading-relaxed`}
             />
             <input
               type="text"
@@ -882,7 +882,7 @@ export default function MomPanel({
                         }}
                         rows={2}
                         placeholder="Scope / task description — several lines allowed"
-                        className={`${inputClass} min-h-10 flex-1 resize-y leading-relaxed`}
+                        className={`${inputClass} block min-h-[72px] flex-1 resize-y whitespace-pre-wrap font-sans leading-relaxed`}
                       />
                       <input
                         type="text"
