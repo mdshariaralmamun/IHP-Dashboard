@@ -936,6 +936,36 @@ export function aiChat(body: {
   });
 }
 
+/** Download the combined Procore submittal binder (cover + SOW + BOQ + drawings). */
+export async function downloadProcoreBinder(projectId: number): Promise<void> {
+  const token = getToken();
+  const res = await fetch('/api/projects/' + projectId + '/package/pdf', {
+    method: 'POST',
+    headers: token ? { Authorization: 'Bearer ' + token } : undefined,
+  });
+  if (!res.ok) {
+    let message = 'Could not build the binder.';
+    try {
+      const body: unknown = await res.json();
+      if (body && typeof body === 'object' && 'detail' in body) {
+        message = String((body as { detail: unknown }).detail);
+      }
+    } catch {
+      /* keep the generic message */
+    }
+    throw new Error(message);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = 'Procore Submittal Binder.pdf';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 export interface PipelineStageRow {
   stage: number;
   label: string;

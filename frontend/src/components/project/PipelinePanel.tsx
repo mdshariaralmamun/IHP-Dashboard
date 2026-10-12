@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { getPipeline, setPipelineStage } from '@/lib/api';
+import { downloadProcoreBinder, getPipeline, setPipelineStage } from '@/lib/api';
 import type { PipelineResponse, PipelineStageRow } from '@/lib/api';
 import { VisualCard } from '@/components/powerbi/PowerBI';
 
@@ -130,6 +130,24 @@ export default function PipelinePanel({ projectId }: { projectId: number }) {
               >
                 Save note
               </button>
+              {row.stage === 3 && (
+                <button
+                  type="button"
+                  disabled={busy === row.stage}
+                  onClick={() => {
+                    setBusy(row.stage);
+                    setError(null);
+                    downloadProcoreBinder(projectId)
+                      .catch((e) =>
+                        setError(e instanceof Error ? e.message : 'Could not build the binder'),
+                      )
+                      .finally(() => setBusy(null));
+                  }}
+                  className="rounded-md bg-primary px-2.5 py-1 text-[10px] font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  Download Combined Procore Binder (PDF)
+                </button>
+              )}
               {row.updated_at && (
                 <span className="text-[10px] text-apple-muted">
                   updated {row.updated_at.slice(0, 10)}
