@@ -720,7 +720,7 @@ def combined_binder(
     from fastapi.responses import FileResponse
 
     from ..models import Attachment
-    from ..services import docgen
+    from ..services import storage, sow_boq_mto_docgen as generators, workflow
 
     project = get_project_or_404(db, project_id)
     sow = (
@@ -738,11 +738,11 @@ def combined_binder(
     sources: list[tuple[str, Path]] = []
     try:
         # 1. SOW and BOQ from the app's own generators, converted to PDF.
-        sow_docx = docgen.generate_sow_docx(project, sow)
+        sow_docx = generators.generate_sow_docx(project, sow)
         sow_pdf = _soffice_pdf(sow_docx)
         if sow_pdf:
             sources.append(("Scope of Work", sow_pdf))
-        boq_xlsx = docgen.generate_boq_xlsx(project, list(items), sow)
+        boq_xlsx = generators.generate_boq_xlsx(project, list(items), sow)
         boq_pdf = _soffice_pdf(boq_xlsx)
         if boq_pdf:
             sources.append(("Bill of Quantities", boq_pdf))
