@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from datetime import datetime
 from email.message import EmailMessage
+from typing import Literal
 
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -21,14 +22,17 @@ from ..core.rbac import (
     require_capability,
 )
 from ..db import get_db
-from ..models import MomRecord, Project, User
-from ..schemas import MomAgendaItem, MomDetails, MomOut, MomStatusUpdate
+from ..models import Attachment, MomRecord, Project, User
+from ..schemas import MomAgendaItem, MomDetails, MomDetailsPatch, MomOut, MomStatusUpdate
 from ..services import docgen, emailer, storage, workflow
 from .projects import _derive_tracker_fields, get_project_or_404
 
 router = APIRouter(prefix="/projects/{project_id}/mom", tags=["mom"])
 
 MOM_TEMPLATE_NAME = "mom_template.docx"
+
+#: The team's design mailbox is always copied on a MOM email draft.
+MOM_CC = "IHP.design@kaust.edu.sa"
 
 #: RBAC trade code -> trade label used in MOM agenda items.
 TRADE_LABELS = {
@@ -385,6 +389,13 @@ def download_mom(
         media_type = (
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
+    if not mom.docx_filename:
+        # Reachable only since autosave can create a draft record before the
+        # document has ever been rendered.
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Generate the MOM first: the document has not been rendered yet.",
+        )
     path = storage.project_dir(project.pr_number, "mom") / filename
     if not path.exists():
         raise HTTPException(
@@ -529,6 +540,32 @@ def mom_email_directory(
     return {"entries": entries, "count": len(entries)}
 
 
+def render_mom_document(
+    project: Project, mom: MomRecord, details: dict,
+    base_url: str | None = None, for_email: bool = False,
+) -> str:
+    """The minute as the self-contained HTML document - the one source of truth.
+
+    The live preview, the PDF that Chromium prints and the HTML body of the MOM
+    email all come through here, so they can never drift apart. Pure Jinja over
+    the stored record: no AI call, no regeneration.
+    """
+    from ..services import mom_html
+
+    context = build_mom_context(project, details, mom.version)
+    return mom_html.render_html(
+        mom_html.build_html_context(
+            project=project,
+            details=details,
+            derived=_derive_tracker_fields(project),
+            version=mom.version,
+            context=context,
+            base_url=base_url or None,
+            for_email=for_email,
+        )
+    )
+
+
 @router.get("/view", response_class=HTMLResponse)
 def mom_web_view(
     project_id: int,
@@ -542,23 +579,284 @@ def mom_web_view(
     renderer produces the HTML body of the MOM email, so what the team reviews
     here is exactly what the recipient sees.
     """
-    from ..services import mom_html
+    project = get_project_or_404(db, project_id)
+    mom = get_mom_or_404(project)
+    return HTMLResponse(content=render_mom_document(project, mom, mom.details or {}, base_url=base_url))
 
+
+@router.get("/preview")
+def mom_preview(
+    project_id: int,
+    base_url: str | None = Query(default=None, description="Where the logo is served from"),
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """The stored MOM as HTML, for the panel's live preview.
+
+    Byte-identical to what /mom/view serves and to what Chromium prints for the
+    PDF export, so the preview can never drift from the download. No AI call and
+    no regeneration: typing and refreshing this is cheap.
+    """
     project = get_project_or_404(db, project_id)
     mom = get_mom_or_404(project)
     details = mom.details or {}
     context = build_mom_context(project, details, mom.version)
-    html = mom_html.render_html(
-        mom_html.build_html_context(
-            project=project,
-            details=details,
-            derived=_derive_tracker_fields(project),
-            version=mom.version,
-            context=context,
-            base_url=base_url,
+    html = render_mom_document(project, mom, details, base_url=base_url)
+    return {
+        "html": html,
+        "document_code": context["document_code"],
+        "revision": f"R{mom.version - 1:02d}",
+        "version": mom.version,
+        "updated_at": mom.updated_at,
+        "bytes": len(html),
+    }
+
+
+@router.patch("", response_model=MomOut)
+def patch_mom(
+    project_id: int,
+    payload: MomDetailsPatch,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Autosave the MOM fields the panel changed. Never regenerates the document.
+
+    Meeting details, attendees, the agenda, the invitation and the organizer are
+    edited in place: version, docx_filename, pdf_filename and the email draft are
+    deliberately untouched, so an autosave can never invalidate a document that
+    was already issued. A field left out of the body keeps its stored value; a
+    field sent as "" clears it; a field that is not a MOM field is refused with
+    422 (extra="forbid") instead of being dropped silently.
+    """
+    project = get_project_or_404(db, project_id)
+    data = payload.model_dump(exclude_unset=True)
+    if not data:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Nothing to update.",
         )
+
+    perms = effective_permissions(user)
+    manages = CAP_MOM_MANAGE in perms
+    trade_user = CAP_MOM_AGENDA in perms
+    if not manages and not trade_user:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Missing permission: mom.manage or mom.agenda",
+        )
+    if not manages:
+        # A trade user may only touch the agenda, and only their own trade's rows.
+        if set(data) != {"agenda"}:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="A trade user may only update the agenda.",
+            )
+        for item in data.get("agenda") or []:
+            _check_item_access(user, item)
+
+    mom = project.mom
+    created = False
+    if mom is None:
+        mom = MomRecord(
+            project_id=project.id,
+            version=1,
+            status="draft",
+            docx_filename="",
+            updated_by_id=user.id,
+        )
+        db.add(mom)
+        db.flush()
+        created = True
+
+    details = copy.deepcopy(mom.details or {})
+    for key, value in data.items():
+        details[key] = value
+    mom.details = details
+    mom.updated_by_id = user.id
+    db.flush()
+
+    workflow.log_action(
+        db,
+        user,
+        "mom:edit",
+        project,
+        {
+            "fields": sorted(data),
+            "attendees": len(details.get("attendees") or []),
+            "agenda": len(details.get("agenda") or []),
+            "created": created,
+        },
     )
-    return HTMLResponse(content=html)
+    db.commit()
+    db.refresh(mom)
+    return mom
+
+
+@router.get("/export")
+def export_mom(
+    project_id: int,
+    format: Literal["docx", "pdf"] = Query("pdf"),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_capability(CAP_MOM_MANAGE)),
+):
+    """Export the current MOM under the team's own file name, filed on the PR.
+
+    pdf  - Chromium prints the same HTML the preview shows (one source of truth)
+    docx - the team's mom_template.docx through docxtpl, from the same context
+    The file is written to the project's generated folder and recorded on the PR
+    as a DELIVERABLE attachment, exactly like the Procore binder does, so it shows
+    up in AttachmentsSection. The audit trail records mom:export.
+    """
+    project = get_project_or_404(db, project_id)
+    mom = get_mom_or_404(project)
+    if not mom.docx_filename and format == "docx":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Generate the MOM first: the document has not been rendered yet.",
+        )
+    details = mom.details or {}
+    context = build_mom_context(project, details, mom.version)
+    code = context["document_code"]
+
+    out_dir = storage.project_dir(project.pr_number, "generated")
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    pages = 0
+    if format == "pdf":
+        target = out_dir / f"{code}.pdf"
+        rendered = docgen.html_to_pdf(render_mom_document(project, mom, details), target)
+        if rendered is None or not Path(rendered).exists():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=(
+                    "The PDF renderer (Chromium) is not available in this "
+                    "deployment, so the minute cannot be exported as PDF."
+                ),
+            )
+        path = Path(rendered)
+        media_type = "application/pdf"
+        try:
+            import pymupdf
+
+            with pymupdf.open(path) as document:
+                pages = document.page_count
+        except Exception:  # noqa: BLE001 - the page count is informational
+            pages = 0
+    else:
+        path = Path(docgen.render_docx(MOM_TEMPLATE_NAME, context, out_dir / f"{code}.docx"))
+        media_type = (
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+
+    size = path.stat().st_size
+    existing = db.scalars(
+        select(Attachment).where(
+            Attachment.project_id == project.id, Attachment.filename == path.name
+        )
+    ).first()
+    if existing is not None:
+        existing.stored_path = str(path)
+        existing.content_type = media_type
+        existing.size_bytes = size
+        existing.version = (existing.version or 1) + 1
+        existing.uploaded_by_id = user.id
+    else:
+        db.add(
+            Attachment(
+                project_id=project.id,
+                stage="DELIVERABLE",
+                filename=path.name,
+                stored_path=str(path),
+                content_type=media_type,
+                size_bytes=size,
+                version=storage.next_version(
+                    storage.project_dir(project.pr_number, "DELIVERABLE"), path.name
+                ),
+                uploaded_by_id=user.id,
+            )
+        )
+
+    workflow.log_action(
+        db,
+        user,
+        "mom:export",
+        project,
+        {"file": path.name, "format": format, "bytes": size, "pages": pages},
+    )
+    db.commit()
+    return FileResponse(
+        path,
+        filename=path.name,
+        media_type=media_type,
+        headers={"X-MOM-Pages": str(pages), "X-MOM-Document": code},
+    )
+
+
+@router.get("/email-draft")
+def mom_email_draft(
+    project_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """To / Cc / Subject / Body for the MOM email. Builds a draft; never sends.
+
+    The panel turns this into a mailto: link and downloads the PDF beside it,
+    because mailto: cannot carry an attachment. The .eml export stays available
+    as the full-fidelity route when the attachment must be automatic.
+    """
+    project = get_project_or_404(db, project_id)
+    mom = get_mom_or_404(project)
+    details = mom.details or {}
+    context = build_mom_context(project, details, mom.version)
+    code = context["document_code"]
+
+    to: list[str] = []
+    for attendee in details.get("attendees") or []:
+        email = str((attendee or {}).get("email") or "").strip()
+        if "@" in email and email not in to:
+            to.append(email)
+    if not to:
+        # No attendee addresses: fall back to the project's own contact.
+        contact = (project.pi_email or "").strip()
+        if contact:
+            to = [contact]
+    if not to:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "No attendee emails and no project contact - cannot build the "
+                "email draft."
+            ),
+        )
+
+    meeting_title = str(details.get("meeting_title") or project.title or "").strip()
+    subject = code + " \u2013 " + meeting_title
+    body = (
+        "Dear all,\n\n"
+        "please find attached the Minutes of Meeting for " + str(project.pr_number)
+        + " \u2013 " + str(project.title) + ".\n\n"
+        "Please review and confirm the accuracy of this document.\n\n"
+        "Regards,\nIn-House Projects."
+    )
+    filename = code + ".pdf"
+    return {
+        "to": to,
+        "cc": [MOM_CC],
+        "subject": subject,
+        "body": body,
+        "attachment": {
+            "filename": filename,
+            "download_url": f"/api/projects/{project.id}/mom/export?format=pdf",
+            "ready": True,
+        },
+        # mailto: cannot carry a file, so the panel downloads the PDF as well.
+        "attachment_supported": False,
+        "path_taken": "mailto + downloaded PDF (mailto cannot carry an attachment)",
+        "note": (
+            "Outlook compose is opened with the PDF downloaded - attach "
+            + filename + " before sending."
+        ),
+    }
 
 
 @router.get("/email-link")

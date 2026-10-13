@@ -4,5 +4,5 @@
  * Bump this and add an entry to /CHANGELOG.md whenever something ships, so the
  * running app can always be matched to what is in the repository.
  */
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.2.1';
 export const APP_VERSION_DATE = '14 October 2026';

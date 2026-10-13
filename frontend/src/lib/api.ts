@@ -21,6 +21,7 @@ import type {
   MaterialTrackingItem,
   MaterialTrackingWithProject,
   MomAgendaItem,
+  MomAttendee,
   MomDetails,
   MomRecord,
   MomStatusUpdate,
@@ -2488,4 +2489,81 @@ export function resetAssistant(projectId: number): Promise<void> {
 /** The action registry the panel greys out from: id, label, capability, panel. */
 export function listAssistantActions(projectId: number): Promise<AssistantActionInfo[]> {
   return request<AssistantActionInfo[]>(`/api/projects/${projectId}/assistant/actions`);
+}
+
+// --- MOM autosave, live preview, named exports and the email draft ---
+
+export interface MomDetailsPatch {
+  meeting_title?: string;
+  meeting_location?: string;
+  meeting_number?: string;
+  meeting_date?: string;
+  meeting_time?: string;
+  organizer?: string;
+  invitation?: string;
+  attendees?: MomAttendee[];
+  agenda?: MomAgendaItem[];
+}
+
+/** Autosave one slice of the MOM. keepalive is for the pagehide flush. */
+export function patchMom(
+  projectId: number,
+  patch: MomDetailsPatch,
+  opts: { keepalive?: boolean } = {},
+): Promise<MomRecord> {
+  return request<MomRecord>(
+    `/api/projects/${projectId}/mom`,
+    { method: 'PATCH', keepalive: opts.keepalive ?? false },
+    patch,
+  );
+}
+
+export interface MomPreview {
+  html: string;
+  document_code: string;
+  revision: string;
+  version: number;
+  updated_at: string | null;
+  bytes: number;
+}
+
+/** The stored MOM as the same HTML the PDF is printed from (one source of truth). */
+export function getMomPreview(projectId: number): Promise<MomPreview> {
+  return request<MomPreview>(`/api/projects/${projectId}/mom/preview`);
+}
+
+function fileNameFrom(header: string | null, fallback: string): string {
+  const match = header ? /filename="?([^";]+)"?/i.exec(header) : null;
+  return match ? match[1] : fallback;
+}
+
+/** Download the named export (IHP-MOM-…-R01.pdf/.docx); it is also filed on the PR. */
+export async function downloadMomExport(
+  projectId: number,
+  format: 'docx' | 'pdf',
+): Promise<void> {
+  const token = getToken();
+  const res = await fetch(`/api/projects/${projectId}/mom/export?format=${format}`, {
+    headers: token ? { Authorization: 'Bearer ' + token } : undefined,
+  });
+  await saveAsDownload(
+    res,
+    fileNameFrom(res.headers.get('content-disposition'), 'MOM.' + format),
+  );
+}
+
+export interface MomEmailDraft {
+  to: string[];
+  cc: string[];
+  subject: string;
+  body: string;
+  attachment: { filename: string; download_url: string; ready: boolean };
+  attachment_supported: boolean;
+  path_taken: string;
+  note?: string | null;
+}
+
+/** To / Cc / Subject / Body for the MOM email. Builds a draft; never sends. */
+export function getMomEmailDraft(projectId: number): Promise<MomEmailDraft> {
+  return request<MomEmailDraft>(`/api/projects/${projectId}/mom/email-draft`);
 }

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import ErrorBox from '@/components/ErrorBox';
 import MomStatusBadge from '@/components/MomStatusBadge';
-import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailDirectory, getMomEmailLink, getMomWebViewHtml, openMomWebView, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
+import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, downloadMomExport, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailDirectory, getMomEmailDraft, getMomEmailLink, getMomPreview, getMomWebViewHtml, openMomWebView, patchMom, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
+import type { MomDetailsPatch, MomPreview } from '@/lib/api';
 import type { MomDirectoryEntry } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { canDo } from '@/lib/useUser';
@@ -140,6 +141,79 @@ export default function MomPanel({
   // The Outlook invitation, pasted as-is (its own section in the minute).
   const [invitation, setInvitation] = useState('');
 
+  // --- autosave + live preview ---------------------------------------------
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [momPreview, setMomPreview] = useState<MomPreview | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [emailNote, setEmailNote] = useState<string | null>(null);
+  const pendingRef = useRef<MomDetailsPatch>({});
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedRef = useRef('');
+  const savingRef = useRef(false);
+
+  /** Re-read the rendered minute: it is the same HTML the PDF is printed from. */
+  const refreshPreview = useCallback(async () => {
+    try {
+      setMomPreview(await getMomPreview(projectId));
+      setPreviewError(null);
+    } catch (e) {
+      // Before the first save there is no record yet - that is not a failure.
+      setPreviewError(e instanceof Error ? e.message : 'Preview unavailable');
+    }
+  }, [projectId]);
+
+  /**
+   * Send whatever is pending. Returns true when the server accepted it.
+   *
+   * This is what the blurs, the hidden tab and pagehide call, and what every
+   * heavy action awaits first, so nothing typed is ever lost to a refresh.
+   */
+  const flush = useCallback(
+    async (keepalive = false): Promise<boolean> => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      const body = pendingRef.current;
+      if (Object.keys(body).length === 0) return true;
+      const serialised = JSON.stringify(body);
+      if (serialised === lastSavedRef.current) {
+        setSaveState('saved');
+        return true;
+      }
+      if (savingRef.current && !keepalive) return false;
+      savingRef.current = true;
+      try {
+        const saved = await patchMom(projectId, body, { keepalive });
+        lastSavedRef.current = serialised;
+        pendingRef.current = {};
+        setSavedAt(saved.updated_at ?? new Date().toISOString());
+        setSaveState('saved');
+        setSaveError(null);
+        void refreshPreview();
+        return true;
+      } catch (e) {
+        setSaveState('failed');
+        setSaveError(e instanceof Error ? e.message : 'Save failed.');
+        return false;
+      } finally {
+        savingRef.current = false;
+      }
+    },
+    [projectId, refreshPreview],
+  );
+
+  /** Queue one slice of the MOM and restart the 400 ms debounce. */
+  function scheduleSave(patch: MomDetailsPatch) {
+    pendingRef.current = { ...pendingRef.current, ...patch };
+    setSaveState('saving');
+    setSaveError(null);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => void flush(), 400);
+  }
+
   const participantEmails = ((mom?.details?.attendees ?? []) as MomAttendee[])
     .map((person) => (person.email || '').trim())
     .filter((email) => email.includes('@'));
@@ -150,6 +224,26 @@ export default function MomPanel({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mom?.version, mom?.details]);
+
+  // The preview follows the stored record: on mount and after every save.
+  useEffect(() => {
+    void refreshPreview();
+  }, [refreshPreview, mom?.version]);
+
+  // Never lose a keystroke: flush on a hidden tab and on pagehide (keepalive),
+  // which is the "type and immediately refresh" case.
+  useEffect(() => {
+    const onHidden = () => {
+      if (document.visibilityState === 'hidden') void flush(true);
+    };
+    const onPageHide = () => void flush(true);
+    document.addEventListener('visibilitychange', onHidden);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHidden);
+      window.removeEventListener('pagehide', onPageHide);
+    };
+  }, [flush]);
 
   /** Open a compose window in the local mail client (no attachment). */
   async function handleOpenInOutlook() {
@@ -464,17 +558,47 @@ export default function MomPanel({
     });
   }
 
+  /**
+   * The named export: IHP-MOM-PR-XXXX-R01.docx / .pdf.
+   *
+   * The file is also filed on the PR as a DELIVERABLE, so it appears in
+   * AttachmentsSection the moment it is downloaded.
+   */
   function handleDownload(fmt: 'docx' | 'pdf') {
     void run(`download-${fmt}`, async () => {
-      try {
-        await downloadMom(projectId, fmt);
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 404 && fmt === 'pdf') {
-          throw new ApiError(404, 'PDF export is not available for this MOM yet.');
-        }
-        throw err;
-      }
+      await flush();
+      await downloadMomExport(projectId, fmt);
+      onChanged();
     });
+  }
+
+  /**
+   * Email: build the draft, open the local mail client, and download the PDF.
+   *
+   * mailto: cannot carry an attachment, so the PDF is downloaded beside the
+   * compose window and the panel says so. A 409 (no attendee emails and no
+   * project contact) shows the sentence and opens nothing.
+   */
+  async function handleEmail() {
+    setBusy('email');
+    setError(null);
+    setEmailNote(null);
+    try {
+      await flush();
+      const draft = await getMomEmailDraft(projectId);
+      const query =
+        'cc=' + encodeURIComponent(draft.cc.join(',')) +
+        '&subject=' + encodeURIComponent(draft.subject) +
+        '&body=' + encodeURIComponent(draft.body);
+      window.location.href = 'mailto:' + draft.to.join(',') + '?' + query;
+      await downloadMomExport(projectId, 'pdf');
+      setEmailNote((draft.note ?? draft.path_taken) + ' (' + draft.path_taken + ')');
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not prepare the email');
+    } finally {
+      setBusy(null);
+    }
   }
 
   function handleStatus(status: MomStatusUpdate, note?: string) {
@@ -493,8 +617,11 @@ export default function MomPanel({
   }
 
   function updateMeeting(field: keyof MeetingFields) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
-      setMeeting((prev) => ({ ...prev, [field]: e.target.value }));
+    return (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setMeeting((prev) => ({ ...prev, [field]: value }));
+      scheduleSave({ [field]: value } as MomDetailsPatch);
+    };
   }
 
   /**
@@ -517,13 +644,15 @@ export default function MomPanel({
   }
 
   function updateAttendee(index: number, field: keyof MomAttendee, value: string) {
-    setAttendees((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
-    );
+    const next = attendees.map((row, i) => (i === index ? { ...row, [field]: value } : row));
+    setAttendees(next);
+    scheduleSave({ attendees: next });
   }
 
   function updateAgenda(index: number, field: keyof MomAgendaItem, value: string | null) {
-    setAgenda((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+    const next = agenda.map((row, i) => (i === index ? { ...row, [field]: value } : row));
+    setAgenda(next);
+    scheduleSave({ agenda: next });
   }
 
   const meetingInputs: { field: keyof MeetingFields; label: string; placeholder: string; list?: string }[] = [
@@ -541,6 +670,35 @@ export default function MomPanel({
         <h2 className="text-sm font-semibold uppercase tracking-wide text-apple-muted">
           Minutes of Meeting (MOM)
         </h2>
+        <div className="flex flex-wrap items-center gap-2">
+          {momPreview && (
+            <span className="rounded-full border border-apple-border px-2 py-0.5 text-[11px] text-apple-muted">
+              {momPreview.document_code}
+            </span>
+          )}
+          {saveState !== 'idle' && (
+            <button
+              type="button"
+              onClick={() => void flush()}
+              disabled={saveState !== 'failed'}
+              title={saveError ?? 'Every change is saved automatically'}
+              className={
+                'rounded-full px-2 py-0.5 text-[11px] font-medium ' +
+                (saveState === 'failed'
+                  ? 'bg-red-100 text-red-700'
+                  : saveState === 'saving'
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-emerald-100 text-emerald-800')
+              }
+            >
+              {saveState === 'saving'
+                ? 'Saving…'
+                : saveState === 'failed'
+                  ? 'Save failed — retry'
+                  : 'Saved' + (savedAt ? ' ' + new Date(savedAt).toLocaleTimeString() : '')}
+            </button>
+          )}
+        </div>
         {canManageMom && (
           <button
             type="button"
@@ -629,7 +787,10 @@ export default function MomPanel({
                 <textarea
                   rows={6}
                   value={invitation}
-                  onChange={(e) => setInvitation(e.target.value)}
+                  onChange={(e) => {
+                    setInvitation(e.target.value);
+                    scheduleSave({ invitation: e.target.value });
+                  }}
                   placeholder={'Paste the meeting invitation here, e.g.\nPR 12693 Nanofabricator Lite Site Visit\nWed, Sep 9, 10:30 AM - 11:00 AM\n3-2635\nParticipants (5)'}
                   className={`${inputClass} font-mono text-xs`}
                 />
@@ -1086,7 +1247,21 @@ export default function MomPanel({
                 >
                   {busy === 'send' ? 'Preparing…' : 'Download email file (.eml)'}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => void handleEmail()}
+                  disabled={busy !== null}
+                  className={secondaryButton}
+                >
+                  {busy === 'email' ? 'Preparing…' : 'Email (compose + PDF)'}
+                </button>
               </div>
+
+              {emailNote && (
+                <p className="rounded-md border border-apple-border bg-apple-hover px-3 py-2 text-[11px] text-apple-muted">
+                  {emailNote}
+                </p>
+              )}
 
               <label className="flex items-center gap-2 text-xs text-apple-text">
                 <input
@@ -1189,6 +1364,34 @@ export default function MomPanel({
               />
             </div>
           )}
+
+          {/* The live minute: the same HTML the PDF is printed from, in a
+              sandboxed frame so its stylesheet cannot leak into the app. */}
+          <div className="border-t border-apple-border pt-4">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-medium text-apple-muted">
+                Live preview
+                {momPreview ? ' · ' + momPreview.revision : ''}
+              </p>
+              {saveState === 'saving' && (
+                <span className="text-[11px] text-amber-700">updating…</span>
+              )}
+            </div>
+            {momPreview ? (
+              <iframe
+                title={'MOM preview ' + projectId}
+                srcDoc={momPreview.html}
+                sandbox=""
+                className="h-[70vh] w-full rounded-lg border border-apple-border bg-white"
+              />
+            ) : (
+              <p className="rounded-lg border border-dashed border-apple-border px-3 py-6 text-center text-xs text-apple-muted">
+                {previewError
+                  ? 'The preview appears as soon as the minute exists.'
+                  : 'Loading the minute…'}
+              </p>
+            )}
+          </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t border-apple-border pt-4">
             <button

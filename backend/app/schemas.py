@@ -524,6 +524,29 @@ class MomDetails(BaseModel):
     organizer: str | None = None
 
 
+
+
+class MomDetailsPatch(BaseModel):
+    """Autosave payload: only the MOM fields the panel actually changed.
+
+    Every field defaults to None so exclude_unset can tell "not sent" (leave the
+    stored value) apart from an explicit "" (clear it). extra="forbid" means a key
+    that is not a MOM field answers 422 instead of being dropped silently.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    meeting_title: str | None = None
+    meeting_location: str | None = None
+    meeting_number: str | None = None
+    meeting_date: str | None = None
+    meeting_time: str | None = None
+    organizer: str | None = None
+    invitation: str | None = None
+    attendees: list[MomAttendee] | None = None
+    agenda: list[MomAgendaItem] | None = None
+
+
 # ---------- audit ----------
 class AuditOut(BaseModel):
     id: int

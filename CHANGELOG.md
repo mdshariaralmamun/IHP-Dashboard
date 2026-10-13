@@ -3,6 +3,37 @@
 Every change to the app is recorded here from 11 October 2026 onwards, and the
 current version is shown in the app under **Admin → Version**.
 
+## 1.2.1 — 14 October 2026
+
+### The MOM panel is live, downloadable and emailable
+- **Autosave**: every MOM field saves itself as you type (400 ms debounce, one
+  `PATCH /api/projects/{id}/mom` per burst, no Save button). It also flushes on
+  blur, when the tab is hidden, on `pagehide` (keepalive) and before any heavier
+  action, so typing and immediately refreshing never loses a keystroke. A **Saved /
+  Saving… / Save failed — retry** indicator sits in the panel header with the
+  document code, and a failed save shows the API's own sentence.
+- **Live HTML preview**: `GET /api/projects/{id}/mom/preview` returns the minute
+  as the **same HTML the PDF is printed from** (and the same string `/mom/view`
+  serves), mounted in a sandboxed frame below the fields and refreshed after every
+  save. Preview, PDF and the email body are one source of truth; the Word file
+  uses the team's own `.docx` template with the same data (same content, different
+  renderer).
+- **Named exports**: `GET /api/projects/{id}/mom/export?format=docx|pdf` writes
+  **IHP-MOM-PR-{pr}-R{rev}.docx / .pdf**, files it on the PR as a **DELIVERABLE**
+  attachment (so it appears in AttachmentsSection immediately) and records
+  `mom:export` in the audit trail with the byte size and the page count.
+- **Email draft**: `GET /api/projects/{id}/mom/email-draft` returns To (the
+  attendees' emails, falling back to the project contact), Cc
+  (IHP.design@kaust.edu.sa), the subject and a short body. The panel opens the
+  local mail client with that draft **and downloads the PDF** beside it, telling
+  you which path was taken, because `mailto:` cannot carry an attachment. Nothing
+  is ever sent automatically. With no attendee emails and no project contact the
+  endpoint answers **409** with the reason and no compose window opens. The
+  existing `.eml` control stays as the automatic-attachment route.
+- Unknown fields in an autosave are refused with **422** (`extra="forbid"`)
+  instead of being dropped silently, and a draft record that has never been
+  rendered reports **409** "Generate the MOM first" instead of "file missing".
+
 ## 1.2.0 — 14 October 2026
 
 ### The Project Delivery Assistant
