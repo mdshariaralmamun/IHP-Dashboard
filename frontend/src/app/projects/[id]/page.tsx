@@ -26,6 +26,7 @@ import SourceRoomCard from '@/components/project/SourceRoomCard';
 import MaterialPicker from '@/components/project/MaterialPicker';
 import ProjectChat from '@/components/project/ProjectChat';
 import PipelinePanel from '@/components/project/PipelinePanel';
+import AssistantChat from '@/components/project/AssistantChat';
 import ProcorePanel from '@/components/project/ProcorePanel';
 import AiReviewCard from '@/components/project/AiReviewCard';
 import PlanMarkersCard from '@/components/project/PlanMarkersCard';
@@ -256,6 +257,17 @@ function ProjectDetailView() {
               <NextStepCard
                 project={project}
                 canEdit={canEditProject}
+                onChanged={load}
+              />
+            </div>
+
+            {/* The delivery assistant: paste the notes and the documents come
+                out in gate order. Above the pipeline so it is the first thing
+                the team sees, on every project. */}
+            <div className="mb-6">
+              <AssistantChat
+                projectId={project.id}
+                prNumber={project.pr_number}
                 onChanged={load}
               />
             </div>

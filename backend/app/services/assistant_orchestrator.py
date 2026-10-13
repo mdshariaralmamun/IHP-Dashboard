@@ -28,6 +28,7 @@ Two rules shape every call:
 from __future__ import annotations
 
 import json
+import re
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -456,13 +457,148 @@ def _trade_data_instruction(kind: str) -> str:
 # ---------------------------------------------------------------------------
 # Writers
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# The MOM's own words: template keys, and an agenda that is never empty
+# ---------------------------------------------------------------------------
+#: What the model tends to call things, mapped onto the template's keys.
+_MOM_ALIASES = (
+    ("date", "meeting_date"),
+    ("location", "meeting_location"),
+    ("time", "meeting_time"),
+    ("title", "meeting_title"),
+)
+
+_BULLET = re.compile(r"^\s*(?:[-*\u2022]|\d+[.)])\s+")
+_ACTION_HINT = re.compile(
+    r"\b(action|actions|responsible|to be (?:issued|confirmed|submitted)|"
+    r"\b(?:ihp|pi|hse|operations|fmom|ctps)\s+to\b|to issue|to confirm|to submit|"
+    r"to finalise|to finalize|to provide)\b",
+    re.I,
+)
+_ACTOR = re.compile(r"\b(IHP|PI|HSE|Building Operations|FMOM|CTPS|Proponent)\b", re.I)
+_SCOPE_HINT = re.compile(
+    r"\b(scope|agreed|works?|installation|install|replace|replacement|upgrade|"
+    r"supply|provide|new |tie[- ]in|remove|relocat|repair|testing|commission)\b",
+    re.I,
+)
+_SKIP_LINE = re.compile(r"^\s*(meeting|date|attendees?|invitation|organi[sz]er)\b", re.I)
+_TRADE_HINT = (
+    ("Civil / Architectural", ("civil", "architect", "trench", "concrete", "penetrat")),
+    ("Electrical", ("electric", "panel", "cable", "earthing", "bonding", "power supply")),
+    ("Low Current", ("low current", "low-current", "telecom", "bms", "detection", "scada",
+                     "cctv", "tgm")),
+    ("Plumbing", ("plumb", "gas", "pipe", "valve", "water", "drain")),
+    ("HVAC", ("hvac", "duct", "ahu", "fcu", "ventilation", "chiller")),
+    ("Fire Sprinkler", ("sprinkler", "fire-stop", "fire stop", "fire-rated")),
+)
+
+
+def _clean_agenda(value: Any) -> list[dict]:
+    """Keep only the agenda rows that actually say something, in template shape."""
+    rows: list[dict] = []
+    for item in value or []:
+        if not isinstance(item, dict):
+            continue
+        scope = str(item.get("scope") or item.get("description") or "").strip()
+        if not scope:
+            continue
+        rows.append({
+            "scope": scope,
+            "trade": str(item.get("trade") or "").strip(),
+            "action": str(item.get("action") or "").strip(),
+            "responsible": str(item.get("responsible") or "").strip(),
+            "etc": str(item.get("etc") or "").strip(),
+        })
+    return rows
+
+
+def _agenda_from_notes(source_text: str | None) -> list[dict]:
+    """One agenda row per scope point when the model returned none.
+
+    Bullet or numbered lines win; otherwise sentences are used. A point that
+    talks about an action keeps it, the actor becomes the responsible party and
+    the trade is inferred so the MOM still sorts trade-wise.
+    """
+    text = (source_text or "").strip()
+    if not text:
+        return []
+    lines = [line for line in text.splitlines() if line.strip()]
+    bullets = [_BULLET.sub("", line).strip() for line in lines if _BULLET.match(line)]
+    if bullets:
+        # keep the bullet points, then whatever else was written around them
+        # (the "Action:" line usually carries the responsible party)
+        points = bullets + [line.strip() for line in lines if not _BULLET.match(line)]
+    else:
+        points = [p.strip() for p in re.split(r"(?<=[.!?])\s+", " ".join(lines)) if p.strip()]
+    rows: list[dict] = []
+    seen: set[str] = set()
+    for point in points:
+        if len(point) < 15 or _SKIP_LINE.match(point):
+            continue
+        if not (_SCOPE_HINT.search(point) or _ACTION_HINT.search(point)):
+            continue
+        key = point.lower()[:60]
+        if key in seen:
+            continue
+        seen.add(key)
+        actor = _ACTOR.search(point)
+        lowered = point.lower()
+        trade = next(
+            (name for name, words in _TRADE_HINT if any(w in lowered for w in words)), ""
+        )
+        rows.append({
+            "scope": point,
+            "trade": trade,
+            "action": point if _ACTION_HINT.search(point) else "",
+            "responsible": actor.group(1) if actor else "",
+            "etc": "",
+        })
+    return rows[:12]
+
+
+def _mom_details(data: dict, source_text: str | None) -> tuple[dict, str]:
+    """Normalise the model's MOM JSON: template keys and at least one agenda row.
+
+    Returns (details, where the agenda came from) so the report can say whether
+    the model, the notes or the request itself supplied it.
+    """
+    details = {k: v for k, v in (data or {}).items() if v not in (None, [], {})}
+    for alias, key in _MOM_ALIASES:
+        if not details.get(key) and details.get(alias):
+            details[key] = details[alias]
+    agenda = _clean_agenda(details.get("agenda"))
+    source = "from the model" if agenda else ""
+    if not agenda:
+        agenda = _agenda_from_notes(source_text)
+        source = "from your notes" if agenda else ""
+    if agenda:
+        details["agenda"] = agenda
+    # With no agenda at all, build_mom_context supplies its own single row from
+    # the project description, so the minute is never blank.
+    return details, (source or "from the request")
+
+
+def _source_text(db: Session, project: Project, note: str | None) -> str:
+    """The team's own words for this run: the note, else the latest message."""
+    if note and note.strip():
+        return note.strip()
+    row = db.scalars(
+        select(AssistantMessage)
+        .where(AssistantMessage.project_id == project.id, AssistantMessage.role == "user")
+        .order_by(AssistantMessage.id.desc())
+    ).first()
+    return (row.content if row else "") or ""
+
+
 def _mom_draft(db: Session, project: Project, user: User, data: dict, *,
-               model: str | None = None, provider_id: str | None = None) -> dict:
+               model: str | None = None, provider_id: str | None = None,
+               source_text: str | None = None) -> dict:
     mom_api = _mom_api()
     version = (project.mom.version + 1) if project.mom else 1
-    details = {k: v for k, v in (data or {}).items() if v not in (None, [], {})}
+    details, agenda_source = _mom_details(data, source_text)
     if not details and project.mom and project.mom.details:
         details = dict(project.mom.details)
+        agenda_source = "from the stored MOM"
 
     context = mom_api.build_mom_context(project, details, version)
     mom_dir = storage.project_dir(project.pr_number, "mom")
@@ -485,11 +621,11 @@ def _mom_draft(db: Session, project: Project, user: User, data: dict, *,
     mom.updated_by_id = user.id
     db.flush()
 
-    agenda = details.get("agenda") or []
+    agenda = context["agenda"]  # the built, trade-sorted agenda - never empty
     return {
         "summary": (
             "MOM v" + str(version) + " drafted from your notes: " + str(len(agenda))
-            + " agenda item(s), " + str(len(details.get("attendees") or []))
+            + " agenda item(s) (" + agenda_source + "), " + str(len(context["attendees"]))
             + " attendee(s). It is in the MOM panel, ready for you to confirm."
         ),
         "artifacts": [
@@ -497,13 +633,14 @@ def _mom_draft(db: Session, project: Project, user: User, data: dict, *,
                      "/api/projects/" + str(project.id) + "/mom/download", "MomPanel",
                      {"version": version}),
             artifact("table", "MOM agenda", None, None, "MomPanel",
-                     {"attendees": details.get("attendees") or [], "agenda": agenda[:15]}),
+                     {"attendees": context["attendees"], "agenda": agenda[:15]}),
         ],
     }
 
 
 def _summary_draft(db: Session, project: Project, user: User, data: dict, *,
-                   model: str | None = None, provider_id: str | None = None) -> dict:
+                   model: str | None = None, provider_id: str | None = None,
+               source_text: str | None = None) -> dict:
     from . import summary_docgen
 
     data = data or {}
@@ -548,7 +685,8 @@ def _summary_draft(db: Session, project: Project, user: User, data: dict, *,
 
 
 def _ear_draft(db: Session, project: Project, user: User, data: dict, *,
-               model: str | None = None, provider_id: str | None = None) -> dict:
+               model: str | None = None, provider_id: str | None = None,
+               source_text: str | None = None) -> dict:
     data = data or {}
     ear = project.ear
     if ear is None:
@@ -615,7 +753,8 @@ def _ear_draft(db: Session, project: Project, user: User, data: dict, *,
 
 
 def _sow_draft(db: Session, project: Project, user: User, data: dict, *,
-               model: str | None = None, provider_id: str | None = None) -> dict:
+               model: str | None = None, provider_id: str | None = None,
+               source_text: str | None = None) -> dict:
     data = data or {}
     revision = "Rev-" + str(len(project.sow_records))
 
@@ -781,7 +920,8 @@ def _write_items(db: Session, project: Project, rows: list[dict], mto_kind: str)
 
 
 def _boq_draft(db: Session, project: Project, user: User, data: dict, *,
-               model: str | None = None, provider_id: str | None = None) -> dict:
+               model: str | None = None, provider_id: str | None = None,
+               source_text: str | None = None) -> dict:
     rows = _boq_rows(data)
     source = "from the assessment"
     if not rows:
@@ -808,7 +948,8 @@ def _boq_draft(db: Session, project: Project, user: User, data: dict, *,
 
 
 def _drawings_list(db: Session, project: Project, user: User, data: dict, *,
-                   model: str | None = None, provider_id: str | None = None) -> dict:
+                   model: str | None = None, provider_id: str | None = None,
+               source_text: str | None = None) -> dict:
     register: list[dict] = []
     for entry in (data or {}).get("drawings") or []:
         if isinstance(entry, dict):
@@ -851,7 +992,8 @@ def _drawings_list(db: Session, project: Project, user: User, data: dict, *,
 
 
 def _binder(db: Session, project: Project, user: User, data: dict, *,
-            model: str | None = None, provider_id: str | None = None) -> dict:
+            model: str | None = None, provider_id: str | None = None,
+            source_text: str | None = None) -> dict:
     """Call the real binder (cover + SOW + BOQ + comment log + drawings)."""
     from ..api import sow_boq
 
@@ -879,7 +1021,8 @@ def _binder(db: Session, project: Project, user: User, data: dict, *,
 
 
 def _mto_draft(db: Session, project: Project, user: User, data: dict, *,
-               model: str | None = None, provider_id: str | None = None) -> dict:
+               model: str | None = None, provider_id: str | None = None,
+               source_text: str | None = None) -> dict:
     rows = _boq_rows(data) or _rows_from_sow(db, project)
     items = _write_items(db, project, rows, "design")
     sow = _latest_sow(db, project)
@@ -952,9 +1095,14 @@ _register(Action(
     instruction=(
         "Turn the team's notes into the KAUST MOM fields. Use only what the notes say; leave a "
         "field out rather than inventing it.\n"
-        '{"meeting_title": "...", "location": "...", "date": "YYYY-MM-DD", "time": "10:00-11:30", '
+        '{"meeting_title": "...", "meeting_location": "...", "meeting_date": "YYYY-MM-DD", '
+        '"meeting_time": "10:00-11:30", "meeting_number": "01", '
         '"attendees": [{"name": "...", "title": "...", "email": ""}], '
-        '"agenda": [{"scope": "...", "action": "...", "responsible": "..."}]}'
+        '"agenda": [{"scope": "...", "trade": "...", "action": "...", "responsible": "...", '
+        '"etc": "..."}]}\n'
+        "Prose notes are normal: split them into ONE agenda row per scope point, and one row per "
+        "trade where a trade is mentioned. Never return an empty agenda, and never leave the "
+        "scope of a row empty."
     ),
 ))
 _register(Action(
@@ -1124,8 +1272,10 @@ def run_action(db: Session, project: Project, user: User, action_id: str, *,
         if isinstance(candidate, dict):
             data = candidate
 
+    source_text = _source_text(db, project, note)
     if action.writer is not None:
-        result = action.writer(db, project, user, data, model=model, provider_id=provider_id)
+        result = action.writer(db, project, user, data, model=model, provider_id=provider_id,
+                               source_text=source_text)
     else:
         result = _stage_writer(db, project, user, action, note=note)
 

@@ -2373,3 +2373,119 @@ export function signoffCloseout(
   return request<CloseoutRecord>(`/api/projects/${projectId}/closeout/signoff`, { method: 'POST' }, input);
 }
 
+
+// --- Delivery assistant (the gated, conversational front door) ---
+
+export interface AssistantArtifact {
+  kind: string; // docx | xlsx | zip | pdf | record | table
+  label: string;
+  filename?: string | null;
+  url?: string | null;
+  panel?: string | null;
+  meta?: Record<string, unknown>;
+}
+
+export interface AssistantGate {
+  stage: number;
+  label: string;
+  status: string;
+  allowed: string[];
+  /** action id -> the pipeline's own sentence for why it may not run yet */
+  blocked: Record<string, string>;
+}
+
+export interface AssistantEarTrack {
+  status: string;
+  next_step: string | null;
+  trade_inputs: number;
+  parallel: boolean;
+}
+
+export interface AssistantAiStatus {
+  provider: string;
+  model: string;
+  available: boolean;
+  reason?: string | null;
+}
+
+export interface AssistantTurn {
+  id: number;
+  role: 'user' | 'assistant' | 'tool';
+  content: string;
+  created_at: string;
+  action?: string | null;
+  suggested_action?: string | null;
+  needs_confirmation?: boolean;
+  artifacts?: AssistantArtifact[];
+  gate?: AssistantGate | null;
+  elapsed_ms?: number | null;
+  available?: boolean;
+}
+
+export interface AssistantActionInfo {
+  id: string;
+  label: string;
+  track: 'spine' | 'ear';
+  stage: number;
+  panel: string;
+  capability: string;
+  precondition: string | null;
+}
+
+export interface AssistantState {
+  project_id: number;
+  pr_number: string;
+  pipeline: unknown;
+  gate: AssistantGate;
+  ear: AssistantEarTrack;
+  actions: AssistantActionInfo[];
+  ai: AssistantAiStatus;
+  transcript: AssistantTurn[];
+}
+
+/** The gate, the EAR track, the action registry and the transcript. */
+export function getAssistantState(projectId: number): Promise<AssistantState> {
+  return request<AssistantState>(`/api/projects/${projectId}/assistant`);
+}
+
+/** Paste notes or instructions; get the one step that should run next. */
+export function proposeAssistant(
+  projectId: number,
+  message: string,
+  opts: { model?: string; provider?: string } = {},
+): Promise<AssistantTurn> {
+  return request<AssistantTurn>(
+    `/api/projects/${projectId}/assistant/message`,
+    { method: 'POST' },
+    { message, model: opts.model ?? null, provider: opts.provider ?? null },
+  );
+}
+
+/** Execute one action. A 409 carries the pipeline's own reason sentence. */
+export function runAssistantAction(
+  projectId: number,
+  action: string,
+  note?: string,
+  opts: { model?: string; provider?: string } = {},
+): Promise<AssistantTurn> {
+  return request<AssistantTurn>(
+    `/api/projects/${projectId}/assistant/run`,
+    { method: 'POST' },
+    { action, note: note ?? null, model: opts.model ?? null, provider: opts.provider ?? null },
+  );
+}
+
+/** The transcript, oldest first. */
+export function listAssistantMessages(projectId: number): Promise<AssistantTurn[]> {
+  return request<AssistantTurn[]>(`/api/projects/${projectId}/assistant/messages`);
+}
+
+/** Clear the transcript (the documents the assistant produced stay). */
+export function resetAssistant(projectId: number): Promise<void> {
+  return request<void>(`/api/projects/${projectId}/assistant/messages`, { method: 'DELETE' });
+}
+
+/** The action registry the panel greys out from: id, label, capability, panel. */
+export function listAssistantActions(projectId: number): Promise<AssistantActionInfo[]> {
+  return request<AssistantActionInfo[]>(`/api/projects/${projectId}/assistant/actions`);
+}

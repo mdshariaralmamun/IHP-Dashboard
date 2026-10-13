@@ -3,6 +3,54 @@
 Every change to the app is recorded here from 11 October 2026 onwards, and the
 current version is shown in the app under **Admin → Version**.
 
+## 1.2.0 — 14 October 2026
+
+### The Project Delivery Assistant
+- **One conversational panel per project** (above the delivery pipeline): paste the
+  meeting notes, the instructions or the scope inputs, press **Propose the next
+  step**, and run the step it names. Every step writes the real document through
+  the app's own generators — MOM, Project Summary + Cost Estimate, EAR, SOW, BOQ,
+  technical drawing list, the combined Procore binder and the design MTO.
+- **Nothing is written without an explicit run**: *Propose* records what the team
+  pasted and says which step comes next; only **Run** writes, and each result is
+  reported inline (document, version, panel, size, audit key).
+- **The gates are never skipped**: a step that is not allowed yet is shown greyed
+  out with the **pipeline's own sentence** ("Confirm the MOM first (Stage 1) …",
+  "The MTO unlocks when Procore is Approved or Approved as Noted"), and the API
+  refuses it with a 409 even if the button were clicked. 13 actions in a registry,
+  each with a precondition, a panel and an audit key.
+- **The EAR funnel runs beside the five-stage spine**, and the panel shows both:
+  the five stage chips plus an "EAR · pi signature · beside the spine" chip.
+- **Capability-aware**: a Run button appears only when the user holds the action's
+  capability (mom.manage, projects.edit, ear.manage, sow.manage, boq.manage);
+  otherwise the step is shown with what it needs.
+- Six new endpoints: `GET/POST/PATCH/DELETE /api/projects/{id}/assistant` and
+  `/message`, `/run`, `/messages`, `/actions`; new `assistant_messages` table.
+
+### MOM quality fixes
+- **Prose notes now always produce an agenda**: the model is asked for one row per
+  scope point, and when it returns none the assistant derives them from the notes
+  (bullet points first, then sentences), infers the trade and keeps the responsible
+  party ("Action: IHP to issue the SOW" → responsible IHP).
+- **Template keys fixed**: date / location / time / title are normalised onto the
+  template's `meeting_date`, `meeting_location`, `meeting_time`, `meeting_title` —
+  they were being dropped before.
+- The panel now reports the agenda that the document actually contains, not the raw
+  model reply.
+
+### Fixes
+- **`sow.approve`** was missing from the assistant registry, so the binder could
+  never be unlocked.
+- **The hand-set Procore status now unlocks the MTO**: the gate reads
+  `project.procore_status = Approved / Approved as Noted` as well as the pipeline's
+  stage 4, matching "Procore status is set by hand".
+- **A useless model answer no longer produces an empty BOQ**: it falls back to the
+  SOW's own measured lines.
+- **Project Summary generation** created the `deliverables/` folder it writes into
+  (the first Summary for a PR raised FileNotFoundError from python-docx).
+- The combined binder and the plan-marker renderer import `pymupdf` instead of the
+  deprecated `fitz` alias.
+
 ## 1.1.0 — 12 October 2026
 
 ### The five-stage delivery spine

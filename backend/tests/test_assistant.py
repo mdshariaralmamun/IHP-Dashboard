@@ -338,3 +338,91 @@ def test_boq_falls_back_to_the_sow_measurements(client, admin_headers, project, 
     assert items, "the BOQ fell back to nothing"
     assert all(i.unit_rate == 0.0 and i.total_rate == 0.0 for i in items)
     db.close()
+
+PROSE = '''
+- Replace the 2 air-handling units on the roof level (HVAC).
+- New dedicated 60 A electrical supply with a new panel for the etcher.
+- Gas piping tie-in to the existing manifold, including the isolation valve.
+- Low current points for the new thermostats and gas detection.
+- Leak test and purge before commissioning.
+Action: IHP to issue the SOW, BOQ and the drawing list within two weeks.
+'''
+
+
+def test_mom_agenda_splits_prose_into_scope_points():
+    rows = assistant._agenda_from_notes(PROSE)
+    assert len(rows) >= 3, rows
+    trades = {row['trade'] for row in rows}
+    assert 'Plumbing' in trades
+    assert 'Electrical' in trades
+    assert all(row['scope'].strip() for row in rows)
+    acting = [row for row in rows if row['responsible'] == 'IHP']
+    assert acting, rows
+    assert 'to issue' in acting[0]['action']
+
+
+def test_mom_agenda_from_prose_notes(client, admin_headers, project, monkeypatch):
+    """A model that returns no agenda must still leave a usable minute."""
+
+    def _no_agenda(system, prompt, *, model=None, provider_id=None):
+        if "choosing the next step" in system:
+            return {"action": "mom.draft", "reason": "notes", "reply": "Drafting the MOM."}
+        return {"data": {"meeting_title": "Gas line site meeting", "attendees": [
+            {"name": "Atteq UrRehman", "title": "PI", "email": ""}], "agenda": []}}
+
+    monkeypatch.setattr(assistant, "_ai_json", _no_agenda)
+    pid = project["id"]
+    resp = client.post(
+        f"/api/projects/{pid}/assistant/run",
+        json={"action": "mom.draft", "note": PROSE},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert "from your notes" in body["content"]
+    assert "0 agenda item" not in body["content"]
+    table = [a for a in body['artifacts'] if a['kind'] == 'table'][0]
+    agenda = table['meta']['agenda']
+    assert len(agenda) >= 3
+    db = SessionLocal()
+    mom = db.query(MomRecord).filter(MomRecord.project_id == pid).first()
+    assert len(mom.details['agenda']) >= 3
+    assert all(row['scope'] for row in mom.details['agenda'])
+    db.close()
+
+
+def test_mom_detail_aliases_are_normalised(client, admin_headers, project, monkeypatch):
+    def _aliases(system, prompt, *, model=None, provider_id=None):
+        if "choosing the next step" in system:
+            return {"action": "mom.draft", "reason": "notes", "reply": "Drafting the MOM."}
+        return {"data": {
+            "title": "Gas line kick-off",
+            "date": "2026-10-14",
+            "location": "B5 - Room 5-3201",
+            "time": "10:00-11:30",
+            "agenda": [{"scope": "Install the gas line", "action": "IHP to issue the SOW",
+                        "responsible": "IHP"}],
+        }}
+
+    monkeypatch.setattr(assistant, "_ai_json", _aliases)
+    pid = project["id"]
+    resp = _run(client, admin_headers, pid, "mom.draft")
+    assert resp.status_code == 200, resp.text
+    db = SessionLocal()
+    mom = db.query(MomRecord).filter(MomRecord.project_id == pid).first()
+    assert mom.details['meeting_title'] == 'Gas line kick-off'
+    assert mom.details['meeting_date'] == '2026-10-14'
+    assert mom.details['meeting_location'] == 'B5 - Room 5-3201'
+    assert mom.details['meeting_time'] == '10:00-11:30'
+    db.close()
+
+
+def test_actions_endpoint_lists_the_registry(client, admin_headers, project):
+    resp = client.get(f"/api/projects/{project['id']}/assistant/actions", headers=admin_headers)
+    assert resp.status_code == 200, resp.text
+    rows = resp.json()
+    assert len(rows) == 13
+    ids = {row['id'] for row in rows}
+    assert {'mom.draft', 'summary.draft', 'ear.draft', 'sow.draft', 'boq.draft',
+            'drawings.list', 'sow.approve', 'package.binder', 'mto.draft'} <= ids
+    assert all(row['capability'] and row['panel'] for row in rows)
