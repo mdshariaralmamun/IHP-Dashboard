@@ -692,6 +692,30 @@ def patch_mom(
     return mom
 
 
+def mom_pdf_file(
+    project: Project, mom: MomRecord, details: dict, base_url: str | None = None,
+) -> Path | None:
+    """The named full MOM PDF: generated/{document_code}.pdf.
+
+    Built from the same HTML the preview serves and the export returns, so the
+    email attachment, the download and the preview can never diverge. Returns
+    None when Chromium is unavailable. This is the ONLY place the MOM PDF is
+    produced.
+    """
+    context = build_mom_context(project, details, mom.version)
+    out_dir = storage.project_dir(project.pr_number, "generated")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    target = out_dir / f"{context['document_code']}.pdf"
+    if target.exists() and target.stat().st_size > 0:
+        return target
+    rendered = docgen.html_to_pdf(
+        render_mom_document(project, mom, details, base_url=base_url), target
+    )
+    if rendered is None or not Path(rendered).exists():
+        return None
+    return Path(rendered)
+
+
 @router.get("/export")
 def export_mom(
     project_id: int,
@@ -723,9 +747,8 @@ def export_mom(
 
     pages = 0
     if format == "pdf":
-        target = out_dir / f"{code}.pdf"
-        rendered = docgen.html_to_pdf(render_mom_document(project, mom, details), target)
-        if rendered is None or not Path(rendered).exists():
+        rendered = mom_pdf_file(project, mom, details)
+        if rendered is None:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail=(
@@ -944,12 +967,12 @@ def _set_email_bodies(
 
 
 @router.get("/email.eml")
-def mom_email_draft(
+def mom_email_file(
     request: Request,
     project_id: int,
     to: str | None = Query(default=None, description="Comma separated recipients"),
-    cc: str | None = Query(default=None),
-    attach: bool = Query(default=True, description="Attach the MOM DOCX/PDF"),
+    cc: str | None = Query(default=None, description="Extra Cc addresses"),
+    attach: bool = Query(default=True, description="Attach the full MOM PDF"),
     base_url: str | None = Query(
         default=None, description="Public origin, for the logo in the email"
     ),
@@ -961,7 +984,7 @@ def mom_email_draft(
         ),
     ),
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     """A ready-to-send email file for the MOM (opens in Outlook on the desktop).
 
@@ -983,62 +1006,89 @@ def mom_email_draft(
         return [part.strip() for part in (value or "").replace(";", ",").split(",") if part.strip()]
 
     recipients = _split(to) or emailer.mom_recipients(project, details)
+    if not recipients and (project.pi_email or "").strip():
+        # No attendee addresses: the project's own contact is the last resort.
+        recipients = [project.pi_email.strip()]
     if not recipients:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="No recipients: add participants to the MOM or pass ?to=email@example.com",
         )
 
+    context = build_mom_context(project, details, mom.version)
+    code = context["document_code"]
+    meeting_title = str(details.get("meeting_title") or project.title or "").strip()
+
     message = EmailMessage()
-    message["Subject"] = mom.email_subject or f"PR {project.pr_number} - {project.title}"
+    message["Subject"] = code + " \u2013 " + meeting_title
     message["To"] = ", ".join(recipients)
-    copied = _split(cc)
+    # The design mailbox is copied in - unless it is already a recipient.
+    copied = _split(cc) or (
+        [MOM_CC] if MOM_CC.lower() not in {email.lower() for email in recipients} else []
+    )
     if copied:
         message["Cc"] = ", ".join(copied)
     message["X-Unsent"] = "1"
     origin = _public_base_url(request, base_url)
     html_body = _mom_html_body(project, mom, details, base_url=origin)
-    if attach:
-        plain = mom.email_body or ""
-    else:
-        # No document attached: the minute travels inside the email body instead,
-        # so the sender can attach their own images/files in Outlook.
-        fresh = build_mom_context(project, details, mom.version)
+    plain = mom.email_body or ""
+    if not plain or not attach:
+        # No stored body (or no document attached, so the minute must travel in
+        # the body itself): build it from the live record.
         _, plain = emailer.build_mom_draft(
             project,
-            fresh["items"],
+            context["items"],
             details=details,
-            context=fresh,
-            include_attachments=False,
+            context=context,
+            include_attachments=attach,
         )
     _set_email_bodies(message, plain, html_body, html_only=html_only)
 
-    mom_dir = storage.project_dir(project.pr_number, "mom")
-    # The PDFs need LibreOffice / Chromium, so they may be absent; the DOCX
-    # always exists. The "minute" PDF is the web view itself, so a mail client
-    # that shows plain text still delivers the styled document.
-    styled_pdf = _mom_styled_pdf(project, mom, details, base_url=origin)
-    attachments = [
-        (
-            mom_dir / mom.docx_filename if mom.docx_filename else None,
-            "application",
-            "vnd.openxmlformats-officedocument.wordprocessingml.document",
-        ),
-        (
-            mom_dir / mom.pdf_filename if mom.pdf_filename else None,
-            "application",
-            "pdf",
-        ),
-        (styled_pdf, "application", "pdf"),
-    ]
+    filename = code + ".eml"
+    attachment_name = code + ".pdf"
     if attach:
-        for path, maintype, subtype in attachments:
-            if path and path.exists():
+        # ONE attachment: the full MOM PDF, from the same helper the download and
+        # the export use, so the bytes are identical by construction.
+        pdf = mom_pdf_file(project, mom, details, base_url=origin)
+        if pdf is not None:
+            message.add_attachment(
+                pdf.read_bytes(), maintype="application", subtype="pdf", filename=pdf.name
+            )
+            attachment_name = pdf.name
+        else:
+            # No renderer (CI, or a deployment without Chromium): the rendered
+            # Word minute is better than an empty draft, and the audit trail
+            # records which one went out.
+            word = None
+            if mom.docx_filename:
+                candidate = storage.project_dir(project.pr_number, "mom") / mom.docx_filename
+                if candidate.exists():
+                    word = candidate
+            if word is not None:
                 message.add_attachment(
-                    path.read_bytes(), maintype=maintype, subtype=subtype, filename=path.name
+                    word.read_bytes(),
+                    maintype="application",
+                    subtype="vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    filename=code + ".docx",
                 )
+                attachment_name = code + ".docx"
+                message["X-IHP-MOM-Attachment"] = "docx-fallback-no-renderer"
 
-    filename = f"MOM_{storage.safe_name(project.pr_number)}_v{mom.version}.eml"
+    workflow.log_action(
+        db,
+        user,
+        "mom:eml",
+        project,
+        {
+            "file": filename,
+            "to": recipients,
+            "cc": copied,
+            "attachment": attachment_name if attach else None,
+            "bytes": len(message.as_bytes()),
+        },
+    )
+    db.commit()
+
     return Response(
         content=message.as_bytes(),
         media_type="message/rfc822",

@@ -2567,3 +2567,36 @@ export interface MomEmailDraft {
 export function getMomEmailDraft(projectId: number): Promise<MomEmailDraft> {
   return request<MomEmailDraft>(`/api/projects/${projectId}/mom/email-draft`);
 }
+
+/** The .eml draft URL (the MOM PDF is attached); used for the "open" link too. */
+export function momEmailDraftUrl(projectId: number): string {
+  const params = new URLSearchParams();
+  if (typeof window !== 'undefined') params.set('base_url', window.location.origin);
+  return `/api/projects/${projectId}/mom/email.eml?${params.toString()}`;
+}
+
+/**
+ * Download the real draft: an .eml whose single attachment is the full MOM PDF.
+ *
+ * The file name comes from the server's Content-Disposition, so it lands as
+ * IHP-MOM-PR-XXXX-R01.eml rather than a generic name. Opening it in Outlook (or
+ * the OS mail client) gives a compose window with To/Cc/Subject/Body filled in
+ * and the attachment already in place. Nothing is ever sent from here.
+ */
+export async function downloadMomEmailDraft(projectId: number): Promise<string> {
+  const token = getToken();
+  const res = await fetch(momEmailDraftUrl(projectId), {
+    headers: token ? { Authorization: 'Bearer ' + token } : undefined,
+  });
+  if (res.status === 401) {
+    clearToken();
+    redirectToLogin();
+    throw new ApiError(401, 'Your session has expired. Please log in again.');
+  }
+  if (!res.ok) {
+    throw new ApiError(res.status, await parseErrorMessage(res));
+  }
+  const name = filenameFromDisposition(res, 'IHP-MOM-draft.eml');
+  await saveAsDownload(res, name);
+  return name;
+}

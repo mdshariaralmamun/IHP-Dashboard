@@ -15,6 +15,7 @@ the first PATCH and the record is restored anyway.
 from __future__ import annotations
 
 import copy
+import email
 import json
 import os
 import sys
@@ -219,11 +220,46 @@ def _run_writes(pid: int, token: str, snap: dict, db) -> str:
     show("GET /email-draft (must be 409)", status, ctype, raw)
     assert status == 409, "the email draft should refuse without any address"
 
+    # the .eml draft: exactly one attachment, the named full MOM PDF
+    started = time.time()
+    status, ctype, raw, headers = api("GET", f"/api/projects/{pid}/mom/email.eml", token)
+    disposition = headers.get("content-disposition", "")
+    show("GET /mom/email.eml", status, ctype, raw,
+         " | " + disposition[:74] + " | " + str(round(time.time() - started, 2)) + "s")
+    assert status == 200 and ctype == "message/rfc822", "the draft must be message/rfc822"
+    assert code + ".eml" in disposition, "the draft is not named after the document code"
+    message = email.message_from_bytes(raw)
+    parts = [part.get_filename() for part in message.walk() if part.get_filename()]
+    print("    X-Unsent:", message.get("X-Unsent"), "| To:", message.get("To"))
+    print("    Cc:", message.get("Cc"), "| Subject:", message.get("Subject"))
+    print("    attachments:", parts)
+    assert message.get("X-Unsent") == "1", "without X-Unsent Outlook shows it as received"
+    assert parts == [code + ".pdf"], "the draft must carry exactly the named MOM PDF"
+
+    # the browser names the file from Content-Disposition (same regex as api.ts)
+    import re as _re
+
+    match = _re.search(r"filename\*?=(?:UTF-8''|\")?([^\";]+)", disposition, _re.I)
+    browser_name = match.group(1).replace('"', "").strip() if match else "IHP-MOM-draft.eml"
+    print("    the browser saves it as:", browser_name)
+    assert browser_name == code + ".eml", "the download name must come from the header"
+
+    attached = [
+        part for part in message.walk() if part.get_filename() == code + ".pdf"
+    ][0].get_payload(decode=True)
+    status, _c, exported, _h = api("GET", f"/api/projects/{pid}/mom/export?format=pdf", token)
+    assert status == 200
+    print("    attachment == export bytes:", attached == exported, "|", len(attached), "bytes")
+    assert attached == exported, "the attachment must be the export file"
+    assert round(time.time() - started, 2) < 3.0, "the .eml must return in under 3s"
+
     # the audit trail
     status, ctype, raw, _h = api("GET", f"/api/projects/{pid}/audit", token)
     entries = json.dumps(json.loads(raw))
     print("    audit mom:edit present:", "mom:edit" in entries,
-          "| mom:export present:", "mom:export" in entries)
+          "| mom:export present:", "mom:export" in entries,
+          "| mom:eml present:", "mom:eml" in entries)
+    assert "mom:eml" in entries, "the .eml draft must be audited"
     return code
 
 

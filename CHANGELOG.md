@@ -3,6 +3,32 @@
 Every change to the app is recorded here from 11 October 2026 onwards, and the
 current version is shown in the app under **Admin → Version**.
 
+## 1.2.2 — 14 October 2026
+
+### A real auto-attached Outlook draft for the MOM
+- **`GET /mom/email.eml` now returns a draft with the MOM PDF already attached.**
+  It carries exactly **one** attachment — `IHP-MOM-PR-{pr}-R{rev}.pdf`, the same bytes
+  `GET /mom/export?format=pdf` returns, because both now go through one shared
+  `mom_pdf_file()` helper built from the same HTML the live preview shows.
+  Before, it attached three files (the Word minute, the LibreOffice PDF and the
+  minute PDF) and none of them was the named document.
+- The message keeps **`X-Unsent: 1`** and no `From` header, so Outlook opens it as an
+  editable compose window with To, Cc, Subject and the attachment in place; the
+  user sends it from their own mailbox, and no SMTP credentials are involved.
+- **Subject** is now the document code plus the meeting title
+  (`IHP-MOM-PR-12864-R01 – PR-12864 Installation of new gas line for plasma etcher`)
+  and **Cc** is `IHP.design@kaust.edu.sa`, deduped against To. A new audit key
+  **`mom:eml`** records the file, recipients and attachment size.
+- The draft file is named **`IHP-MOM-PR-{pr}-R{rev}.eml`** (the client takes the name
+  from `Content-Disposition`), instead of `MOM_{pr}_v{version}.eml`.
+- **Panel**: the primary **Email** button downloads that draft (one line under it:
+  "Opens a draft in Outlook with the MOM PDF attached."), the mailto control is
+  relabelled **"Email (compose, no attachment)"**, and the manual route is
+  **"Download draft (.eml)"**. If the mail client does not open automatically, the
+  panel says to open the .eml from the Downloads folder.
+- The mailto endpoint and its behaviour are untouched, as are the Procore binder's
+  `package:pdf` key, the labour line, the hand-set Procore status and every other panel.
+
 ## 1.2.1 — 14 October 2026
 
 ### The MOM panel is live, downloadable and emailable

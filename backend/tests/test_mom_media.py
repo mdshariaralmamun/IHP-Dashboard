@@ -6,6 +6,7 @@ autosave must persist an immediate PATCH - which is what the browser's blur /
 pagehide flush sends.
 """
 
+import email
 import uuid
 
 import pytest
@@ -322,3 +323,81 @@ def test_email_draft_dedupes_cc_against_to(client, admin_headers, monkeypatch):
         assert draft["cc"] == ["IHP.design@kaust.edu.sa"]
     finally:
         _cleanup(data["id"])
+
+
+def _fake_pdf(payload: bytes):
+    """A deterministic html_to_pdf so the .eml tests never need Chromium."""
+
+    def _writer(html, out_path, *, base_url=""):
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_bytes(payload)
+        return out_path
+
+    return _writer
+
+
+def test_email_eml_carries_the_named_mom_pdf(client, admin_headers, mom_project, monkeypatch):
+    """The draft carries exactly one attachment: IHP-MOM-<pr>-R<rev>.pdf."""
+    monkeypatch.setattr(docgen, "html_to_pdf", _fake_pdf(b"%PDF-1.4\n% draft pdf\n%%EOF\n"))
+    pid = mom_project["id"]
+    code = _code(mom_project["pr_number"], _version(pid))
+    resp = client.get(f"/api/projects/{pid}/mom/email.eml", headers=admin_headers)
+    assert resp.status_code == 200, resp.text
+    assert resp.headers["content-type"].startswith("message/rfc822")
+    assert code + ".eml" in resp.headers["content-disposition"]
+
+    message = email.message_from_bytes(resp.content)
+    assert message.get("X-Unsent") == "1"
+    assert "pi@example.kaust.edu.sa" in (message.get("To") or "")
+    assert code in (message.get("Subject") or "")
+    names = [part.get_filename() for part in message.walk() if part.get_filename()]
+    assert names == [code + ".pdf"], names
+    assert message.get("Cc") == "IHP.design@kaust.edu.sa"
+
+
+def test_email_eml_dedupes_cc_against_to(client, admin_headers, monkeypatch):
+    monkeypatch.setattr(docgen, "html_to_pdf", _fake_pdf(b"%PDF-1.4\n% cc check\n%%EOF\n"))
+    data = _make_project(client, admin_headers)
+    try:
+        pid = data["id"]
+        resp = client.patch(
+            f"/api/projects/{pid}/mom",
+            json={"attendees": [{"name": "In-House Projects Design", "title": "IHP",
+                                 "email": "IHP.design@kaust.edu.sa"}]},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 200, resp.text
+        first = email.message_from_bytes(client.get(
+            f"/api/projects/{pid}/mom/email.eml", headers=admin_headers).content)
+        assert "IHP.design@kaust.edu.sa" in (first.get("To") or "")
+        assert first.get("Cc") is None
+
+        resp = client.patch(
+            f"/api/projects/{pid}/mom",
+            json={"attendees": [{"name": "A. Rehman", "title": "PI",
+                                 "email": "pi@example.kaust.edu.sa"}]},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 200
+        second = email.message_from_bytes(client.get(
+            f"/api/projects/{pid}/mom/email.eml", headers=admin_headers).content)
+        assert second.get("Cc") == "IHP.design@kaust.edu.sa"
+    finally:
+        _cleanup(data["id"])
+
+
+def test_email_eml_attachment_is_the_export_bytes(client, admin_headers, mom_project, monkeypatch):
+    """One source of truth: the attachment IS the export file."""
+    payload = b"%PDF-1.4\n% one source of truth\n%%EOF\n"
+    monkeypatch.setattr(docgen, "html_to_pdf", _fake_pdf(payload))
+    pid = mom_project["id"]
+    eml = client.get(f"/api/projects/{pid}/mom/email.eml", headers=admin_headers)
+    assert eml.status_code == 200, eml.text
+    message = email.message_from_bytes(eml.content)
+    parts = [part for part in message.walk() if part.get_filename()]
+    attached = parts[0].get_payload(decode=True)
+    exported = client.get(f"/api/projects/{pid}/mom/export?format=pdf", headers=admin_headers)
+    assert exported.status_code == 200
+    assert attached == exported.content == payload
+    audit = str(client.get(f"/api/projects/{pid}/audit", headers=admin_headers).json())
+    assert "mom:eml" in audit

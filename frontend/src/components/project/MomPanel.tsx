@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { renderAsync } from 'docx-preview';
 import ErrorBox from '@/components/ErrorBox';
 import MomStatusBadge from '@/components/MomStatusBadge';
-import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, downloadMomExport, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailDirectory, getMomEmailDraft, getMomEmailLink, getMomPreview, getMomWebViewHtml, openMomWebView, patchMom, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
+import { ApiError, addMomAgendaItem, deleteMomAgendaItem, downloadMom, downloadMomEmail, downloadMomEmailDraft, downloadMomExport, generateMom, getMomDefaults, getMomDocxBlob, getMomEmailDirectory, getMomEmailDraft, getMomEmailLink, getMomPreview, getMomWebViewHtml, openMomWebView, patchMom, setMomStatus, suggestMomAgenda, updateMomAgendaItem } from '@/lib/api';
 import type { MomDetailsPatch, MomPreview } from '@/lib/api';
 import type { MomDirectoryEntry } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
@@ -573,11 +573,13 @@ export default function MomPanel({
   }
 
   /**
-   * Email: build the draft, open the local mail client, and download the PDF.
+   * Email: a real draft with the MOM PDF already attached.
    *
-   * mailto: cannot carry an attachment, so the PDF is downloaded beside the
-   * compose window and the panel says so. A 409 (no attendee emails and no
-   * project contact) shows the sentence and opens nothing.
+   * The endpoint returns an .eml carrying X-Unsent (so Outlook opens it as an
+   * editable draft) whose single attachment is the full MOM PDF, named
+   * IHP-MOM-PR-XXXX-R01.pdf. Opening the file gives a compose window with the
+   * recipients, subject, body and the attachment in place - nothing is sent
+   * from the server, and no mailbox credentials are involved.
    */
   async function handleEmail() {
     setBusy('email');
@@ -585,14 +587,14 @@ export default function MomPanel({
     setEmailNote(null);
     try {
       await flush();
-      const draft = await getMomEmailDraft(projectId);
-      const query =
-        'cc=' + encodeURIComponent(draft.cc.join(',')) +
-        '&subject=' + encodeURIComponent(draft.subject) +
-        '&body=' + encodeURIComponent(draft.body);
-      window.location.href = 'mailto:' + draft.to.join(',') + '?' + query;
-      await downloadMomExport(projectId, 'pdf');
-      setEmailNote((draft.note ?? draft.path_taken) + ' (' + draft.path_taken + ')');
+      await downloadMomEmailDraft(projectId);
+      setEmailNote(
+        'Draft downloaded with the MOM PDF attached' +
+          (momPreview ? ' (' + momPreview.document_code + '.pdf)' : '') +
+          '. Open it to compose in Outlook - To, Cc, subject and body are already ' +
+          'filled in. If your mail client did not open, open the .eml file from ' +
+          'your Downloads folder.',
+      );
       onChanged();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not prepare the email');
@@ -1237,7 +1239,7 @@ export default function MomPanel({
                   disabled={busy !== null}
                   className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {busy === 'outlook' ? 'Opening…' : 'Open in Outlook (no attachment)'}
+                  {busy === 'outlook' ? 'Opening…' : 'Email (compose, no attachment)'}
                 </button>
                 <button
                   type="button"
@@ -1245,7 +1247,7 @@ export default function MomPanel({
                   disabled={busy !== null}
                   className={secondaryButton}
                 >
-                  {busy === 'send' ? 'Preparing…' : 'Download email file (.eml)'}
+                  {busy === 'send' ? 'Preparing…' : 'Download draft (.eml)'}
                 </button>
                 <button
                   type="button"
@@ -1253,9 +1255,13 @@ export default function MomPanel({
                   disabled={busy !== null}
                   className={secondaryButton}
                 >
-                  {busy === 'email' ? 'Preparing…' : 'Email (compose + PDF)'}
+                  {busy === 'email' ? 'Preparing…' : 'Email (draft with MOM PDF attached)'}
                 </button>
               </div>
+
+              <p className="text-[11px] text-apple-muted">
+                Opens a draft in Outlook with the MOM PDF attached.
+              </p>
 
               {emailNote && (
                 <p className="rounded-md border border-apple-border bg-apple-hover px-3 py-2 text-[11px] text-apple-muted">
