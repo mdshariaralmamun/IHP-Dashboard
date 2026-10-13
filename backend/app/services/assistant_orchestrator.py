@@ -197,6 +197,10 @@ def _blocked(action: Action, db: Session, project: Project, by_stage: dict) -> s
     if pre == "procore_approved":
         if by_stage[4].status in api.PROCORE_APPROVED:
             return None
+        # The reviewer's answer is recorded by hand on the Procore panel, and
+        # that is the team's authoritative record: it unlocks the MTO as well.
+        if (project.procore_status or "").strip().lower() in ("approved", "approved as noted"):
+            return None
         return api.blocked_reason(by_stage, 5)
     if pre == "ear_exists":
         return None if project.ear is not None else "Draft the EAR first (ear.draft)."
@@ -245,7 +249,7 @@ def next_action(db: Session, project: Project) -> str | None:
         "mom.draft", "mom.confirm",
         "summary.draft", "summary.approve",
         "ear.draft", "ear.pi_signature", "ear.asepc",
-        "sow.draft", "boq.draft", "drawings.list",
+        "sow.draft", "boq.draft", "drawings.list", "sow.approve",
         "package.binder", "mto.draft",
     ]
     for action_id in order:
@@ -697,6 +701,43 @@ def _sow_draft(db: Session, project: Project, user: User, data: dict, *,
     }
 
 
+def _as_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _rows_from_sow(db: Session, project: Project) -> list[dict]:
+    """Deterministic fallback: the SOW's own scope items become the BOQ/MTO lines.
+
+    The model is the drafting help, not the source of truth - if its answer is
+    unusable the BOQ must still come out with the SOW's measured lines.
+    """
+    sow = _latest_sow(db, project)
+    if sow is None:
+        return []
+    rows: list[dict] = []
+    for trade in ((sow.trade_sections or {}).get("trades") or []):
+        if not isinstance(trade, dict):
+            continue
+        name = str(trade.get("name") or "")
+        g = generators.group_for_trade(name)
+        code = g[0] if g else "A"
+        for i, item in enumerate(trade.get("items") or [], 1):
+            if not isinstance(item, dict):
+                continue
+            rows.append({
+                "trade": name or TRADE_NAMES.get(code, code),
+                "item_code": code + "." + str(i),
+                "description": str(item.get("description") or item.get("sow_text") or ""),
+                "unit": str(item.get("unit") or "Lot"),
+                "quantity": _as_float(item.get("qty") or item.get("quantity"), 1.0),
+                "material_spec": str(item.get("material_spec") or ""),
+            })
+    return rows
+
+
 def _boq_rows(data: dict) -> list[dict]:
     rows = []
     for entry in (data or {}).get("items") or []:
@@ -711,7 +752,7 @@ def _boq_rows(data: dict) -> list[dict]:
                              or (group + "." + str(len(rows) + 1))),
             "description": str(entry.get("description") or ""),
             "unit": str(entry.get("unit") or "Lot"),
-            "quantity": float(entry.get("quantity") or entry.get("qty") or 0.0),
+            "quantity": _as_float(entry.get("quantity") or entry.get("qty"), 0.0),
             "material_spec": str(entry.get("material_spec") or ""),
         })
     return rows
@@ -742,13 +783,18 @@ def _write_items(db: Session, project: Project, rows: list[dict], mto_kind: str)
 def _boq_draft(db: Session, project: Project, user: User, data: dict, *,
                model: str | None = None, provider_id: str | None = None) -> dict:
     rows = _boq_rows(data)
+    source = "from the assessment"
+    if not rows:
+        rows = _rows_from_sow(db, project)
+        source = "from the SOW measurements"
     items = _write_items(db, project, rows, "design")
     sow = _latest_sow(db, project)
     path = generators.generate_boq_xlsx(project, items, sow)
     return {
         "summary": (
-            "BOQ built with " + str(len(items)) + " line(s) across the six trade groups, unpriced "
-            "for bidding (unit rate 0.00, labour $0.00 in-house)."
+            "BOQ built with " + str(len(items)) + " line(s) " + source
+            + " across the six trade groups, unpriced for bidding "
+            "(unit rate 0.00, labour $0.00 in-house)."
         ),
         "artifacts": [
             artifact("xlsx", "Bill of Quantities", Path(path).name,
@@ -834,7 +880,7 @@ def _binder(db: Session, project: Project, user: User, data: dict, *,
 
 def _mto_draft(db: Session, project: Project, user: User, data: dict, *,
                model: str | None = None, provider_id: str | None = None) -> dict:
-    rows = _boq_rows(data)
+    rows = _boq_rows(data) or _rows_from_sow(db, project)
     items = _write_items(db, project, rows, "design")
     sow = _latest_sow(db, project)
     path = generators.generate_mto_xlsx(project, sow)
@@ -982,6 +1028,11 @@ _register(Action(
         '{"drawings": [{"drawing_no": "...", "rev": "0", "title": "...", "discipline": "...", '
         '"date": "...", "status": "IFC"}]}'
     ),
+))
+_register(Action(
+    id="sow.approve", label="Issue the SOW package (stage 3)", track="spine", stage=3,
+    capability="sow.manage", panel="PipelinePanel", audit_key="pipeline:stage",
+    precondition="sow_exists",
 ))
 _register(Action(
     id="package.binder", label="Compile the Procore binder", track="spine", stage=4,

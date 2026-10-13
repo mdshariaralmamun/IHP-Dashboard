@@ -25,9 +25,11 @@ from fastapi.testclient import TestClient
 from app.core.config import get_settings
 from app.core.security import create_access_token
 from app.db import SessionLocal
+from app.main import app
 from app.models import (
     AssistantMessage,
     Attachment,
+    AuditLog,
     BoqMtoItem,
     EarRecord,
     EarTradeInput,
@@ -137,9 +139,11 @@ def main() -> None:
 
     step("POST /run package.binder (must be 409)", client.post(
         f"/api/projects/{pid}/assistant/run", headers=H, json={"action": "package.binder"}))
-    step("POST /run sow.approve", client.post(
-        f"/api/projects/{pid}/assistant/run", headers=H, json={"action": "sow.approve"}))
     t0 = time.time()
+    r = step("POST /run sow.approve", client.post(
+        f"/api/projects/{pid}/assistant/run", headers=H, json={"action": "sow.approve"}))
+    if r.status_code == 200:
+        print("    ", r.json()["content"])
     r = step("POST /run package.binder", client.post(
         f"/api/projects/{pid}/assistant/run", headers=H, json={"action": "package.binder"}))
     if r.status_code == 200:
@@ -157,7 +161,7 @@ def main() -> None:
     # ---- every artifact in its own panel -------------------------------------
     print("\n--- panels ---")
     for label, path in (
-        ("MomPanel", f"/api/projects/{pid}/mom"),
+        ("MomPanel", f"/api/projects/{pid}/mom/defaults"),
         ("EarPanel", f"/api/projects/{pid}/ear"),
         ("SowBoqPanel /sow", f"/api/projects/{pid}/sow"),
         ("SowBoqPanel /boq", f"/api/projects/{pid}/boq"),
@@ -201,6 +205,8 @@ def main() -> None:
     for model in (EarRecord, SowRecord, BoqMtoItem, MomRecord, PipelineStage,
                   AssistantMessage, Attachment):
         db.query(model).filter(model.project_id == pid).delete(synchronize_session=False)
+    # audit_logs.project_id is a real foreign key: it must go before the project
+    db.query(AuditLog).filter(AuditLog.project_id == pid).delete(synchronize_session=False)
     db.query(Project).filter(Project.id == pid).delete()
     db.commit()
     db.close()

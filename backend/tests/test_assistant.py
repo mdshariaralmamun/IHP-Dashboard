@@ -141,7 +141,7 @@ def test_state_lists_allowed_and_blocked_actions(client, admin_headers, project)
     assert "mto.draft" in data["gate"]["blocked"]
     assert data["ear"]["parallel"] is True
     assert data["ai"]["provider"]
-    assert len(data["actions"]) == 12
+    assert len(data["actions"]) == 13
 
 
 def test_gate_refuses_sow_before_mom_confirmed(client, admin_headers, project):
@@ -282,3 +282,59 @@ def test_reset_clears_the_transcript(client, admin_headers, project):
     assert client.get(
         f"/api/projects/{pid}/assistant/messages", headers=admin_headers
     ).json() == []
+
+def test_sow_approve_issues_the_package(client, admin_headers, project):
+    pid = project["id"]
+    for action in ("mom.confirm", "summary.approve", "sow.draft", "sow.approve"):
+        resp = _run(client, admin_headers, pid, action)
+        assert resp.status_code == 200, action + ": " + resp.text
+    pipeline = client.get(f"/api/projects/{pid}/pipeline", headers=admin_headers).json()
+    stage_three = [s for s in pipeline["stages"] if s["stage"] == 3][0]
+    assert stage_three["status"] == "approved"
+    # the binder gate is open now (the PDF itself needs PyMuPDF + LibreOffice,
+    # which the live container has and a bare dev venv may not, so the gate is
+    # asserted from the state endpoint instead of by building the file)
+    state = client.get(f"/api/projects/{pid}/assistant", headers=admin_headers).json()
+    assert "package.binder" not in state["gate"]["blocked"]
+
+
+def test_procore_status_set_by_hand_unlocks_the_mto(client, admin_headers, project):
+    pid = project["id"]
+    _set_stages(pid, {1: "confirmed", 2: "approved", 3: "approved"})
+    assert _run(client, admin_headers, pid, "mto.draft").status_code == 409
+    patched = client.patch(
+        f"/api/projects/{pid}/procore",
+        json={"procore_status": "Approved as Noted"},
+        headers=admin_headers,
+    )
+    assert patched.status_code == 200, patched.text
+    resp = _run(client, admin_headers, pid, "mto.draft")
+    assert resp.status_code == 200, resp.text
+    db = SessionLocal()
+    items = db.query(BoqMtoItem).filter(BoqMtoItem.project_id == pid).all()
+    assert items and all(i.unit_rate == 0.0 for i in items)
+    db.close()
+
+
+def test_boq_falls_back_to_the_sow_measurements(client, admin_headers, project, monkeypatch):
+    """A useless model answer must not produce an empty BOQ."""
+
+    def _no_boq(system, prompt, *, model=None, provider_id=None):
+        if "choosing the next step" in system:
+            return {"action": "mom.draft", "reason": "notes", "reply": "Drafting the MOM."}
+        if "bill of quantities lines" in prompt:
+            return {}
+        return {"data": dict(PLAN)}
+
+    monkeypatch.setattr(assistant, "_ai_json", _no_boq)
+    pid = project["id"]
+    for action in ("mom.draft", "mom.confirm", "summary.draft", "summary.approve", "sow.draft"):
+        assert _run(client, admin_headers, pid, action).status_code == 200
+    resp = _run(client, admin_headers, pid, "boq.draft")
+    assert resp.status_code == 200, resp.text
+    assert "from the SOW measurements" in resp.json()["content"]
+    db = SessionLocal()
+    items = db.query(BoqMtoItem).filter(BoqMtoItem.project_id == pid).all()
+    assert items, "the BOQ fell back to nothing"
+    assert all(i.unit_rate == 0.0 and i.total_rate == 0.0 for i in items)
+    db.close()
