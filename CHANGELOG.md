@@ -28,6 +28,10 @@ current version is shown in the app under **Admin → Version**.
   panel says to open the .eml from the Downloads folder.
 - The mailto endpoint and its behaviour are untouched, as are the Procore binder's
   `package:pdf` key, the labour line, the hand-set Procore status and every other panel.
+- **Correction kept for the next reader:** that mis-naming was **server-side** — the
+  endpoint sent `MOM_{pr}_v{version}.eml`. `downloadFile()` in
+  `frontend/src/lib/api.ts` has always read `Content-Disposition`; the file to fix was
+  `backend/app/api/mom.py`, not the client.
 
 ## 1.2.1 — 14 October 2026
 
