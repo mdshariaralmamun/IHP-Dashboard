@@ -252,7 +252,7 @@ def mom_email_draft(project_id: int, db: Session = Depends(get_db),
 * **Cc**: `IHP.design@kaust.edu.sa` (constant `MOM_CC`, overridable by a query parameter).
 * **Subject**: `IHP-MOM-PR-{pr}-R{rev} – {meeting_title}` — the code plus an en dash, as specified.
 * **Body**: the short template — "Dear all, please find attached the Minutes of Meeting for
-  PR-{pr} – {title}. Please review and confirm the accuracy of this document. Regards, In-House Projects."
+  PR-{pr} – {title}. Please review this document and reply with your comments or approval. Regards, In-House Projects."
 * **attachment**: `{"filename": code + ".pdf", "download_url": "/api/projects/{id}/mom/export?format=pdf",
   "ready": bool}` — the panel downloads it so the user can drag it into the compose window.
 * **409** when neither attendee emails nor a project contact exist:

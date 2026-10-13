@@ -219,6 +219,31 @@ def build_mom_context(project: Project, details: dict, version: int) -> dict:
     }
 
 
+def render_mom_docx(project: Project, details: dict, version: int, out_path: Path) -> Path:
+    """The Word minute: the team's .docx template plus the shared footer lines.
+
+    The .docx template is binary and carries no footer, so the two lines are
+    appended after the render - from the same constants the HTML minute uses, so
+    the wording, the separators and the date format cannot drift between the two.
+    """
+    from ..services import mom_html
+
+    context = build_mom_context(project, details, version)
+    path = docgen.render_docx(MOM_TEMPLATE_NAME, context, out_path)
+
+    from docx import Document as DocxDocument
+
+    document = DocxDocument(str(path))
+    document.add_paragraph(mom_html.MOM_FOOTER_CONFIRM)
+    document.add_paragraph(
+        mom_html.MOM_FOOTER_META.format(
+            generated_at=mom_html.generated_at(project.pr_number)
+        )
+    )
+    document.save(str(path))
+    return path
+
+
 @router.get("/defaults")
 def mom_defaults(
     project_id: int,
@@ -319,7 +344,7 @@ def generate_mom(
 
     mom_dir = storage.project_dir(project.pr_number, "mom")
     docx_name = f"MOM_{storage.safe_name(project.pr_number)}_v{version}.docx"
-    docx_path = docgen.render_docx(MOM_TEMPLATE_NAME, context, mom_dir / docx_name)
+    docx_path = render_mom_docx(project, details, version, mom_dir / docx_name)
     pdf_path = docgen.docx_to_pdf(docx_path)
 
     subject, body = emailer.build_mom_draft(
@@ -453,7 +478,11 @@ def _mom_styled_pdf(
         f"MOM_{storage.safe_name(project.pr_number)}_v{mom.version}_minute.pdf"
     )
     path = storage.project_dir(project.pr_number, "mom") / filename
-    if path.exists():
+    template = Path(get_settings().TEMPLATES_DIR) / "mom_template.html"
+    if (
+        path.exists()
+        and (not template.exists() or path.stat().st_mtime >= template.stat().st_mtime)
+    ):
         return path
     return docgen.html_to_pdf(html, path)
 
@@ -706,7 +735,12 @@ def mom_pdf_file(
     out_dir = storage.project_dir(project.pr_number, "generated")
     out_dir.mkdir(parents=True, exist_ok=True)
     target = out_dir / f"{context['document_code']}.pdf"
-    if target.exists() and target.stat().st_size > 0:
+    template = Path(get_settings().TEMPLATES_DIR) / "mom_template.html"
+    if (
+        target.exists()
+        and target.stat().st_size > 0
+        and (not template.exists() or target.stat().st_mtime >= template.stat().st_mtime)
+    ):
         return target
     rendered = docgen.html_to_pdf(
         render_mom_document(project, mom, details, base_url=base_url), target
@@ -766,7 +800,7 @@ def export_mom(
         except Exception:  # noqa: BLE001 - the page count is informational
             pages = 0
     else:
-        path = Path(docgen.render_docx(MOM_TEMPLATE_NAME, context, out_dir / f"{code}.docx"))
+        path = Path(render_mom_docx(project, details, mom.version, out_dir / f"{code}.docx"))
         media_type = (
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
@@ -858,7 +892,7 @@ def mom_email_draft(
         "Dear all,\n\n"
         "please find attached the Minutes of Meeting for " + str(project.pr_number)
         + " \u2013 " + str(project.title) + ".\n\n"
-        "Please review and confirm the accuracy of this document.\n\n"
+        "Please review this document and reply with your comments or approval.\n\n"
         "Regards,\nIn-House Projects."
     )
     filename = code + ".pdf"

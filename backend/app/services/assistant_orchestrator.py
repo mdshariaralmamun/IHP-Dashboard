@@ -612,7 +612,7 @@ def _mom_draft(db: Session, project: Project, user: User, data: dict, *,
     context = mom_api.build_mom_context(project, details, version)
     mom_dir = storage.project_dir(project.pr_number, "mom")
     docx_name = "MOM_" + storage.safe_name(project.pr_number) + "_v" + str(version) + ".docx"
-    docx_path = docgen.render_docx(mom_api.MOM_TEMPLATE_NAME, context, mom_dir / docx_name)
+    docx_path = mom_api.render_mom_docx(project, details, version, mom_dir / docx_name)
     pdf_path = docgen.docx_to_pdf(docx_path)
     subject, body = emailer.build_mom_draft(project, context["items"], details=details, context=context)
 
