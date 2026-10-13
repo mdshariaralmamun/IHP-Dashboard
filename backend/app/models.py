@@ -1090,6 +1090,26 @@ class ProcoreComment(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, onupdate=utcnow)
 
 
+class AssistantMessage(Base):
+    """One turn of the Project Delivery Assistant transcript.
+
+    role is "user" (what the team pasted), "assistant" (what the assistant
+    said) or "tool" (what an action actually produced). meta carries the action
+    id, the artifacts (filename + the panel that shows them) and the elapsed
+    time, so the chat can render links without a second table.
+    """
+
+    __tablename__ = "assistant_messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    project_id: Mapped[int] = mapped_column(ForeignKey("projects.id"), index=True)
+    role: Mapped[str] = mapped_column(String(16), default="user")
+    content: Mapped[str] = mapped_column(Text, default="")
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+
+
 class MtoDraftItem(Base):
     """One line of a project's materials take-off draft.
 

@@ -962,3 +962,77 @@ __all__ = [
     "ROLES",
     "TRADES",
 ]
+
+# ---------------------------------------------------------------------------
+# Project Delivery Assistant
+# ---------------------------------------------------------------------------
+
+
+class AssistantArtifact(BaseModel):
+    kind: str  # docx | xlsx | zip | pdf | record | table
+    label: str
+    filename: str | None = None
+    url: str | None = None
+    panel: str | None = None
+    meta: dict = {}
+
+
+class AssistantGate(BaseModel):
+    stage: int
+    label: str
+    status: str
+    allowed: list[str] = []
+    blocked: dict[str, str] = {}
+
+
+class AssistantEarTrack(BaseModel):
+    status: str
+    next_step: str | None = None
+    trade_inputs: int = 0
+    parallel: bool = True
+
+
+class AssistantAiOut(BaseModel):
+    provider: str
+    model: str
+    available: bool
+    reason: str | None = None
+
+
+class AssistantTurnOut(BaseModel):
+    id: int
+    role: str
+    content: str
+    created_at: datetime
+    action: str | None = None
+    suggested_action: str | None = None
+    needs_confirmation: bool = False
+    artifacts: list[AssistantArtifact] = []
+    gate: AssistantGate | None = None
+    elapsed_ms: int | None = None
+    available: bool = True
+
+
+class AssistantStateOut(BaseModel):
+    project_id: int
+    pr_number: str
+    pipeline: dict
+    gate: AssistantGate
+    ear: AssistantEarTrack
+    actions: list[dict] = []
+    ai: AssistantAiOut
+    transcript: list[AssistantTurnOut] = []
+
+
+class AssistantMessageIn(BaseModel):
+    message: str
+    model: str | None = None
+    provider: str | None = None
+
+
+class AssistantRunIn(BaseModel):
+    action: str
+    note: str | None = None
+    model: str | None = None
+    provider: str | None = None
+

@@ -238,6 +238,9 @@ def generate_project_summary_docx(project: Project, context: dict | None = None,
             section.right_margin = Inches(1)
 
         out_dir = project_dir(project.pr_number, "deliverables")
+        # The first document for a PR must create its own folder: python-docx
+        # raises FileNotFoundError from zipfile when the parent is missing.
+        out_dir.mkdir(parents=True, exist_ok=True)
         out = out_dir / f"{project.pr_number} Project Summary.docx"
         doc.save(out)
         return out

@@ -32,6 +32,7 @@ from .api import (  # noqa: F401 (routers registered below)
     mom,
     pipeline,
     planning,
+    assistant,
     procore,
     projects,
     public,
@@ -166,6 +167,7 @@ def create_app() -> FastAPI:
     # The five-stage delivery pipeline (spine + guards).
     app.include_router(pipeline.router, prefix="/api")
     app.include_router(procore.router, prefix="/api")
+    app.include_router(assistant.router, prefix="/api")
     # The PR data room: raw source files, their extracted text and the AI brief.
     app.include_router(sources.router, prefix="/api")
     app.include_router(sources.sources_router, prefix="/api")
