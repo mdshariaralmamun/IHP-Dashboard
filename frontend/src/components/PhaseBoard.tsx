@@ -39,6 +39,7 @@ function passes(row: BoardRow, filter: string | null): boolean {
   if (filter === 'summary_acknowledged') return row.summary.status === 'acknowledged';
   if (filter === 'summary_pending_send')
     return row.summary.status === 'none' || row.summary.status === 'draft';
+  if (filter.indexOf('stage:') === 0) return row.stage === filter.slice(6);
   if (filter.indexOf('wait:') === 0) return (row.waiting_on ?? '') === filter.slice(5);
   if (filter.indexOf('owner:') === 0) return (row.owner_username ?? '') === filter.slice(6);
   return true;
@@ -166,6 +167,27 @@ export default function PhaseBoard({ phase }: { phase: 'ear' | 'design' | 'proco
     return bars;
   }, [all]);
 
+  /** The workflow stages actually present, in lifecycle order, with their counts. */
+  const stageOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    all.forEach((row) => counts.set(row.stage, (counts.get(row.stage) ?? 0) + 1));
+    return STAGES.filter((stage) => counts.has(stage.id)).map((stage) => ({
+      id: stage.id,
+      label: stageName(stage.id),
+      count: counts.get(stage.id) ?? 0,
+    }));
+  }, [all]);
+
+  const stageFilter =
+    selected.find((key) => key.indexOf('stage:') === 0)?.slice(6) ?? '';
+
+  /** The stage filter is single-select: choosing one replaces the previous one. */
+  const setStageFilter = (value: string) =>
+    setSelected((prev) => [
+      ...prev.filter((key) => key.indexOf('stage:') !== 0),
+      ...(value ? ['stage:' + value] : []),
+    ]);
+
   const toggle = (key: string) =>
     setSelected((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
 
@@ -284,11 +306,30 @@ export default function PhaseBoard({ phase }: { phase: 'ear' | 'design' | 'proco
             onToggle={toggle}
             onClear={() => setSelected([])}
           />
+          {phase === 'ear' && (
+            <select
+              value={stageFilter}
+              onChange={(e) => setStageFilter(e.target.value)}
+              title="Filter the board by workflow stage"
+              aria-label="Filter by stage"
+              className="ml-auto rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-apple-text outline-none focus:border-primary dark:border-white/10 dark:bg-white/5"
+            >
+              <option value="">All stages</option>
+              {stageOptions.map((stage) => (
+                <option key={stage.id} value={stage.id}>
+                  {stage.label} ({stage.count})
+                </option>
+              ))}
+            </select>
+          )}
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search PR, title, PI, location…"
-            className="ml-auto w-full max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-apple-text outline-none focus:border-primary dark:border-white/10 dark:bg-white/5"
+            className={
+              (phase === 'ear' ? '' : 'ml-auto ') +
+              'w-full max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-apple-text outline-none focus:border-primary dark:border-white/10 dark:bg-white/5'
+            }
           />
         </div>
 

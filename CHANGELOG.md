@@ -3,6 +3,19 @@
 Every change to the app is recorded here from 11 October 2026 onwards, and the
 current version is shown in the app under **Admin → Version**.
 
+## 1.2.4 — 14 October 2026
+
+### EAR board: filter by stage
+- The EAR board now has a **Stage** filter next to the search box, listing only the
+  workflow stages present on the board with their counts (e.g. `EAR Review (7)`,
+  `EAR Approved (3)`), in lifecycle order, plus "All stages". Choosing one narrows the
+  board; it is single-select, it shows up alongside the other cross-filters, and
+  "Clear" resets it with everything else.
+- Nothing else changed: the KPI cards, the court/waiting/owner visuals, the search box
+  and the row actions behave exactly as before, and the Design and Procore boards render
+  unchanged (the control is shown on the EAR board only; one line moves it to the
+  others).
+
 ## 1.2.3 — 14 October 2026
 
 ### The MOM footer sentence
