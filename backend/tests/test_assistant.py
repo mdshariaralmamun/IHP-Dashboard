@@ -426,3 +426,29 @@ def test_actions_endpoint_lists_the_registry(client, admin_headers, project):
     assert {'mom.draft', 'summary.draft', 'ear.draft', 'sow.draft', 'boq.draft',
             'drawings.list', 'sow.approve', 'package.binder', 'mto.draft'} <= ids
     assert all(row['capability'] and row['panel'] for row in rows)
+
+
+def test_mom_agenda_prefers_the_notes_scope_points(client, admin_headers, project, monkeypatch):
+    """One aggregated model row must not swallow the agreed scope points."""
+
+    def _one_row(system, prompt, *, model=None, provider_id=None):
+        if "choosing the next step" in system:
+            return {"action": "mom.draft", "reason": "notes", "reply": "Drafting the MOM."}
+        return {"data": {"meeting_title": "Gas line site meeting", "agenda": [
+            {"scope": "Install the gas line and the electrical supply", "action": "IHP",
+             "responsible": "IHP"}]}}
+
+    monkeypatch.setattr(assistant, "_ai_json", _one_row)
+    pid = project["id"]
+    resp = client.post(
+        f"/api/projects/{pid}/assistant/run",
+        json={"action": "mom.draft", "note": PROSE},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200, resp.text
+    assert "from your notes" in resp.json()["content"]
+    db = SessionLocal()
+    mom = db.query(MomRecord).filter(MomRecord.project_id == pid).first()
+    stored = mom.details['agenda']
+    assert len(stored) >= 3, stored
+    db.close()

@@ -566,11 +566,20 @@ def _mom_details(data: dict, source_text: str | None) -> tuple[dict, str]:
     for alias, key in _MOM_ALIASES:
         if not details.get(key) and details.get(alias):
             details[key] = details[alias]
-    agenda = _clean_agenda(details.get("agenda"))
-    source = "from the model" if agenda else ""
-    if not agenda:
-        agenda = _agenda_from_notes(source_text)
-        source = "from your notes" if agenda else ""
+    model_rows = _clean_agenda(details.get("agenda"))
+    derived = _agenda_from_notes(source_text)
+    agenda = model_rows
+    source = "from the model" if model_rows else ""
+    if derived and len(derived) >= max(2, len(model_rows)):
+        # The notes list the agreed scope points one by one and the model kept
+        # fewer: the notes are the record of what was agreed, so they win.
+        agenda = derived
+        source = "from your notes" + (
+            " (the model returned 1 row)" if len(model_rows) == 1 else ""
+        )
+    elif not agenda and derived:
+        agenda = derived
+        source = "from your notes"
     if agenda:
         details["agenda"] = agenda
     # With no agenda at all, build_mom_context supplies its own single row from

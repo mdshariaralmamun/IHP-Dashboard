@@ -29,9 +29,10 @@ current version is shown in the app under **Admin → Version**.
 
 ### MOM quality fixes
 - **Prose notes now always produce an agenda**: the model is asked for one row per
-  scope point, and when it returns none the assistant derives them from the notes
-  (bullet points first, then sentences), infers the trade and keeps the responsible
-  party ("Action: IHP to issue the SOW" → responsible IHP).
+  scope point, and when it returns fewer than the notes list, the notes win — the
+  assistant splits them itself (bullet points first, then sentences), infers the
+  trade and keeps the responsible party ("Action: IHP to issue the SOW" →
+  responsible IHP). A single aggregated model row no longer swallows the scope.
 - **Template keys fixed**: date / location / time / title are normalised onto the
   template's `meeting_date`, `meeting_location`, `meeting_time`, `meeting_title` —
   they were being dropped before.

@@ -57,6 +57,14 @@ def api(method: str, path: str, token: str, body: dict | None = None):
     data = json.dumps(body).encode() if body is not None else None
     request = urllib.request.Request(BASE + path, data=data, method=method)
     request.add_header("Authorization", "Bearer " + token)
+    # Cloudflare's bot rules answer the default urllib agent with error 1010,
+    # so this speaks like the browser it is standing in for.
+    request.add_header(
+        "User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/141.0 Safari/537.36",
+    )
+    request.add_header("Accept", "application/json, text/html;q=0.9")
     if data:
         request.add_header("Content-Type", "application/json")
     try:
