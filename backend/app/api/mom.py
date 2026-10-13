@@ -839,9 +839,12 @@ def mom_email_draft(
         "Regards,\nIn-House Projects."
     )
     filename = code + ".pdf"
+    # The design mailbox is copied in - unless it is already a recipient, in
+    # which case it would appear twice in the compose window.
+    cc = [MOM_CC] if MOM_CC.lower() not in {email.lower() for email in to} else []
     return {
         "to": to,
-        "cc": [MOM_CC],
+        "cc": cc,
         "subject": subject,
         "body": body,
         "attachment": {

@@ -288,3 +288,37 @@ def test_email_draft_409_without_any_email(client, admin_headers):
         assert "No attendee emails and no project contact" in draft.text
     finally:
         _cleanup(data["id"])
+
+
+def test_email_draft_dedupes_cc_against_to(client, admin_headers, monkeypatch):
+    """The design mailbox is copied in, but never twice."""
+    data = _make_project(client, admin_headers)
+    try:
+        pid = data["id"]
+        # the design mailbox is one of the attendees: Cc must come back empty
+        resp = client.patch(
+            f"/api/projects/{pid}/mom",
+            json={"attendees": [
+                {"name": "In-House Projects Design", "title": "IHP",
+                 "email": "IHP.design@kaust.edu.sa"},
+                {"name": "A. Rehman", "title": "PI", "email": "pi@example.kaust.edu.sa"},
+            ]},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 200, resp.text
+        draft = client.get(f"/api/projects/{pid}/mom/email-draft", headers=admin_headers).json()
+        assert "ihp.design@kaust.edu.sa" in [e.lower() for e in draft["to"]]
+        assert draft["cc"] == []
+
+        # an attendee list without the design mailbox still copies it in
+        resp = client.patch(
+            f"/api/projects/{pid}/mom",
+            json={"attendees": [{"name": "A. Rehman", "title": "PI",
+                                 "email": "pi@example.kaust.edu.sa"}]},
+            headers=admin_headers,
+        )
+        assert resp.status_code == 200
+        draft = client.get(f"/api/projects/{pid}/mom/email-draft", headers=admin_headers).json()
+        assert draft["cc"] == ["IHP.design@kaust.edu.sa"]
+    finally:
+        _cleanup(data["id"])
